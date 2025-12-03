@@ -162,6 +162,53 @@ export const generatedRoutes: GeneratedRoute[] = [
     ]
   },
   {
+    name: 'bms',
+    path: '/bms',
+    component: 'layout.base',
+    meta: {
+      title: 'bms',
+      i18nKey: 'route.bms'
+    },
+    children: [
+      {
+        name: 'bms_dealer',
+        path: '/bms/dealer',
+        component: 'view.bms_dealer',
+        meta: {
+          title: 'bms_dealer',
+          i18nKey: 'route.bms_dealer'
+        }
+      },
+      {
+        name: 'bms_battery_model',
+        path: '/bms/battery/model',
+        component: 'view.bms_battery_model',
+        meta: {
+          title: 'bms_battery_model',
+          i18nKey: 'route.bms_battery_model'
+        }
+      },
+      {
+        name: 'bms_battery_transfer',
+        path: '/bms/battery/transfer',
+        component: 'view.bms_battery_transfer',
+        meta: {
+          title: 'bms_battery_transfer',
+          i18nKey: 'route.bms_battery_transfer'
+        }
+      },
+      {
+        name: 'bms_warranty',
+        path: '/bms/warranty',
+        component: 'view.bms_warranty',
+        meta: {
+          title: 'bms_warranty',
+          i18nKey: 'route.bms_warranty'
+        }
+      }
+    ]
+  },
+  {
     name: 'component',
     path: '/component',
     component: 'layout.base',

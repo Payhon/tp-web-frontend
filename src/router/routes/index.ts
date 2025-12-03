@@ -66,6 +66,54 @@ const customRoutes: CustomRoute[] = [
         }
       }
     ]
+  },
+  {
+    name: 'bms',
+    path: '/bms',
+    component: 'layout.base',
+    meta: {
+      title: 'BMS管理',
+      icon: 'mdi:battery-charging-100',
+      order: 10
+    },
+    children: [
+      {
+        name: 'bms_dealer',
+        path: '/bms/dealer',
+        component: 'view.bms_dealer',
+        meta: {
+          title: '经销商管理',
+          icon: 'mdi:account-group'
+        }
+      },
+      {
+        name: 'bms_battery_model',
+        path: '/bms/battery/model',
+        component: 'view.bms_battery_model',
+        meta: {
+          title: '电池型号管理',
+          icon: 'mdi:battery-unknown'
+        }
+      },
+      {
+        name: 'bms_battery_transfer',
+        path: '/bms/battery/transfer',
+        component: 'view.bms_battery_transfer',
+        meta: {
+          title: '设备转移记录',
+          icon: 'mdi:transfer'
+        }
+      },
+      {
+        name: 'bms_warranty',
+        path: '/bms/warranty',
+        component: 'view.bms_warranty',
+        meta: {
+          title: '维保中心',
+          icon: 'mdi:clipboard-text'
+        }
+      }
+    ]
   }
 ]
 
@@ -75,13 +123,13 @@ export function createRoutes() {
 
   const authRoutes: ElegantRoute[] = []
 
-  ;[...customRoutes, ...generatedRoutes].forEach(item => {
-    if (item.meta?.constant) {
-      constantRoutes.push(item)
-    } else {
-      authRoutes.push(item)
-    }
-  })
+    ;[...customRoutes, ...generatedRoutes].forEach(item => {
+      if (item.meta?.constant) {
+        constantRoutes.push(item)
+      } else {
+        authRoutes.push(item)
+      }
+    })
 
   const constantVueRoutes = transformElegantRoutesToVueRoutes(constantRoutes, layouts, views)
 
