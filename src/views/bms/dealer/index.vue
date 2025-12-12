@@ -1,5 +1,5 @@
 <script setup lang="tsx">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { NButton, NPopconfirm, NSpace, NTag, useMessage } from 'naive-ui';
 import { getDealerList, deleteDealer, createDealer, updateDealer } from '@/service/api/bms';
 import type { SearchConfig } from '@/components/data-table-page/index.vue';
@@ -40,7 +40,7 @@ const searchConfigs = ref<SearchConfig[]>([
   }
 ]);
 
-// 表格列配置
+// 表格列配置（Naive UI 原始列定义，用于自定义渲染）
 const columns = ref([
   {
     key: 'name',
@@ -109,6 +109,15 @@ const columns = ref([
   }
 ]);
 
+// 映射为 DataTablePage 使用的 columnsToShow 配置
+const columnsToShow = computed(() =>
+  columns.value.map((col: any) => ({
+    key: col.key,
+    label: col.title,
+    render: col.render
+  }))
+);
+
 // 顶部操作按钮
 const topActions = [
   {
@@ -175,11 +184,10 @@ const handleModalSubmit = async (formData: any) => {
   <div class="h-full">
     <DataTablePage
       ref="tablePageRef"
-      :api="getDealerList"
-      :columns="columns"
+      :fetch-data="getDealerList"
+      :columns-to-show="columnsToShow"
       :search-configs="searchConfigs"
       :top-actions="topActions"
-      row-key="id"
     />
 
     <DealerModal

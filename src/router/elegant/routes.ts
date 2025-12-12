@@ -180,24 +180,6 @@ export const generatedRoutes: GeneratedRoute[] = [
         }
       },
       {
-        name: 'bms_battery_model',
-        path: '/bms/battery/model',
-        component: 'view.bms_battery_model',
-        meta: {
-          title: 'bms_battery_model',
-          i18nKey: 'route.bms_battery_model'
-        }
-      },
-      {
-        name: 'bms_battery_transfer',
-        path: '/bms/battery/transfer',
-        component: 'view.bms_battery_transfer',
-        meta: {
-          title: 'bms_battery_transfer',
-          i18nKey: 'route.bms_battery_transfer'
-        }
-      },
-      {
         name: 'bms_warranty',
         path: '/bms/warranty',
         component: 'view.bms_warranty',

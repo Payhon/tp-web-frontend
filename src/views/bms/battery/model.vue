@@ -1,28 +1,49 @@
 <script setup lang="tsx">
 import { ref } from 'vue';
-import { NButton, NPopconfirm, NSpace, NTag, useMessage } from 'naive-ui';
+import {
+  NButton,
+  NPopconfirm,
+  NSpace,
+  NTag,
+  useMessage,
+  NCard,
+  NForm,
+  NFormItem,
+  NInput,
+  NDataTable
+} from 'naive-ui';
+import type { DataTableColumns } from 'naive-ui';
+import { useTable } from '@/hooks/common/table';
 import { getBatteryModelList, deleteBatteryModel, createBatteryModel, updateBatteryModel } from '@/service/api/bms';
-import type { SearchConfig } from '@/components/data-table-page/index.vue';
 import BatteryModelModal from './modules/battery-model-modal.vue';
 
+interface BatteryModelItem {
+  id: string;
+  name: string;
+  voltage_rated?: number | null;
+  capacity_rated?: number | null;
+  cell_count?: number | null;
+  nominal_power?: number | null;
+  warranty_months?: number | null;
+  description?: string | null;
+  device_count?: number | null;
+  created_at: string;
+}
+
+interface BatteryModelListResponse {
+  list: BatteryModelItem[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
 const message = useMessage();
-const tablePageRef = ref();
 const modalVisible = ref(false);
 const modalType = ref<'add' | 'edit'>('add');
-const currentData = ref(null);
+const currentData = ref<BatteryModelItem | null>(null);
 
-// 搜索配置
-const searchConfigs = ref<SearchConfig[]>([
-  {
-    key: 'name',
-    label: '型号名称',
-    type: 'input',
-    placeholder: '请输入型号名称'
-  }
-]);
-
-// 表格列配置
-const columns = ref([
+// 列定义
+const createColumns = (): DataTableColumns<BatteryModelItem> => [
   {
     key: 'name',
     title: '型号名称',
@@ -57,9 +78,7 @@ const columns = ref([
     key: 'device_count',
     title: '关联设备',
     minWidth: 100,
-    render: (row: any) => {
-      return <NTag type="info">{row.device_count || 0}</NTag>;
-    }
+    render: row => <NTag type="info">{row.device_count || 0}</NTag>
   },
   {
     key: 'created_at',
@@ -71,59 +90,97 @@ const columns = ref([
     title: '操作',
     width: 200,
     fixed: 'right',
-    render: (row: any) => {
-      return (
-        <NSpace>
-          <NButton size="small" type="primary" onClick={() => handleEdit(row)}>
-            编辑
-          </NButton>
-          <NPopconfirm onPositiveClick={() => handleDelete(row)}>
-            {{
-              default: () => '确认删除该电池型号吗？',
-              trigger: () => <NButton size="small" type="error">删除</NButton>
-            }}
-          </NPopconfirm>
-        </NSpace>
-      );
-    }
-  }
-]);
-
-// 顶部操作按钮
-const topActions = [
-  {
-    element: () => (
-      <NButton type="primary" onClick={handleAdd}>
-        + 新增电池型号
-      </NButton>
+    render: row => (
+      <NSpace>
+        <NButton size="small" type="primary" onClick={() => handleEdit(row)}>
+          编辑
+        </NButton>
+        <NPopconfirm onPositiveClick={() => handleDelete(row.id)}>
+          {{
+            default: () => '确认删除该电池型号吗？',
+            trigger: () => (
+              <NButton size="small" type="error">
+                删除
+              </NButton>
+            )
+          }}
+        </NPopconfirm>
+      </NSpace>
     )
   }
 ];
 
-// 处理新增
+// 表格与分页
+const {
+  data,
+  loading,
+  columns,
+  filteredColumns,
+  pagination,
+  getData,
+  updateSearchParams
+} = useTable<BatteryModelItem, typeof getBatteryModelList>({
+  apiFn: getBatteryModelList,
+  apiParams: {
+    page: 1,
+    page_size: 10,
+    name: ''
+  },
+  transformer: (res: any) => {
+    const payload: BatteryModelListResponse | undefined = res?.data;
+    return {
+      data: payload?.list ?? [],
+      pageNum: payload?.page ?? 1,
+      pageSize: payload?.page_size ?? 10,
+      total: payload?.total ?? 0
+    };
+  },
+  columns: (): any => createColumns()
+});
+
+// 搜索表单
+const searchForm = ref({
+  name: ''
+});
+
+const handleSearch = () => {
+  updateSearchParams({
+    page: 1,
+    page_size: pagination.pageSize,
+    name: searchForm.value.name || undefined
+  });
+  getData();
+};
+
+const handleReset = () => {
+  searchForm.value.name = '';
+  handleSearch();
+};
+
+// 新增
 const handleAdd = () => {
   modalType.value = 'add';
   currentData.value = null;
   modalVisible.value = true;
 };
 
-// 处理编辑
-const handleEdit = (row: any) => {
+// 编辑
+const handleEdit = (row: BatteryModelItem) => {
   modalType.value = 'edit';
   currentData.value = { ...row };
   modalVisible.value = true;
 };
 
-// 处理删除
-const handleDelete = async (row: any) => {
+// 删除
+const handleDelete = async (id: string) => {
   try {
-    const { error } = await deleteBatteryModel(row.id);
+    const { error } = await deleteBatteryModel(id);
     if (!error) {
       message.success('删除成功');
-      tablePageRef.value?.reload();
+      getData();
     }
-  } catch (err) {
-    // 错误处理
+  } catch {
+    // 错误提示已由 request 统一处理
   }
 };
 
@@ -135,32 +192,62 @@ const handleModalSubmit = async (formData: any) => {
       if (!error) {
         message.success('创建成功');
         modalVisible.value = false;
-        tablePageRef.value?.reload();
+        getData();
       }
-    } else {
+    } else if (currentData.value) {
       const { error } = await updateBatteryModel(currentData.value.id, formData);
       if (!error) {
         message.success('更新成功');
         modalVisible.value = false;
-        tablePageRef.value?.reload();
+        getData();
       }
     }
-  } catch (err) {
-    // 错误处理
+  } catch {
+    // 错误提示已由 request 统一处理
   }
 };
 </script>
 
 <template>
-  <div class="h-full">
-    <DataTablePage
-      ref="tablePageRef"
-      :api="getBatteryModelList"
-      :columns="columns"
-      :search-configs="searchConfigs"
-      :top-actions="topActions"
-      row-key="id"
-    />
+  <div class="flex-vertical-stretch gap-16px overflow-hidden <sm:overflow-auto">
+    <NCard title="电池型号管理" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
+      <!-- 搜索区域 -->
+      <NForm
+        inline
+        :model="searchForm"
+        label-placement="left"
+        label-width="auto"
+        class="mb-4 flex flex-wrap gap-4 items-end"
+      >
+        <NFormItem label="型号名称" path="name">
+          <NInput
+            v-model:value="searchForm.name"
+            placeholder="请输入型号名称"
+            style="width: 220px"
+            clearable
+          />
+        </NFormItem>
+        <NFormItem>
+          <NSpace>
+            <NButton type="primary" @click="handleSearch">查询</NButton>
+            <NButton @click="handleReset">重置</NButton>
+          </NSpace>
+        </NFormItem>
+        <NFormItem>
+          <NButton type="primary" @click="handleAdd">+ 新增电池型号</NButton>
+        </NFormItem>
+      </NForm>
+
+      <!-- 表格 -->
+      <NDataTable
+        :columns="columns"
+        :data="data"
+        :loading="loading"
+        :pagination="pagination"
+        :row-key="row => row.id"
+        :scroll-x="960"
+      />
+    </NCard>
 
     <BatteryModelModal
       v-model:visible="modalVisible"

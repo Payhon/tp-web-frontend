@@ -1,33 +1,44 @@
 <script setup lang="tsx">
 import { ref } from 'vue';
-import { NTag } from 'naive-ui';
+import {
+  NCard,
+  NForm,
+  NFormItem,
+  NInput,
+  NButton,
+  NSpace,
+  NDataTable,
+  NTag
+} from 'naive-ui';
+import type { DataTableColumns } from 'naive-ui';
+import dayjs from 'dayjs';
+import { useTable } from '@/hooks/common/table';
 import { getTransferHistory } from '@/service/api/bms';
-import type { SearchConfig } from '@/components/data-table-page/index.vue';
 
-// 搜索配置
-const searchConfigs = ref<SearchConfig[]>([
-  {
-    key: 'device_number',
-    label: '设备编号',
-    type: 'input',
-    placeholder: '请输入设备编号'
-  },
-  {
-    key: 'start_time',
-    label: '开始时间',
-    type: 'date-picker',
-    placeholder: '请选择开始时间'
-  },
-  {
-    key: 'end_time',
-    label: '结束时间',
-    type: 'date-picker',
-    placeholder: '请选择结束时间'
-  }
-]);
+interface TransferItem {
+  id: string;
+  device_id: string;
+  device_number: string;
+  device_model: string;
+  from_dealer_id?: string | null;
+  from_dealer_name?: string | null;
+  to_dealer_id?: string | null;
+  to_dealer_name?: string | null;
+  operator_id?: string | null;
+  operator_name?: string | null;
+  transfer_time: string;
+  remark?: string | null;
+}
 
-// 表格列配置
-const columns = ref([
+interface TransferListResponse {
+  list: TransferItem[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+// 列定义
+const createColumns = (): DataTableColumns<TransferItem> => [
   {
     key: 'device_number',
     title: '设备编号',
@@ -42,17 +53,13 @@ const columns = ref([
     key: 'from_dealer_name',
     title: '原经销商',
     minWidth: 150,
-    render: (row: any) => {
-      return row.from_dealer_name || <NTag type="info">厂家</NTag>;
-    }
+    render: row => row.from_dealer_name || <NTag type="info">厂家</NTag>
   },
   {
     key: 'to_dealer_name',
     title: '目标经销商',
     minWidth: 150,
-    render: (row: any) => {
-      return row.to_dealer_name || <NTag type="info">厂家</NTag>;
-    }
+    render: row => row.to_dealer_name || <NTag type="info">厂家</NTag>
   },
   {
     key: 'operator_name',
@@ -72,17 +79,120 @@ const columns = ref([
       tooltip: true
     }
   }
-]);
+];
 
+// 表格与分页
+const {
+  data,
+  loading,
+  columns,
+  filteredColumns,
+  pagination,
+  getData,
+  updateSearchParams
+} = useTable<TransferItem, typeof getTransferHistory>({
+  apiFn: getTransferHistory,
+  apiParams: {
+    page: 1,
+    page_size: 10,
+    device_number: '',
+    start_time: undefined,
+    end_time: undefined
+  },
+  transformer: (res: any) => {
+    const payload: TransferListResponse | undefined = res?.data;
+    return {
+      data: payload?.list ?? [],
+      pageNum: payload?.page ?? 1,
+      pageSize: payload?.page_size ?? 10,
+      total: payload?.total ?? 0
+    };
+  },
+  columns: (): any => createColumns()
+});
+
+// 搜索表单
+const searchForm = ref({
+  device_number: '',
+  start_time: null as number | null,
+  end_time: null as number | null
+});
+
+const handleSearch = () => {
+  updateSearchParams({
+    page: 1,
+    page_size: pagination.pageSize,
+    device_number: searchForm.value.device_number || undefined,
+    start_time: searchForm.value.start_time
+      ? dayjs(searchForm.value.start_time).format('YYYY-MM-DD HH:mm:ss')
+      : undefined,
+    end_time: searchForm.value.end_time ? dayjs(searchForm.value.end_time).format('YYYY-MM-DD HH:mm:ss') : undefined
+  });
+  getData();
+};
+
+const handleReset = () => {
+  searchForm.value = {
+    device_number: '',
+    start_time: null,
+    end_time: null
+  };
+  handleSearch();
+};
 </script>
 
 <template>
-  <div class="h-full">
-    <DataTablePage
-      :api="getTransferHistory"
-      :columns="columns"
-      :search-configs="searchConfigs"
-      row-key="id"
-    />
+  <div class="flex-vertical-stretch gap-16px overflow-hidden <sm:overflow-auto">
+    <NCard title="设备转移记录" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
+      <!-- 搜索区域 -->
+      <NForm
+        inline
+        :model="searchForm"
+        label-placement="left"
+        label-width="auto"
+        class="mb-4 flex flex-wrap gap-4 items-end"
+      >
+        <NFormItem label="设备编号" path="device_number">
+          <NInput
+            v-model:value="searchForm.device_number"
+            placeholder="请输入设备编号"
+            style="width: 220px"
+            clearable
+          />
+        </NFormItem>
+        <NFormItem label="开始时间" path="start_time">
+          <NDatePicker
+            v-model:value="searchForm.start_time"
+            type="datetime"
+            clearable
+            style="width: 260px"
+          />
+        </NFormItem>
+        <NFormItem label="结束时间" path="end_time">
+          <NDatePicker
+            v-model:value="searchForm.end_time"
+            type="datetime"
+            clearable
+            style="width: 260px"
+          />
+        </NFormItem>
+        <NFormItem>
+          <NSpace>
+            <NButton type="primary" @click="handleSearch">查询</NButton>
+            <NButton @click="handleReset">重置</NButton>
+          </NSpace>
+        </NFormItem>
+      </NForm>
+
+      <!-- 表格 -->
+      <NDataTable
+        :columns="columns"
+        :data="data"
+        :loading="loading"
+        :pagination="pagination"
+        :row-key="row => row.id"
+        :scroll-x="960"
+      />
+    </NCard>
   </div>
 </template>

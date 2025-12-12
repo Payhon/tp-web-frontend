@@ -4,6 +4,7 @@ import { NButton, NCard, NDataTable, NForm, NFormItem, NInput, NSelect, NTag, ND
 import type { DataTableColumns } from 'naive-ui';
 import { useTable } from '@/hooks/common/table';
 import { getWarrantyList, getWarrantyDetail, updateWarrantyStatus } from '@/service/api/bms';
+import dayjs from 'dayjs';
 
 interface WarrantyItem {
   id: string;
@@ -33,6 +34,72 @@ interface WarrantyListResponse {
 
 const message = useMessage();
 
+// 列配置（提前声明为函数，避免初始化顺序问题）
+function createColumns(): DataTableColumns<WarrantyItem> {
+  return [
+    {
+      key: 'device_number',
+      title: '设备编号',
+      minWidth: 150
+    },
+    {
+      key: 'device_name',
+      title: '设备名称',
+      minWidth: 140
+    },
+    {
+      key: 'type',
+      title: '申请类型',
+      minWidth: 100,
+      render: row => <NTag>{typeLabel(row.type)}</NTag>
+    },
+    {
+      key: 'user_name',
+      title: '申请人',
+      minWidth: 120,
+      render: row => row.user_name || '--'
+    },
+    {
+      key: 'user_phone',
+      title: '联系电话',
+      minWidth: 130
+    },
+    {
+      key: 'status',
+      title: '状态',
+      minWidth: 110,
+      render: row => <NTag type={statusTagType(row.status)}>{statusLabel(row.status)}</NTag>
+    },
+    {
+      key: 'handler_name',
+      title: '处理人',
+      minWidth: 120,
+      render: row => row.handler_name || '--'
+    },
+    {
+      key: 'created_at',
+      title: '创建时间',
+      minWidth: 160
+    },
+    {
+      key: 'operate',
+      title: '操作',
+      minWidth: 180,
+      align: 'center',
+      render: row => (
+        <NSpace>
+          <NButton size="small" type="primary" onClick={() => handleView(row.id)}>
+            查看
+          </NButton>
+          <NButton size="small" type="success" onClick={() => handleProcess(row.id)}>
+            处理
+          </NButton>
+        </NSpace>
+      )
+    }
+  ];
+}
+
 // 列表与分页
 const {
   data,
@@ -48,23 +115,29 @@ const {
     page: 1,
     page_size: 10
   },
-  transformer: (res: WarrantyListResponse) => {
+  transformer: (res: any) => {
+    const payload: WarrantyListResponse | undefined = res?.data;
     return {
-      data: res?.list ?? [],
-      pageNum: res?.page ?? 1,
-      pageSize: res?.page_size ?? 10,
-      total: res?.total ?? 0
+      data: payload?.list ?? [],
+      pageNum: payload?.page ?? 1,
+      pageSize: payload?.page_size ?? 10,
+      total: payload?.total ?? 0
     };
   },
   columns: (): any => createColumns()
 });
 
 // 搜索表单
-const searchForm = ref({
+const searchForm = ref<{
+  device_number: string;
+  type: string | null;
+  status: string | null;
+  create_time: [number, number] | null;
+}>({
   device_number: '',
-  type: null as string | null,
-  status: null as string | null,
-  create_time: [] as [number, number] | []
+  type: null,
+  status: null,
+  create_time: null
 });
 
 const typeOptions = [
@@ -90,8 +163,8 @@ const handleSearch = () => {
     device_number: searchForm.value.device_number || undefined,
     type: searchForm.value.type || undefined,
     status: searchForm.value.status || undefined,
-    start_time: start ? new Date(start).toISOString() : undefined,
-    end_time: end ? new Date(end).toISOString() : undefined
+    start_time: start ? dayjs(start).format('YYYY-MM-DD HH:mm:ss') : undefined,
+    end_time: end ? dayjs(end).format('YYYY-MM-DD HH:mm:ss') : undefined
   });
 
   getData();
@@ -102,13 +175,13 @@ const handleReset = () => {
     device_number: '',
     type: null,
     status: null,
-    create_time: []
+    create_time: null
   };
   handleSearch();
 };
 
 // 状态样式
-const statusTagType = (status: string): 'info' | 'success' | 'warning' | 'error' => {
+function statusTagType(status: string): 'info' | 'success' | 'warning' | 'error' {
   switch (status) {
     case 'PENDING':
       return 'warning';
@@ -123,9 +196,9 @@ const statusTagType = (status: string): 'info' | 'success' | 'warning' | 'error'
     default:
       return 'info';
   }
-};
+}
 
-const statusLabel = (status: string): string => {
+function statusLabel(status: string): string {
   switch (status) {
     case 'PENDING':
       return '待审核';
@@ -140,9 +213,9 @@ const statusLabel = (status: string): string => {
     default:
       return status;
   }
-};
+}
 
-const typeLabel = (type: string): string => {
+function typeLabel(type: string): string {
   switch (type) {
     case 'REPAIR':
       return '维修';
@@ -153,71 +226,7 @@ const typeLabel = (type: string): string => {
     default:
       return type;
   }
-};
-
-// 列配置
-const createColumns = (): DataTableColumns<WarrantyItem> => [
-  {
-    key: 'device_number',
-    title: '设备编号',
-    minWidth: 150
-  },
-  {
-    key: 'device_name',
-    title: '设备名称',
-    minWidth: 140
-  },
-  {
-    key: 'type',
-    title: '申请类型',
-    minWidth: 100,
-    render: row => <NTag>{typeLabel(row.type)}</NTag>
-  },
-  {
-    key: 'user_name',
-    title: '申请人',
-    minWidth: 120,
-    render: row => row.user_name || '--'
-  },
-  {
-    key: 'user_phone',
-    title: '联系电话',
-    minWidth: 130
-  },
-  {
-    key: 'status',
-    title: '状态',
-    minWidth: 110,
-    render: row => <NTag type={statusTagType(row.status)}>{statusLabel(row.status)}</NTag>
-  },
-  {
-    key: 'handler_name',
-    title: '处理人',
-    minWidth: 120,
-    render: row => row.handler_name || '--'
-  },
-  {
-    key: 'created_at',
-    title: '创建时间',
-    minWidth: 160
-  },
-  {
-    key: 'operate',
-    title: '操作',
-    minWidth: 180,
-    align: 'center',
-    render: row => (
-      <NSpace>
-        <NButton size="small" type="primary" onClick={() => handleView(row.id)}>
-          查看
-        </NButton>
-        <NButton size="small" type="success" onClick={() => handleProcess(row.id)}>
-          处理
-        </NButton>
-      </NSpace>
-    )
-  }
-];
+}
 
 // 详情 & 处理弹窗
 const detailVisible = ref(false);
@@ -237,8 +246,8 @@ const handleView = async (id: string) => {
   detailVisible.value = true;
   detailLoading.value = true;
   try {
-    const res = (await getWarrantyDetail(id)) as WarrantyItem;
-    detailData.value = res;
+    const res: any = await getWarrantyDetail(id);
+    detailData.value = res?.data as WarrantyItem;
   } catch (error) {
     // 错误提示已由 request 统一处理
   } finally {
@@ -416,4 +425,3 @@ const detailResultText = computed(() => {
   height: 100%;
 }
 </style>
-

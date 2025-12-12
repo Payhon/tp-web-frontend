@@ -1,69 +1,70 @@
 import { request } from '../request';
 
 // 经销商相关接口
+// 注意：request 的 baseURL 已包含 /api/v1，路径中不要再写 /api/v1 前缀
 export const getDealerList = (params: any) => {
-  return request.get('/api/v1/dealer', { params });
+  return request.get('/dealer', { params });
 };
 
 export const getDealerDetail = (id: string) => {
-  return request.get(`/api/v1/dealer/${id}`);
+  return request.get(`/dealer/${id}`);
 };
 
 export const createDealer = (data: any) => {
-  return request.post('/api/v1/dealer', data);
+  return request.post('/dealer', data);
 };
 
 export const updateDealer = (id: string, data: any) => {
-  return request.put(`/api/v1/dealer/${id}`, data);
+  return request.put(`/dealer/${id}`, data);
 };
 
 export const deleteDealer = (id: string) => {
-  return request.delete(`/api/v1/dealer/${id}`);
+  return request.delete(`/dealer/${id}`);
 };
 
 // 电池型号相关接口
 export const getBatteryModelList = (params: any) => {
-  return request.get('/api/v1/battery/model', { params });
+  return request.get('/battery/model', { params });
 };
 
 export const getBatteryModelDetail = (id: string) => {
-  return request.get(`/api/v1/battery/model/${id}`);
+  return request.get(`/battery/model/${id}`);
 };
 
 export const createBatteryModel = (data: any) => {
-  return request.post('/api/v1/battery/model', data);
+  return request.post('/battery/model', data);
 };
 
 export const updateBatteryModel = (id: string, data: any) => {
-  return request.put(`/api/v1/battery/model/${id}`, data);
+  return request.put(`/battery/model/${id}`, data);
 };
 
 export const deleteBatteryModel = (id: string) => {
-  return request.delete(`/api/v1/battery/model/${id}`);
+  return request.delete(`/battery/model/${id}`);
 };
 
 // 设备转移相关接口
 export const transferDevices = (data: any) => {
-  return request.post('/api/v1/device/transfer', data);
+  return request.post('/device/transfer', data);
 };
 
 export const getTransferHistory = (params: any) => {
-  return request.get('/api/v1/device/transfer/history', { params });
+  return request.get('/device/transfer/history', { params });
 };
 
 // 维保相关接口
 export const getWarrantyList = (params: any) => {
-  return request.get('/api/v1/warranty', { params });
+  return request.get('/warranty', { params });
 };
 
 export const getWarrantyDetail = (id: string) => {
-  return request.get(`/api/v1/warranty/${id}`);
+  return request.get(`/warranty/${id}`);
 };
 
 export const createWarranty = (data: any) => {
-  return request.post('/api/v1/warranty', data);
+  return request.post('/warranty', data);
 };
 
 export const updateWarrantyStatus = (id: string, data: any) => {
-  return request.put(`/api/v1/warranty/${id}`, data);
+  return request.put(`/warranty/${id}`, data);
 };

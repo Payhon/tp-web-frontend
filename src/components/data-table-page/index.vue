@@ -272,7 +272,9 @@ defineExpose({
   handleSearch,
   handleReset,
   forceChangeParamsByKey,
-  dataList // 暴露dataList以便父组件能够直接更新数据
+  dataList, // 暴露dataList以便父组件能够直接更新数据
+  // 兼容外部调用 reload() 以刷新列表数据
+  reload: getData
 })
 
 // 更新树形选择器的选项
