@@ -137,6 +137,7 @@
   "route.device_new-device-template_template-details_viewer": "查看模型(新)",
   "route.bms": "BMS管理",
   "route.bms_dealer": "经销商管理",
+  "route.bms_battery_list": "电池列表",
   "route.bms_battery_model": "电池型号管理",
   "route.bms_battery_transfer": "设备转移记录",
   "route.bms_warranty": "维保中心"

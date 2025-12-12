@@ -68,3 +68,8 @@ export const createWarranty = (data: any) => {
 export const updateWarrantyStatus = (id: string, data: any) => {
   return request.put(`/warranty/${id}`, data);
 };
+
+// 电池列表（设备电池）相关接口
+export const getBatteryList = (params: any) => {
+  return request.get('/battery', { params });
+};

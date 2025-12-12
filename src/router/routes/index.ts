@@ -87,6 +87,15 @@ const customRoutes: CustomRoute[] = [
         }
       },
       {
+        name: 'bms_battery_list',
+        path: '/bms/battery/list',
+        component: 'view.bms_battery_list',
+        meta: {
+          title: '电池列表',
+          icon: 'mdi:battery'
+        }
+      },
+      {
         name: 'bms_battery_model',
         path: '/bms/battery/model',
         component: 'view.bms_battery_model',

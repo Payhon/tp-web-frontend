@@ -29,6 +29,7 @@ export const views: Record<LastLevelRouteKey, RouteComponent | (() => Promise<Ro
   "automation_scene-edit": () => import("@/views/automation/scene-edit/index.vue"),
   "automation_scene-linkage": () => import("@/views/automation/scene-linkage/index.vue"),
   "automation_scene-manage": () => import("@/views/automation/scene-manage/index.vue"),
+  bms_battery_list: () => import("@/views/bms/battery/list.vue"),
   bms_battery_model: () => import("@/views/bms/battery/model.vue"),
   bms_battery_transfer: () => import("@/views/bms/battery/transfer.vue"),
   bms_dealer: () => import("@/views/bms/dealer/index.vue"),
