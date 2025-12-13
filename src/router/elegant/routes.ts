@@ -171,13 +171,89 @@ export const generatedRoutes: GeneratedRoute[] = [
     },
     children: [
       {
+        name: 'bms_battery',
+        path: '/bms/battery',
+        meta: {
+          title: 'bms_battery',
+          i18nKey: 'route.bms_battery'
+        },
+        children: [
+          {
+            name: 'bms_battery_list',
+            path: '/bms/battery/list',
+            component: 'view.bms_battery_list',
+            meta: {
+              title: 'bms_battery_list',
+              i18nKey: 'route.bms_battery_list'
+            }
+          },
+          {
+            name: 'bms_battery_model',
+            path: '/bms/battery/model',
+            component: 'view.bms_battery_model',
+            meta: {
+              title: 'bms_battery_model',
+              i18nKey: 'route.bms_battery_model'
+            }
+          },
+          {
+            name: 'bms_battery_transfer',
+            path: '/bms/battery/transfer',
+            component: 'view.bms_battery_transfer',
+            meta: {
+              title: 'bms_battery_transfer',
+              i18nKey: 'route.bms_battery_transfer'
+            }
+          }
+        ]
+      },
+      {
+        name: 'bms_dashboard',
+        path: '/bms/dashboard',
+        component: 'view.bms_dashboard',
+        meta: {
+          title: 'bms_dashboard',
+          i18nKey: 'route.bms_dashboard'
+        }
+      },
+      {
         name: 'bms_dealer',
         path: '/bms/dealer',
         component: 'view.bms_dealer',
         meta: {
           title: 'bms_dealer',
           i18nKey: 'route.bms_dealer'
-        }
+        },
+        children: [
+          {
+            name: 'bms_dealer_detail',
+            path: '/bms/dealer/detail',
+            component: 'view.bms_dealer_detail',
+            meta: {
+              title: 'bms_dealer_detail',
+              i18nKey: 'route.bms_dealer_detail'
+            }
+          }
+        ]
+      },
+      {
+        name: 'bms_end',
+        path: '/bms/end',
+        meta: {
+          title: 'bms_end',
+          i18nKey: 'route.bms_end'
+        },
+        children: [
+          {
+            name: 'bms_end_user',
+            path: '/bms/end/user',
+            component: 'view.bms_end_user',
+            meta: {
+              title: 'bms_end_user',
+              i18nKey: 'route.bms_end_user'
+            }
+          }
+        ]
       },
       {
         name: 'bms_warranty',

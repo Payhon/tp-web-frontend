@@ -1,21 +1,10 @@
 <script setup lang="tsx">
 import { ref } from 'vue';
-import {
-  NButton,
-  NPopconfirm,
-  NSpace,
-  NTag,
-  useMessage,
-  NCard,
-  NForm,
-  NFormItem,
-  NInput,
-  NDataTable
-} from 'naive-ui';
+import { NButton, NCard, NDataTable, NForm, NFormItem, NInput, NPopconfirm, NSpace, NTag, useMessage } from 'naive-ui';
 import type { DataTableColumns } from 'naive-ui';
 import { useTable } from '@/hooks/common/table';
-import { getBatteryModelList, deleteBatteryModel, createBatteryModel, updateBatteryModel } from '@/service/api/bms';
-import BatteryModelModal from './modules/battery-model-modal.vue';
+import { createBatteryModel, deleteBatteryModel, getBatteryModelList, updateBatteryModel } from '@/service/api/bms';
+import BatteryModelModal from '../modules/battery-model-modal.vue';
 
 interface BatteryModelItem {
   id: string;
@@ -42,49 +31,15 @@ const modalVisible = ref(false);
 const modalType = ref<'add' | 'edit'>('add');
 const currentData = ref<BatteryModelItem | null>(null);
 
-// 列定义
 const createColumns = (): DataTableColumns<BatteryModelItem> => [
-  {
-    key: 'name',
-    title: '型号名称',
-    minWidth: 150
-  },
-  {
-    key: 'voltage_rated',
-    title: '额定电压(V)',
-    minWidth: 120
-  },
-  {
-    key: 'capacity_rated',
-    title: '额定容量(Ah)',
-    minWidth: 120
-  },
-  {
-    key: 'cell_count',
-    title: '电芯数量',
-    minWidth: 100
-  },
-  {
-    key: 'nominal_power',
-    title: '标称功率(W)',
-    minWidth: 120
-  },
-  {
-    key: 'warranty_months',
-    title: '质保期(月)',
-    minWidth: 100
-  },
-  {
-    key: 'device_count',
-    title: '关联设备',
-    minWidth: 100,
-    render: row => <NTag type="info">{row.device_count || 0}</NTag>
-  },
-  {
-    key: 'created_at',
-    title: '创建时间',
-    minWidth: 160
-  },
+  { key: 'name', title: '型号名称', minWidth: 150 },
+  { key: 'voltage_rated', title: '额定电压(V)', minWidth: 120 },
+  { key: 'capacity_rated', title: '额定容量(Ah)', minWidth: 120 },
+  { key: 'cell_count', title: '电芯数量', minWidth: 100 },
+  { key: 'nominal_power', title: '标称功率(W)', minWidth: 120 },
+  { key: 'warranty_months', title: '质保期(月)', minWidth: 100 },
+  { key: 'device_count', title: '关联设备', minWidth: 100, render: row => <NTag type="info">{row.device_count || 0}</NTag> },
+  { key: 'created_at', title: '创建时间', minWidth: 160 },
   {
     key: 'actions',
     title: '操作',
@@ -110,22 +65,9 @@ const createColumns = (): DataTableColumns<BatteryModelItem> => [
   }
 ];
 
-// 表格与分页
-const {
-  data,
-  loading,
-  columns,
-  filteredColumns,
-  pagination,
-  getData,
-  updateSearchParams
-} = useTable<BatteryModelItem, typeof getBatteryModelList>({
+const { data, loading, columns, pagination, getData, updateSearchParams } = useTable<BatteryModelItem, typeof getBatteryModelList>({
   apiFn: getBatteryModelList,
-  apiParams: {
-    page: 1,
-    page_size: 10,
-    name: ''
-  },
+  apiParams: { page: 1, page_size: 10, name: '' },
   transformer: (res: any) => {
     const payload: BatteryModelListResponse | undefined = res?.data;
     return {
@@ -138,10 +80,7 @@ const {
   columns: (): any => createColumns()
 });
 
-// 搜索表单
-const searchForm = ref({
-  name: ''
-});
+const searchForm = ref({ name: '' });
 
 const handleSearch = () => {
   updateSearchParams({
@@ -157,21 +96,18 @@ const handleReset = () => {
   handleSearch();
 };
 
-// 新增
 const handleAdd = () => {
   modalType.value = 'add';
   currentData.value = null;
   modalVisible.value = true;
 };
 
-// 编辑
 const handleEdit = (row: BatteryModelItem) => {
   modalType.value = 'edit';
   currentData.value = { ...row };
   modalVisible.value = true;
 };
 
-// 删除
 const handleDelete = async (id: string) => {
   try {
     const { error } = await deleteBatteryModel(id);
@@ -180,11 +116,10 @@ const handleDelete = async (id: string) => {
       getData();
     }
   } catch {
-    // 错误提示已由 request 统一处理
+    // request 层已处理
   }
 };
 
-// 模态框提交
 const handleModalSubmit = async (formData: any) => {
   try {
     if (modalType.value === 'add') {
@@ -203,7 +138,7 @@ const handleModalSubmit = async (formData: any) => {
       }
     }
   } catch {
-    // 错误提示已由 request 统一处理
+    // request 层已处理
   }
 };
 </script>
@@ -211,21 +146,9 @@ const handleModalSubmit = async (formData: any) => {
 <template>
   <div class="flex-vertical-stretch gap-16px overflow-hidden <sm:overflow-auto">
     <NCard title="电池型号管理" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
-      <!-- 搜索区域 -->
-      <NForm
-        inline
-        :model="searchForm"
-        label-placement="left"
-        label-width="auto"
-        class="mb-4 flex flex-wrap gap-4 items-end"
-      >
+      <NForm inline :model="searchForm" label-placement="left" label-width="auto" class="mb-4 flex flex-wrap gap-4 items-end">
         <NFormItem label="型号名称" path="name">
-          <NInput
-            v-model:value="searchForm.name"
-            placeholder="请输入型号名称"
-            style="width: 220px"
-            clearable
-          />
+          <NInput v-model:value="searchForm.name" placeholder="请输入型号名称" style="width: 220px" clearable />
         </NFormItem>
         <NFormItem>
           <NSpace>
@@ -238,22 +161,16 @@ const handleModalSubmit = async (formData: any) => {
         </NFormItem>
       </NForm>
 
-      <!-- 表格 -->
-      <NDataTable
-        :columns="columns"
-        :data="data"
-        :loading="loading"
-        :pagination="pagination"
-        :row-key="row => row.id"
-        :scroll-x="960"
-      />
+      <NDataTable :columns="columns" :data="data" :loading="loading" :pagination="pagination" :row-key="row => row.id" :scroll-x="960" />
     </NCard>
 
-    <BatteryModelModal
-      v-model:visible="modalVisible"
-      :type="modalType"
-      :data="currentData"
-      @submit="handleModalSubmit"
-    />
+    <BatteryModelModal v-model:visible="modalVisible" :type="modalType" :data="currentData" @submit="handleModalSubmit" />
   </div>
 </template>
+
+<style scoped>
+.card-wrapper {
+  height: 100%;
+}
+</style>
+

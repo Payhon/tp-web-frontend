@@ -13,7 +13,7 @@ export const ROOT_ROUTE: CustomRoute = {
   }
 }
 
-const customRoutes: CustomRoute[] = [
+const customRoutes: ElegantRoute[] = [
   ROOT_ROUTE,
   {
     name: 'not-found',
@@ -78,6 +78,15 @@ const customRoutes: CustomRoute[] = [
     },
     children: [
       {
+        name: 'bms_dashboard',
+        path: '/bms/dashboard',
+        component: 'view.bms_dashboard',
+        meta: {
+          title: 'BMS 看板',
+          icon: 'mdi:view-dashboard'
+        }
+      },
+      {
         name: 'bms_dealer',
         path: '/bms/dealer',
         component: 'view.bms_dealer',
@@ -87,31 +96,60 @@ const customRoutes: CustomRoute[] = [
         }
       },
       {
-        name: 'bms_battery_list',
-        path: '/bms/battery/list',
-        component: 'view.bms_battery_list',
+        name: 'bms_end',
+        path: '/bms/end',
         meta: {
-          title: '电池列表',
+          title: '终端用户',
+          icon: 'mdi:account'
+        },
+        children: [
+          {
+            name: 'bms_end_user',
+            path: '/bms/end/user',
+            component: 'view.bms_end_user',
+            meta: {
+              title: '终端用户列表',
+              icon: 'mdi:account'
+            }
+          }
+        ]
+      },
+      {
+        name: 'bms_battery',
+        path: '/bms/battery',
+        meta: {
+          title: '电池管理',
           icon: 'mdi:battery'
-        }
-      },
-      {
-        name: 'bms_battery_model',
-        path: '/bms/battery/model',
-        component: 'view.bms_battery_model',
-        meta: {
-          title: '电池型号管理',
-          icon: 'mdi:battery-unknown'
-        }
-      },
-      {
-        name: 'bms_battery_transfer',
-        path: '/bms/battery/transfer',
-        component: 'view.bms_battery_transfer',
-        meta: {
-          title: '设备转移记录',
-          icon: 'mdi:transfer'
-        }
+        },
+        children: [
+          {
+            name: 'bms_battery_list',
+            path: '/bms/battery/list',
+            component: 'view.bms_battery_list',
+            meta: {
+              title: '电池列表',
+              icon: 'mdi:battery'
+            }
+          },
+          {
+            name: 'bms_battery_model',
+            path: '/bms/battery/model',
+            component: 'view.bms_battery_model',
+            meta: {
+              title: '电池型号管理',
+              icon: 'mdi:battery-unknown'
+            }
+          },
+          {
+            name: 'bms_battery_transfer',
+            path: '/bms/battery/transfer',
+            component: 'view.bms_battery_transfer',
+            meta: {
+              title: '设备转移记录',
+              icon: 'mdi:transfer'
+            }
+          }
+        ]
       },
       {
         name: 'bms_warranty',

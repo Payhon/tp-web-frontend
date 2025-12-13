@@ -1,11 +1,19 @@
 <script setup lang="tsx">
 import { computed, onMounted, ref } from 'vue';
-import { NButton, NCard, NDataTable, NDatePicker, NForm, NFormItem, NInput, NSelect, NSpace, NTag } from 'naive-ui';
+import { NButton, NCard, NDataTable, NDatePicker, NForm, NFormItem, NInput, NModal, NSelect, NSpace, NTag, useMessage } from 'naive-ui';
 import type { DataTableColumns } from 'naive-ui';
 import dayjs from 'dayjs';
 import { useTable } from '@/hooks/common/table';
 import { useRouterPush } from '@/hooks/common/router';
-import { getBatteryList, getBatteryModelList, getDealerList } from '@/service/api/bms';
+import {
+  getBatteryList,
+  getBatteryModelList,
+  getDealerList,
+  exportBatteryList,
+  getBatteryImportTemplate,
+  importBatteryList,
+  batchAssignDealer
+} from '@/service/api/bms';
 
 interface BatteryItem {
   device_id: string;
@@ -37,9 +45,19 @@ interface ListResp<T> {
 }
 
 const { routerPushByKey } = useRouterPush();
+const message = useMessage();
 
 const dealerOptions = ref<Array<{ label: string; value: string }>>([]);
 const modelOptions = ref<Array<{ label: string; value: string }>>([]);
+
+// 批量选择
+const selectedRowKeys = ref<string[]>([]);
+const showBatchAssignModal = ref(false);
+const batchAssignForm = ref({
+  dealer_id: null as string | null
+});
+const importLoading = ref(false);
+const batchAssignLoading = ref(false);
 
 const onlineOptions = [
   { label: '在线', value: 1 },
@@ -90,6 +108,10 @@ const searchForm = ref<{
 });
 
 const createColumns = (): DataTableColumns<BatteryItem> => [
+  {
+    type: 'selection',
+    multiple: true
+  },
   { key: 'device_number', title: '序列号', minWidth: 150 },
   { key: 'battery_model_name', title: '型号', minWidth: 140, render: row => row.battery_model_name || '--' },
   { key: 'production_date', title: '出厂日期', minWidth: 120, render: row => row.production_date || '--' },
@@ -122,14 +144,7 @@ const createColumns = (): DataTableColumns<BatteryItem> => [
   }
 ];
 
-const {
-  data,
-  loading,
-  columns,
-  pagination,
-  getData,
-  updateSearchParams
-} = useTable<BatteryItem, typeof getBatteryList>({
+const { data, loading, columns, pagination, getData, updateSearchParams } = useTable<BatteryItem, typeof getBatteryList>({
   apiFn: getBatteryList,
   apiParams: {
     page: 1,
@@ -146,6 +161,121 @@ const {
   },
   columns: (): any => createColumns()
 });
+
+// 导出
+async function handleExport() {
+  try {
+    const [start, end] = searchForm.value.production_range || [];
+    const params: any = {
+      device_number: searchForm.value.device_number || undefined,
+      battery_model_id: searchForm.value.battery_model_id || undefined,
+      dealer_id: searchForm.value.dealer_id || undefined,
+      is_online: searchForm.value.is_online ?? undefined,
+      activation_status: searchForm.value.activation_status || undefined,
+      warranty_status: searchForm.value.warranty_status || undefined,
+      production_date_start: start ? dayjs(start).format('YYYY-MM-DD') : undefined,
+      production_date_end: end ? dayjs(end).format('YYYY-MM-DD') : undefined
+    };
+
+    const response = await exportBatteryList(params);
+    const blob = new Blob([response.data], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `电池列表_${dayjs().format('YYYYMMDDHHmmss')}.xlsx`;
+    link.click();
+    window.URL.revokeObjectURL(url);
+    message.success('导出成功');
+  } catch (error: any) {
+    message.error(error?.message || '导出失败');
+  }
+}
+
+// 下载模板
+async function handleDownloadTemplate() {
+  try {
+    const response = await getBatteryImportTemplate();
+    const blob = new Blob([response.data], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = '电池导入模板.xlsx';
+    link.click();
+    window.URL.revokeObjectURL(url);
+    message.success('模板下载成功');
+  } catch (error: any) {
+    message.error(error?.message || '下载失败');
+  }
+}
+
+// 导入
+function handleImport() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.xlsx,.xls';
+  input.onchange = async (e: any) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    importLoading.value = true;
+    try {
+      const res: any = await importBatteryList(file);
+      const result = res?.data;
+      if (result) {
+        const msg = `导入完成：总计 ${result.total} 条，成功 ${result.success} 条，失败 ${result.failed} 条`;
+        if (result.failed > 0 && result.failures?.length > 0) {
+          const failures = result.failures.map((f: any) => `第${f.row}行：${f.device_number || '未知'} - ${f.message}`).join('\n');
+          message.warning(msg + '\n失败明细：\n' + failures, { duration: 10000 });
+        } else {
+          message.success(msg);
+        }
+        getData();
+      }
+    } catch (error: any) {
+      message.error(error?.message || '导入失败');
+    } finally {
+      importLoading.value = false;
+    }
+  };
+  input.click();
+}
+
+// 批量分配经销商
+function handleBatchAssign() {
+  if (selectedRowKeys.value.length === 0) {
+    message.warning('请先选择要分配的电池');
+    return;
+  }
+  showBatchAssignModal.value = true;
+}
+
+async function confirmBatchAssign() {
+  if (!batchAssignForm.value.dealer_id) {
+    message.warning('请选择经销商');
+    return;
+  }
+
+  batchAssignLoading.value = true;
+  try {
+    await batchAssignDealer({
+      device_ids: selectedRowKeys.value,
+      dealer_id: batchAssignForm.value.dealer_id
+    });
+    message.success('批量分配成功');
+    showBatchAssignModal.value = false;
+    selectedRowKeys.value = [];
+    batchAssignForm.value.dealer_id = null;
+    getData();
+  } catch (error: any) {
+    message.error(error?.message || '批量分配失败');
+  } finally {
+    batchAssignLoading.value = false;
+  }
+}
 
 function handleSearch() {
   const [start, end] = searchForm.value.production_range || [];
@@ -187,7 +317,6 @@ function goDeviceDetail(row: BatteryItem) {
 }
 
 async function initSelectOptions() {
-  // 经销商下拉（取前 1000 条，满足常规测试；后续可改为远程搜索）
   try {
     const dealerRes: any = await getDealerList({ page: 1, page_size: 1000 });
     const list = (dealerRes?.data?.list || []) as Array<{ id: string; name: string }>;
@@ -196,7 +325,6 @@ async function initSelectOptions() {
     dealerOptions.value = [];
   }
 
-  // 电池型号下拉（取前 1000 条）
   try {
     const modelRes: any = await getBatteryModelList({ page: 1, page_size: 1000 });
     const list = (modelRes?.data?.list || []) as Array<{ id: string; name: string }>;
@@ -216,13 +344,7 @@ onMounted(() => {
 <template>
   <div class="flex-vertical-stretch gap-16px overflow-hidden <sm:overflow-auto">
     <NCard title="电池列表" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
-      <NForm
-        inline
-        :model="searchForm"
-        label-placement="left"
-        label-width="auto"
-        class="mb-4 flex flex-wrap gap-4 items-end"
-      >
+      <NForm inline :model="searchForm" label-placement="left" label-width="auto" class="mb-4 flex flex-wrap gap-4 items-end">
         <NFormItem label="序列号" path="device_number">
           <NInput v-model:value="searchForm.device_number" placeholder="请输入序列号" style="width: 220px" clearable />
         </NFormItem>
@@ -248,13 +370,7 @@ onMounted(() => {
         </NFormItem>
 
         <NFormItem label="在线状态" path="is_online">
-          <NSelect
-            v-model:value="searchForm.is_online"
-            :options="onlineOptions"
-            placeholder="请选择"
-            clearable
-            style="width: 160px"
-          />
+          <NSelect v-model:value="searchForm.is_online" :options="onlineOptions" placeholder="请选择" clearable style="width: 160px" />
         </NFormItem>
 
         <NFormItem label="激活状态" path="activation_status">
@@ -289,6 +405,17 @@ onMounted(() => {
         </NFormItem>
       </NForm>
 
+      <NSpace class="mb-4" justify="space-between">
+        <NSpace>
+          <NButton type="primary" @click="handleExport">导出</NButton>
+          <NButton @click="handleDownloadTemplate">下载模板</NButton>
+          <NButton @click="handleImport" :loading="importLoading">导入</NButton>
+          <NButton v-if="selectedRowKeys.length > 0" type="warning" @click="handleBatchAssign">
+            批量分配经销商({{ selectedRowKeys.length }})
+          </NButton>
+        </NSpace>
+      </NSpace>
+
       <NDataTable
         :columns="columns"
         :data="data"
@@ -296,8 +423,34 @@ onMounted(() => {
         :pagination="pagination"
         :row-key="row => row.device_id"
         :scroll-x="scrollX"
+        v-model:checked-row-keys="selectedRowKeys"
       />
     </NCard>
+
+    <NModal
+      v-model:show="showBatchAssignModal"
+      preset="dialog"
+      title="批量分配经销商"
+      positive-text="确认"
+      negative-text="取消"
+      @positive-click="confirmBatchAssign"
+      :loading="batchAssignLoading"
+    >
+      <NForm :model="batchAssignForm" label-placement="left" label-width="100px">
+        <NFormItem label="经销商" path="dealer_id" required>
+          <NSelect
+            v-model:value="batchAssignForm.dealer_id"
+            :options="dealerOptions"
+            placeholder="请选择经销商"
+            clearable
+            style="width: 100%"
+          />
+        </NFormItem>
+        <NFormItem>
+          <div style="color: #999; font-size: 12px">已选择 {{ selectedRowKeys.length }} 个电池，将分配给选中的经销商</div>
+        </NFormItem>
+      </NForm>
+    </NModal>
   </div>
 </template>
 

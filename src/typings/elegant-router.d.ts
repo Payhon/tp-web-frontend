@@ -38,10 +38,14 @@ declare module "@elegant-router/types" {
     "automation_scene-linkage": "/automation/scene-linkage";
     "automation_scene-manage": "/automation/scene-manage";
     "bms": "/bms";
+    "bms_battery": "/bms/battery";
     "bms_battery_list": "/bms/battery/list";
     "bms_battery_model": "/bms/battery/model";
     "bms_battery_transfer": "/bms/battery/transfer";
+    "bms_dashboard": "/bms/dashboard";
     "bms_dealer": "/bms/dealer";
+    "bms_end": "/bms/end";
+    "bms_end_user": "/bms/end/user";
     "bms_warranty": "/bms/warranty";
     "component": "/component";
     "component_button": "/component/button";
@@ -222,7 +226,9 @@ declare module "@elegant-router/types" {
     | "bms_battery_list"
     | "bms_battery_model"
     | "bms_battery_transfer"
+    | "bms_dashboard"
     | "bms_dealer"
+    | "bms_end_user"
     | "bms_warranty"
     | "component_button"
     | "component_card"

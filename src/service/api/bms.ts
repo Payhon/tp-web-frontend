@@ -22,6 +22,19 @@ export const deleteDealer = (id: string) => {
   return request.delete(`/dealer/${id}`);
 };
 
+export const getDealerOverview = (id: string) => {
+  return request.get(`/dealer/${id}/overview`);
+};
+
+// 经销商权限模板（基础/高级）
+export const getDealerPermissionTemplate = (id: string) => {
+  return request.get(`/dealer/${id}/permission_template`);
+};
+
+export const setDealerPermissionTemplate = (id: string, data: { template: 'BASIC' | 'ADVANCED' }) => {
+  return request.put(`/dealer/${id}/permission_template`, data);
+};
+
 // 电池型号相关接口
 export const getBatteryModelList = (params: any) => {
   return request.get('/battery/model', { params });
@@ -72,4 +85,56 @@ export const updateWarrantyStatus = (id: string, data: any) => {
 // 电池列表（设备电池）相关接口
 export const getBatteryList = (params: any) => {
   return request.get('/battery', { params });
+};
+
+// 导出电池列表
+export const exportBatteryList = (params: any) => {
+  return request.get('/battery/export', { params, responseType: 'blob' });
+};
+
+// 获取导入模板
+export const getBatteryImportTemplate = () => {
+  return request.get('/battery/import/template', { responseType: 'blob' });
+};
+
+// 导入电池列表
+export const importBatteryList = (file: File) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  return request.post('/battery/import', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  });
+};
+
+// 批量分配经销商
+export const batchAssignDealer = (data: { device_ids: string[]; dealer_id: string }) => {
+  return request.post('/battery/batch-assign-dealer', data);
+};
+
+// BMS Dashboard
+export const getBmsDashboardKpi = () => {
+  return request.get('/dashboard/kpi');
+};
+
+export const getBmsDashboardAlarmOverview = (params?: { days?: number }) => {
+  return request.get('/dashboard/alarm/overview', { params });
+};
+
+export const getBmsDashboardOnlineTrend = () => {
+  return request.get('/dashboard/trend/online');
+};
+
+// 终端用户（BMS穿透）
+export const getEndUserList = (params: any) => {
+  return request.get('/end_user', { params });
+};
+
+export const getEndUserDevices = (params: any) => {
+  return request.get('/end_user/devices', { params });
+};
+
+export const forceUnbindEndUserDevice = (data: { binding_id: string }) => {
+  return request.post('/end_user/force_unbind', data);
 };

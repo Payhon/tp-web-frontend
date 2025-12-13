@@ -50,6 +50,17 @@ function transformLayoutAndPageToComponent(layout: string, page: any) {
   return ''
 }
 
+function normalizeRoutePath(path: unknown): string {
+  const raw = String(path ?? '').trim()
+
+  if (!raw) return ''
+
+  const withLeadingSlash = raw.startsWith('/') ? raw : `/${raw}`
+
+  // keep root '/', otherwise strip trailing slashes
+  return withLeadingSlash.length > 1 ? withLeadingSlash.replace(/\/+$/, '') : withLeadingSlash
+}
+
 /** 递归处理数据 */
 function replaceKeys(data: ElegantConstRoute[]): ElegantRoute[] {
   return data.map((item: any): ElegantRoute => {
@@ -65,22 +76,28 @@ function replaceKeys(data: ElegantConstRoute[]): ElegantRoute[] {
     // if (item.route_path === 'layout.base' && item.children.length === 0) {
     //   item.route_path += '$home';
     // }
-    const homeRoutePath = getRouteName(item.param1)
+    const routePath = normalizeRoutePath(item.param1)
+    const name = item.element_code.trim().replace(/\s/g, '_')
+    const homeRoutePath = routePath ? getRouteName(routePath as any) : null
     let component = ''
+
+    // Prefer routeMap mapping; fall back to element_code when backend route path is not normalized.
+    const pageKey = homeRoutePath || name
+
     if (item.parent_id === '0') {
-      component = transformLayoutAndPageToComponent('base', item.element_type === 1 ? '' : homeRoutePath)
+      component = transformLayoutAndPageToComponent('base', item.element_type === 1 ? '' : pageKey)
     } else {
       component = transformLayoutAndPageToComponent(
         item.element_type === 1 ? 'base' : '',
-        item.element_type === 1 ? '' : homeRoutePath
+        item.element_type === 1 ? '' : pageKey
       )
     }
     const route: Partial<ElegantRoute> = {
       // id: item.id,
       // parentId: item.parent_id,
-      name: item.element_code.trim().replace(/\s/g, '_'),
+      name,
       // elementType: item.element_type,
-      path: item.param1 && item.param1[0] === '/' ? item.param1 : (`/${item.param1}` as string),
+      path: routePath || '/',
       // component: item.route_path.trim().replace(/\s/g, '_'),
       // remark: item.remark,
       ...(component && { component }),

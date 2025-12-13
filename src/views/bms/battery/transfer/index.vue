@@ -1,15 +1,6 @@
 <script setup lang="tsx">
 import { ref } from 'vue';
-import {
-  NCard,
-  NForm,
-  NFormItem,
-  NInput,
-  NButton,
-  NSpace,
-  NDataTable,
-  NTag
-} from 'naive-ui';
+import { NCard, NDataTable, NForm, NFormItem, NInput, NButton, NSpace, NTag, NDatePicker } from 'naive-ui';
 import type { DataTableColumns } from 'naive-ui';
 import dayjs from 'dayjs';
 import { useTable } from '@/hooks/common/table';
@@ -37,60 +28,22 @@ interface TransferListResponse {
   page_size: number;
 }
 
-// 列定义
 const createColumns = (): DataTableColumns<TransferItem> => [
-  {
-    key: 'device_number',
-    title: '设备编号',
-    minWidth: 150
-  },
-  {
-    key: 'device_model',
-    title: '设备型号',
-    minWidth: 120
-  },
-  {
-    key: 'from_dealer_name',
-    title: '原经销商',
-    minWidth: 150,
-    render: row => row.from_dealer_name || <NTag type="info">厂家</NTag>
-  },
-  {
-    key: 'to_dealer_name',
-    title: '目标经销商',
-    minWidth: 150,
-    render: row => row.to_dealer_name || <NTag type="info">厂家</NTag>
-  },
-  {
-    key: 'operator_name',
-    title: '操作人',
-    minWidth: 100
-  },
-  {
-    key: 'transfer_time',
-    title: '转移时间',
-    minWidth: 160
-  },
+  { key: 'device_number', title: '设备编号', minWidth: 150 },
+  { key: 'device_model', title: '设备型号', minWidth: 120 },
+  { key: 'from_dealer_name', title: '原经销商', minWidth: 150, render: row => row.from_dealer_name || <NTag type="info">厂家</NTag> },
+  { key: 'to_dealer_name', title: '目标经销商', minWidth: 150, render: row => row.to_dealer_name || <NTag type="info">厂家</NTag> },
+  { key: 'operator_name', title: '操作人', minWidth: 100 },
+  { key: 'transfer_time', title: '转移时间', minWidth: 160 },
   {
     key: 'remark',
     title: '备注',
     minWidth: 200,
-    ellipsis: {
-      tooltip: true
-    }
+    ellipsis: { tooltip: true }
   }
 ];
 
-// 表格与分页
-const {
-  data,
-  loading,
-  columns,
-  filteredColumns,
-  pagination,
-  getData,
-  updateSearchParams
-} = useTable<TransferItem, typeof getTransferHistory>({
+const { data, loading, columns, pagination, getData, updateSearchParams } = useTable<TransferItem, typeof getTransferHistory>({
   apiFn: getTransferHistory,
   apiParams: {
     page: 1,
@@ -111,7 +64,6 @@ const {
   columns: (): any => createColumns()
 });
 
-// 搜索表单
 const searchForm = ref({
   device_number: '',
   start_time: null as number | null,
@@ -123,9 +75,7 @@ const handleSearch = () => {
     page: 1,
     page_size: pagination.pageSize,
     device_number: searchForm.value.device_number || undefined,
-    start_time: searchForm.value.start_time
-      ? dayjs(searchForm.value.start_time).format('YYYY-MM-DD HH:mm:ss')
-      : undefined,
+    start_time: searchForm.value.start_time ? dayjs(searchForm.value.start_time).format('YYYY-MM-DD HH:mm:ss') : undefined,
     end_time: searchForm.value.end_time ? dayjs(searchForm.value.end_time).format('YYYY-MM-DD HH:mm:ss') : undefined
   });
   getData();
@@ -144,37 +94,15 @@ const handleReset = () => {
 <template>
   <div class="flex-vertical-stretch gap-16px overflow-hidden <sm:overflow-auto">
     <NCard title="设备转移记录" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
-      <!-- 搜索区域 -->
-      <NForm
-        inline
-        :model="searchForm"
-        label-placement="left"
-        label-width="auto"
-        class="mb-4 flex flex-wrap gap-4 items-end"
-      >
+      <NForm inline :model="searchForm" label-placement="left" label-width="auto" class="mb-4 flex flex-wrap gap-4 items-end">
         <NFormItem label="设备编号" path="device_number">
-          <NInput
-            v-model:value="searchForm.device_number"
-            placeholder="请输入设备编号"
-            style="width: 220px"
-            clearable
-          />
+          <NInput v-model:value="searchForm.device_number" placeholder="请输入设备编号" style="width: 220px" clearable />
         </NFormItem>
         <NFormItem label="开始时间" path="start_time">
-          <NDatePicker
-            v-model:value="searchForm.start_time"
-            type="datetime"
-            clearable
-            style="width: 260px"
-          />
+          <NDatePicker v-model:value="searchForm.start_time" type="datetime" clearable style="width: 260px" />
         </NFormItem>
         <NFormItem label="结束时间" path="end_time">
-          <NDatePicker
-            v-model:value="searchForm.end_time"
-            type="datetime"
-            clearable
-            style="width: 260px"
-          />
+          <NDatePicker v-model:value="searchForm.end_time" type="datetime" clearable style="width: 260px" />
         </NFormItem>
         <NFormItem>
           <NSpace>
@@ -184,15 +112,14 @@ const handleReset = () => {
         </NFormItem>
       </NForm>
 
-      <!-- 表格 -->
-      <NDataTable
-        :columns="columns"
-        :data="data"
-        :loading="loading"
-        :pagination="pagination"
-        :row-key="row => row.id"
-        :scroll-x="960"
-      />
+      <NDataTable :columns="columns" :data="data" :loading="loading" :pagination="pagination" :row-key="row => row.id" :scroll-x="960" />
     </NCard>
   </div>
 </template>
+
+<style scoped>
+.card-wrapper {
+  height: 100%;
+}
+</style>
+
