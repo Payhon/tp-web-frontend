@@ -35,6 +35,34 @@ export const setDealerPermissionTemplate = (id: string, data: { template: 'BASIC
   return request.put(`/dealer/${id}/permission_template`, data);
 };
 
+// 激活日志（从操作日志派生）
+export const getActivationLogList = (params: {
+  page: number;
+  page_size: number;
+  device_number?: string;
+  user_phone?: string;
+  start_time?: string;
+  end_time?: string;
+  method?: 'APP' | 'WEB';
+}) => {
+  return request.get('/activation_logs', { params });
+};
+
+// 操作记录（复用后端 operation_logs）
+export const getOperationLogList = (params: {
+  page: number;
+  page_size: number;
+  username?: string;
+  ip?: string;
+  start_time?: string;
+  end_time?: string;
+  method?: string;
+  module?: string;
+  op_type?: string;
+}) => {
+  return request.get('/operation_logs', { params });
+};
+
 // 电池型号相关接口
 export const getBatteryModelList = (params: any) => {
   return request.get('/battery/model', { params });

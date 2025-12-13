@@ -46,6 +46,11 @@ declare module "@elegant-router/types" {
     "bms_dealer": "/bms/dealer";
     "bms_end": "/bms/end";
     "bms_end_user": "/bms/end/user";
+    "bms_ops": "/bms/ops";
+    "bms_ops_activation": "/bms/ops/activation";
+    "bms_ops_activation_log": "/bms/ops/activation/log";
+    "bms_ops_operation": "/bms/ops/operation";
+    "bms_ops_operation_log": "/bms/ops/operation/log";
     "bms_warranty": "/bms/warranty";
     "component": "/component";
     "component_button": "/component/button";
@@ -229,6 +234,8 @@ declare module "@elegant-router/types" {
     | "bms_dashboard"
     | "bms_dealer"
     | "bms_end_user"
+    | "bms_ops_activation_log"
+    | "bms_ops_operation_log"
     | "bms_warranty"
     | "component_button"
     | "component_card"

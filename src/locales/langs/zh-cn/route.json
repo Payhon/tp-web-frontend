@@ -142,5 +142,10 @@
   "route.bms_battery_list": "电池列表",
   "route.bms_battery_model": "电池型号管理",
   "route.bms_battery_transfer": "设备转移记录",
-  "route.bms_warranty": "维保中心"
+  "route.bms_warranty": "维保中心",
+  "route.bms_ops": "运营管理",
+  "route.bms_ops_activation": "激活",
+  "route.bms_ops_activation_log": "激活日志",
+  "route.bms_ops_operation": "操作",
+  "route.bms_ops_operation_log": "操作记录"
 }

@@ -159,6 +159,54 @@ const customRoutes: ElegantRoute[] = [
           title: '维保中心',
           icon: 'mdi:clipboard-text'
         }
+      },
+      {
+        name: 'bms_ops',
+        path: '/bms/ops',
+        meta: {
+          title: '运营管理',
+          icon: 'mdi:clipboard-text-outline'
+        },
+        children: [
+          {
+            name: 'bms_ops_activation',
+            path: '/bms/ops/activation',
+            meta: {
+              title: '激活日志',
+              icon: 'mdi:history'
+            },
+            children: [
+              {
+                name: 'bms_ops_activation_log',
+                path: '/bms/ops/activation/log',
+                component: 'view.bms_ops_activation_log',
+                meta: {
+                  title: '激活日志',
+                  icon: 'mdi:history'
+                }
+              }
+            ]
+          },
+          {
+            name: 'bms_ops_operation',
+            path: '/bms/ops/operation',
+            meta: {
+              title: '操作记录',
+              icon: 'mdi:clipboard-list'
+            },
+            children: [
+              {
+                name: 'bms_ops_operation_log',
+                path: '/bms/ops/operation/log',
+                component: 'view.bms_ops_operation_log',
+                meta: {
+                  title: '操作记录',
+                  icon: 'mdi:clipboard-list'
+                }
+              }
+            ]
+          }
+        ]
       }
     ]
   }

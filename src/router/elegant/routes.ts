@@ -256,6 +256,54 @@ export const generatedRoutes: GeneratedRoute[] = [
         ]
       },
       {
+        name: 'bms_ops',
+        path: '/bms/ops',
+        meta: {
+          title: 'bms_ops',
+          i18nKey: 'route.bms_ops'
+        },
+        children: [
+          {
+            name: 'bms_ops_activation',
+            path: '/bms/ops/activation',
+            meta: {
+              title: 'bms_ops_activation',
+              i18nKey: 'route.bms_ops_activation'
+            },
+            children: [
+              {
+                name: 'bms_ops_activation_log',
+                path: '/bms/ops/activation/log',
+                component: 'view.bms_ops_activation_log',
+                meta: {
+                  title: 'bms_ops_activation_log',
+                  i18nKey: 'route.bms_ops_activation_log'
+                }
+              }
+            ]
+          },
+          {
+            name: 'bms_ops_operation',
+            path: '/bms/ops/operation',
+            meta: {
+              title: 'bms_ops_operation',
+              i18nKey: 'route.bms_ops_operation'
+            },
+            children: [
+              {
+                name: 'bms_ops_operation_log',
+                path: '/bms/ops/operation/log',
+                component: 'view.bms_ops_operation_log',
+                meta: {
+                  title: 'bms_ops_operation_log',
+                  i18nKey: 'route.bms_ops_operation_log'
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
         name: 'bms_warranty',
         path: '/bms/warranty',
         component: 'view.bms_warranty',
