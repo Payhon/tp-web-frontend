@@ -147,5 +147,8 @@
   "route.bms_ops_activation": "激活",
   "route.bms_ops_activation_log": "激活日志",
   "route.bms_ops_operation": "操作",
-  "route.bms_ops_operation_log": "操作记录"
+  "route.bms_ops_operation_log": "操作记录",
+  "route.bms_system": "系统管理",
+  "route.bms_system_user": "账号管理",
+  "route.bms_system_role": "角色管理"
 }

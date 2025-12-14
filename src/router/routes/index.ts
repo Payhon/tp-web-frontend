@@ -207,6 +207,34 @@ const customRoutes: ElegantRoute[] = [
             ]
           }
         ]
+      },
+      {
+        name: 'bms_system',
+        path: '/bms/system',
+        meta: {
+          title: '系统管理',
+          icon: 'mdi:cog'
+        },
+        children: [
+          {
+            name: 'bms_system_user',
+            path: '/bms/system/user',
+            component: 'view.bms_system_user',
+            meta: {
+              title: '账号管理',
+              icon: 'mdi:account-cog'
+            }
+          },
+          {
+            name: 'bms_system_role',
+            path: '/bms/system/role',
+            component: 'view.bms_system_role',
+            meta: {
+              title: '角色管理',
+              icon: 'mdi:account-key'
+            }
+          }
+        ]
       }
     ]
   }

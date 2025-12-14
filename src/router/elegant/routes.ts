@@ -304,6 +304,34 @@ export const generatedRoutes: GeneratedRoute[] = [
         ]
       },
       {
+        name: 'bms_system',
+        path: '/bms/system',
+        meta: {
+          title: 'bms_system',
+          i18nKey: 'route.bms_system'
+        },
+        children: [
+          {
+            name: 'bms_system_role',
+            path: '/bms/system/role',
+            component: 'view.bms_system_role',
+            meta: {
+              title: 'bms_system_role',
+              i18nKey: 'route.bms_system_role'
+            }
+          },
+          {
+            name: 'bms_system_user',
+            path: '/bms/system/user',
+            component: 'view.bms_system_user',
+            meta: {
+              title: 'bms_system_user',
+              i18nKey: 'route.bms_system_user'
+            }
+          }
+        ]
+      },
+      {
         name: 'bms_warranty',
         path: '/bms/warranty',
         component: 'view.bms_warranty',
