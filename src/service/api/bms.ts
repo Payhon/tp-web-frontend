@@ -212,6 +212,18 @@ export const getOtaUpgradePackageList = (params: any) => {
   return request.get('/ota/package', { params });
 };
 
+// OTA：上传升级包固件（返回可用于 package_url 的 path）
+export const uploadOtaUpgradePackageFile = (file: File) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('type', 'upgradePackage');
+  return request.post('/file/up', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  });
+};
+
 // OTA：批量推送（BMS封装）
 export const batchPushOta = (data: { device_ids: string[]; ota_upgrade_package_id: string; name?: string; description?: string; remark?: string }) => {
   return request.post('/battery/batch-ota', data);

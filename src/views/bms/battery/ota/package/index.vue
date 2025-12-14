@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { NButton, NCard, NDataTable, NForm, NFormItem, NInput, NModal, NPopconfirm, NSelect, NSpace, useMessage } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import { useTable } from '@/hooks/common/table'
-import { getOtaUpgradePackageList } from '@/service/api/bms'
+import { getOtaUpgradePackageList, uploadOtaUpgradePackageFile } from '@/service/api/bms'
 import { deviceConfig } from '@/service/api/device'
 import { request } from '@/service/request'
 
@@ -119,6 +119,7 @@ function handleReset() {
 const showModal = ref(false)
 const modalType = ref<'create' | 'edit'>('create')
 const saving = ref(false)
+const uploading = ref(false)
 const form = ref({
   id: '',
   name: '',
@@ -179,6 +180,10 @@ async function submit() {
     message.warning('请填写：升级包名称/版本号/设备配置')
     return
   }
+  if (!form.value.package_url.trim()) {
+    message.warning('请上传升级包固件')
+    return
+  }
   saving.value = true
   try {
     const payload: any = {
@@ -189,7 +194,7 @@ async function submit() {
       module: form.value.module.trim() ? form.value.module.trim() : undefined,
       package_type: form.value.package_type,
       signature_type: form.value.signature_type,
-      package_url: form.value.package_url.trim() ? form.value.package_url.trim() : undefined,
+      package_url: form.value.package_url.trim(),
       additional_info: form.value.additional_info?.trim() ? form.value.additional_info.trim() : '{}',
       description: form.value.description.trim() ? form.value.description.trim() : undefined,
       remark: form.value.remark.trim() ? form.value.remark.trim() : undefined
@@ -218,6 +223,32 @@ async function doDelete(row: OtaPackageItem) {
   } catch (e: any) {
     message.error(e?.message || '删除失败')
   }
+}
+
+async function handleUploadFirmware() {
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = '.bin,.tar,.gz,.zip,.gzip,.apk,.dav,.pack'
+  input.onchange = async (e: any) => {
+    const file = e.target.files?.[0] as File | undefined
+    if (!file) return
+    uploading.value = true
+    try {
+      const res: any = await uploadOtaUpgradePackageFile(file)
+      const path = res?.data?.path as string | undefined
+      if (!path) {
+        message.error('上传失败：未返回文件地址')
+        return
+      }
+      form.value.package_url = path
+      message.success('上传成功')
+    } catch (err: any) {
+      message.error(err?.message || '上传失败')
+    } finally {
+      uploading.value = false
+    }
+  }
+  input.click()
 }
 
 loadDeviceConfigs()
@@ -276,8 +307,14 @@ getData()
         <NFormItem label="签名算法" required>
           <NSelect v-model:value="form.signature_type" :options="[{ label: 'MD5', value: 'MD5' }, { label: 'SHA256', value: 'SHA256' }]" />
         </NFormItem>
-        <NFormItem label="包下载地址">
-          <NInput v-model:value="form.package_url" placeholder="例如：/api/v1/ota/download/..." />
+        <NFormItem label="升级包固件" required>
+          <NSpace align="center" style="width: 100%">
+            <NInput v-model:value="form.package_url" readonly placeholder="请先上传固件，系统会自动生成 package_url" style="flex: 1" />
+            <NButton type="primary" :loading="uploading" @click="handleUploadFirmware">选择并上传</NButton>
+          </NSpace>
+          <div style="color: #999; font-size: 12px; margin-top: 6px">
+            支持扩展名：.bin/.tar/.gz/.zip/.gzip/.apk/.dav/.pack
+          </div>
         </NFormItem>
         <NFormItem label="附加信息(JSON)">
           <NInput v-model:value="form.additional_info" type="textarea" :autosize="{ minRows: 3, maxRows: 8 }" />
