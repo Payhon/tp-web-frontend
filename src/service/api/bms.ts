@@ -197,6 +197,16 @@ export const cancelOfflineCommand = (id: string) => {
   return request.delete(`/battery/offline-commands/${id}`);
 };
 
+// 批量下发指令（在线设备）
+export const batchSendBatteryCommand = (data: {
+  device_ids: string[];
+  command_type: string;
+  identify: string;
+  value?: string;
+}) => {
+  return request.post('/battery/batch-command', data);
+};
+
 // BMS Dashboard
 export const getBmsDashboardKpi = () => {
   return request.get('/dashboard/kpi');

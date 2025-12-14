@@ -16,7 +16,8 @@ import {
   batchAssignDealer,
   assignBatteryTags,
   getBatteryTagList,
-  createOfflineCommand
+  createOfflineCommand,
+  batchSendBatteryCommand
 } from '@/service/api/bms';
 
 interface BatteryItem {
@@ -84,6 +85,17 @@ const offlineCmdForm = ref({
   value: '' as string
 });
 const offlineCmdHint = ref<string>('');
+
+// 批量下发指令（在线）
+const showBatchCmdModal = ref(false);
+const batchCmdLoading = ref(false);
+const batchCmdOptions = ref<CmdOption[]>([]);
+const batchCmdForm = ref({
+  identify: '' as string,
+  command_type: '' as string,
+  value: '' as string
+});
+const batchCmdHint = ref<string>('');
 
 const onlineOptions = [
   { label: '在线', value: 1 },
@@ -298,6 +310,73 @@ async function handleBatchTag() {
     }
   }
   showBatchTagModal.value = true;
+}
+
+async function handleBatchCommand() {
+  if (selectedRowKeys.value.length === 0) {
+    message.warning('请先选择要下发指令的电池');
+    return;
+  }
+  showBatchCmdModal.value = true;
+  batchCmdLoading.value = true;
+  batchCmdForm.value = { identify: '', command_type: '', value: '' };
+  batchCmdHint.value = '';
+  try {
+    const firstDeviceID = selectedRowKeys.value[0];
+    const res: any = await commandDataById(firstDeviceID);
+    const list = (res?.data || []) as Array<{ data_name: string; data_identifier: string; params: string; description: string }>;
+    batchCmdOptions.value = list.map(i => ({
+      label: i.data_name,
+      value: i.data_identifier,
+      params: i.params,
+      description: i.description
+    }));
+  } catch {
+    batchCmdOptions.value = [];
+  } finally {
+    batchCmdLoading.value = false;
+  }
+}
+
+function handleBatchCmdSelect(v: string) {
+  batchCmdForm.value.identify = v;
+  const opt = batchCmdOptions.value.find(i => i.value === v);
+  batchCmdForm.value.command_type = opt?.label || v;
+  batchCmdHint.value = opt?.params || opt?.description || '';
+}
+
+async function confirmBatchCommand() {
+  if (!batchCmdForm.value.identify) {
+    message.warning('请选择指令');
+    return;
+  }
+  batchCmdLoading.value = true;
+  try {
+    const res: any = await batchSendBatteryCommand({
+      device_ids: selectedRowKeys.value,
+      command_type: batchCmdForm.value.command_type || batchCmdForm.value.identify,
+      identify: batchCmdForm.value.identify,
+      value: batchCmdForm.value.value?.trim() ? batchCmdForm.value.value.trim() : undefined
+    });
+    const r = res?.data;
+    if (r) {
+      const msg = `下发完成：总计 ${r.total} 台，成功 ${r.success} 台，失败 ${r.failed} 台`;
+      if (r.failed > 0 && r.failures?.length) {
+        const failures = r.failures.map((f: any) => `${f.device_number || f.device_id}：${f.message}`).join('\n');
+        message.warning(msg + '\n失败明细：\n' + failures, { duration: 10000 });
+      } else {
+        message.success(msg);
+      }
+    } else {
+      message.success('批量下发成功');
+    }
+    showBatchCmdModal.value = false;
+    selectedRowKeys.value = [];
+  } catch (e: any) {
+    message.error(e?.message || '批量下发失败');
+  } finally {
+    batchCmdLoading.value = false;
+  }
 }
 
 async function confirmBatchAssign() {
@@ -541,6 +620,9 @@ onMounted(() => {
           <NButton v-if="selectedRowKeys.length > 0" type="info" @click="handleBatchTag">
             批量设置标签({{ selectedRowKeys.length }})
           </NButton>
+          <NButton v-if="selectedRowKeys.length > 0" type="primary" @click="handleBatchCommand">
+            批量下发指令({{ selectedRowKeys.length }})
+          </NButton>
         </NSpace>
       </NSpace>
 
@@ -650,6 +732,45 @@ onMounted(() => {
         <NFormItem>
           <div style="color: #999; font-size: 12px">
             提示：离线指令仅用于设备离线时存储；上线后会自动执行并在“离线指令”页面查看结果。
+          </div>
+        </NFormItem>
+      </NForm>
+    </NModal>
+
+    <NModal
+      v-model:show="showBatchCmdModal"
+      preset="dialog"
+      title="批量下发指令（仅在线设备）"
+      positive-text="确认下发"
+      negative-text="取消"
+      @positive-click="confirmBatchCommand"
+      :loading="batchCmdLoading"
+    >
+      <NForm :model="batchCmdForm" label-placement="left" label-width="100px">
+        <NFormItem label="指令" path="identify" required>
+          <NSelect
+            v-model:value="batchCmdForm.identify"
+            :options="batchCmdOptions"
+            placeholder="请选择指令（基于第一个设备加载物模型命令）"
+            clearable
+            style="width: 100%"
+            @update:value="handleBatchCmdSelect"
+          />
+        </NFormItem>
+        <NFormItem v-if="batchCmdHint" label="参数说明">
+          <div style="color: #999; font-size: 12px; white-space: pre-wrap">{{ batchCmdHint }}</div>
+        </NFormItem>
+        <NFormItem label="参数(JSON)" path="value">
+          <NInput
+            v-model:value="batchCmdForm.value"
+            type="textarea"
+            placeholder="可选：JSON 字符串，例如：{} 或 {\"mode\":1}"
+            :autosize="{ minRows: 3, maxRows: 8 }"
+          />
+        </NFormItem>
+        <NFormItem>
+          <div style="color: #999; font-size: 12px">
+            提示：离线设备会被跳过并返回失败原因；如需离线执行请使用“离线指令”。
           </div>
         </NFormItem>
       </NForm>
