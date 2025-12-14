@@ -257,6 +257,16 @@ export const putBatteryParams = (data: { device_id: string; value: string }) => 
   return request.post('/battery/params/pub', data);
 };
 
+export const getBatteryParamSetLogs = (params: {
+  device_id: string;
+  page: number;
+  page_size: number;
+  status?: string;
+  operation_type?: string;
+}) => {
+  return request.get('/battery/params/set/logs', { params });
+};
+
 // BMS Dashboard
 export const getBmsDashboardKpi = () => {
   return request.get('/dashboard/kpi');
