@@ -154,6 +154,27 @@ export const batchAssignDealer = (data: { device_ids: string[]; dealer_id: strin
   return request.post('/battery/batch-assign-dealer', data);
 };
 
+// 电池标签
+export const getBatteryTagList = (params: any) => {
+  return request.get('/battery/tags', { params });
+};
+
+export const createBatteryTag = (data: any) => {
+  return request.post('/battery/tags', data);
+};
+
+export const updateBatteryTag = (id: string, data: any) => {
+  return request.put(`/battery/tags/${id}`, data);
+};
+
+export const deleteBatteryTag = (id: string) => {
+  return request.delete(`/battery/tags/${id}`);
+};
+
+export const assignBatteryTags = (data: { device_ids: string[]; tag_ids: string[]; mode?: 'REPLACE' | 'APPEND' }) => {
+  return request.post('/battery/tags/assign', data);
+};
+
 // BMS Dashboard
 export const getBmsDashboardKpi = () => {
   return request.get('/dashboard/kpi');

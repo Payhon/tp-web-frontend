@@ -197,6 +197,15 @@ export const generatedRoutes: GeneratedRoute[] = [
             }
           },
           {
+            name: 'bms_battery_tag',
+            path: '/bms/battery/tag',
+            component: 'view.bms_battery_tag',
+            meta: {
+              title: 'bms_battery_tag',
+              i18nKey: 'route.bms_battery_tag'
+            }
+          },
+          {
             name: 'bms_battery_transfer',
             path: '/bms/battery/transfer',
             component: 'view.bms_battery_transfer',

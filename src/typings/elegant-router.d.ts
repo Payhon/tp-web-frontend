@@ -41,6 +41,7 @@ declare module "@elegant-router/types" {
     "bms_battery": "/bms/battery";
     "bms_battery_list": "/bms/battery/list";
     "bms_battery_model": "/bms/battery/model";
+    "bms_battery_tag": "/bms/battery/tag";
     "bms_battery_transfer": "/bms/battery/transfer";
     "bms_dashboard": "/bms/dashboard";
     "bms_dealer": "/bms/dealer";
@@ -233,6 +234,7 @@ declare module "@elegant-router/types" {
     | "automation_scene-manage"
     | "bms_battery_list"
     | "bms_battery_model"
+    | "bms_battery_tag"
     | "bms_battery_transfer"
     | "bms_dashboard"
     | "bms_dealer"

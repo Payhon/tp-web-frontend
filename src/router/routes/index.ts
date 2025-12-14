@@ -141,6 +141,15 @@ const customRoutes: ElegantRoute[] = [
             }
           },
           {
+            name: 'bms_battery_tag',
+            path: '/bms/battery/tag',
+            component: 'view.bms_battery_tag',
+            meta: {
+              title: '标签管理',
+              icon: 'mdi:tag'
+            }
+          },
+          {
             name: 'bms_battery_transfer',
             path: '/bms/battery/transfer',
             component: 'view.bms_battery_transfer',

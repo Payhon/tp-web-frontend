@@ -12,7 +12,9 @@ import {
   exportBatteryList,
   getBatteryImportTemplate,
   importBatteryList,
-  batchAssignDealer
+  batchAssignDealer,
+  assignBatteryTags,
+  getBatteryTagList
 } from '@/service/api/bms';
 
 interface BatteryItem {
@@ -58,6 +60,15 @@ const batchAssignForm = ref({
 });
 const importLoading = ref(false);
 const batchAssignLoading = ref(false);
+
+// 批量设置标签
+const showBatchTagModal = ref(false);
+const batchTagLoading = ref(false);
+const tagOptions = ref<Array<{ label: string; value: string }>>([]);
+const batchTagForm = ref({
+  tag_ids: [] as string[],
+  mode: 'REPLACE' as 'REPLACE' | 'APPEND'
+});
 
 const onlineOptions = [
   { label: '在线', value: 1 },
@@ -253,6 +264,24 @@ function handleBatchAssign() {
   showBatchAssignModal.value = true;
 }
 
+async function handleBatchTag() {
+  if (selectedRowKeys.value.length === 0) {
+    message.warning('请先选择要设置标签的电池');
+    return;
+  }
+  // lazy load tags
+  if (tagOptions.value.length === 0) {
+    try {
+      const res: any = await getBatteryTagList({ page: 1, page_size: 1000 });
+      const list = (res?.data?.list || []) as Array<{ id: string; name: string }>;
+      tagOptions.value = list.map(i => ({ label: i.name, value: i.id }));
+    } catch {
+      tagOptions.value = [];
+    }
+  }
+  showBatchTagModal.value = true;
+}
+
 async function confirmBatchAssign() {
   if (!batchAssignForm.value.dealer_id) {
     message.warning('请选择经销商');
@@ -274,6 +303,27 @@ async function confirmBatchAssign() {
     message.error(error?.message || '批量分配失败');
   } finally {
     batchAssignLoading.value = false;
+  }
+}
+
+async function confirmBatchTag() {
+  batchTagLoading.value = true;
+  try {
+    await assignBatteryTags({
+      device_ids: selectedRowKeys.value,
+      tag_ids: batchTagForm.value.tag_ids,
+      mode: batchTagForm.value.mode
+    });
+    message.success('标签设置成功');
+    showBatchTagModal.value = false;
+    selectedRowKeys.value = [];
+    batchTagForm.value.tag_ids = [];
+    batchTagForm.value.mode = 'REPLACE';
+    getData();
+  } catch (error: any) {
+    message.error(error?.message || '标签设置失败');
+  } finally {
+    batchTagLoading.value = false;
   }
 }
 
@@ -413,6 +463,9 @@ onMounted(() => {
           <NButton v-if="selectedRowKeys.length > 0" type="warning" @click="handleBatchAssign">
             批量分配经销商({{ selectedRowKeys.length }})
           </NButton>
+          <NButton v-if="selectedRowKeys.length > 0" type="info" @click="handleBatchTag">
+            批量设置标签({{ selectedRowKeys.length }})
+          </NButton>
         </NSpace>
       </NSpace>
 
@@ -448,6 +501,42 @@ onMounted(() => {
         </NFormItem>
         <NFormItem>
           <div style="color: #999; font-size: 12px">已选择 {{ selectedRowKeys.length }} 个电池，将分配给选中的经销商</div>
+        </NFormItem>
+      </NForm>
+    </NModal>
+
+    <NModal
+      v-model:show="showBatchTagModal"
+      preset="dialog"
+      title="批量设置标签"
+      positive-text="确认"
+      negative-text="取消"
+      @positive-click="confirmBatchTag"
+      :loading="batchTagLoading"
+    >
+      <NForm :model="batchTagForm" label-placement="left" label-width="100px">
+        <NFormItem label="设置方式" path="mode" required>
+          <NSelect
+            v-model:value="batchTagForm.mode"
+            :options="[
+              { label: '覆盖（替换原标签）', value: 'REPLACE' },
+              { label: '追加（保留原标签）', value: 'APPEND' }
+            ]"
+            style="width: 100%"
+          />
+        </NFormItem>
+        <NFormItem label="标签" path="tag_ids">
+          <NSelect
+            v-model:value="batchTagForm.tag_ids"
+            :options="tagOptions"
+            placeholder="请选择标签（可多选；留空表示清空标签）"
+            multiple
+            clearable
+            style="width: 100%"
+          />
+        </NFormItem>
+        <NFormItem>
+          <div style="color: #999; font-size: 12px">已选择 {{ selectedRowKeys.length }} 个电池</div>
         </NFormItem>
       </NForm>
     </NModal>

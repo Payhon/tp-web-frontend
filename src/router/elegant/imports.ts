@@ -31,6 +31,7 @@ export const views: Record<LastLevelRouteKey, RouteComponent | (() => Promise<Ro
   "automation_scene-manage": () => import("@/views/automation/scene-manage/index.vue"),
   bms_battery_list: () => import("@/views/bms/battery/list/index.vue"),
   bms_battery_model: () => import("@/views/bms/battery/model/index.vue"),
+  bms_battery_tag: () => import("@/views/bms/battery/tag/index.vue"),
   bms_battery_transfer: () => import("@/views/bms/battery/transfer/index.vue"),
   bms_dashboard: () => import("@/views/bms/dashboard/index.vue"),
   bms_dealer: () => import("@/views/bms/dealer/index.vue"),
