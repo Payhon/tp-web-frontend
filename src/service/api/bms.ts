@@ -175,6 +175,28 @@ export const assignBatteryTags = (data: { device_ids: string[]; tag_ids: string[
   return request.post('/battery/tags/assign', data);
 };
 
+// 离线指令
+export const getOfflineCommandList = (params: any) => {
+  return request.get('/battery/offline-commands', { params });
+};
+
+export const createOfflineCommand = (data: {
+  device_id: string;
+  command_type: string;
+  identify: string;
+  value?: string;
+}) => {
+  return request.post('/battery/offline-commands', data);
+};
+
+export const getOfflineCommandDetail = (id: string) => {
+  return request.get(`/battery/offline-commands/${id}`);
+};
+
+export const cancelOfflineCommand = (id: string) => {
+  return request.delete(`/battery/offline-commands/${id}`);
+};
+
 // BMS Dashboard
 export const getBmsDashboardKpi = () => {
   return request.get('/dashboard/kpi');

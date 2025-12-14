@@ -142,6 +142,8 @@
   "route.bms_battery_list": "电池列表",
   "route.bms_battery_model": "电池型号管理",
   "route.bms_battery_tag": "标签管理",
+  "route.bms_battery_offline": "离线指令",
+  "route.bms_battery_offline_cmd": "离线指令",
   "route.bms_battery_transfer": "设备转移记录",
   "route.bms_warranty": "维保中心",
   "route.bms_ops": "运营管理",

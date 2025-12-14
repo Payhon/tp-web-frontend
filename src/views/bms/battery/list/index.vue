@@ -5,6 +5,7 @@ import type { DataTableColumns } from 'naive-ui';
 import dayjs from 'dayjs';
 import { useTable } from '@/hooks/common/table';
 import { useRouterPush } from '@/hooks/common/router';
+import { commandDataById } from '@/service/api/device';
 import {
   getBatteryList,
   getBatteryModelList,
@@ -14,7 +15,8 @@ import {
   importBatteryList,
   batchAssignDealer,
   assignBatteryTags,
-  getBatteryTagList
+  getBatteryTagList,
+  createOfflineCommand
 } from '@/service/api/bms';
 
 interface BatteryItem {
@@ -69,6 +71,19 @@ const batchTagForm = ref({
   tag_ids: [] as string[],
   mode: 'REPLACE' as 'REPLACE' | 'APPEND'
 });
+
+// 单设备：离线指令
+type CmdOption = { label: string; value: string; params?: string; description?: string };
+const showOfflineCmdModal = ref(false);
+const offlineCmdLoading = ref(false);
+const offlineCmdOptions = ref<CmdOption[]>([]);
+const offlineCmdForm = ref({
+  device_id: '',
+  identify: '' as string,
+  command_type: '' as string,
+  value: '' as string
+});
+const offlineCmdHint = ref<string>('');
 
 const onlineOptions = [
   { label: '在线', value: 1 },
@@ -143,12 +158,15 @@ const createColumns = (): DataTableColumns<BatteryItem> => [
   {
     key: 'actions',
     title: '操作',
-    minWidth: 120,
+    minWidth: 220,
     fixed: 'right',
     render: row => (
       <NSpace>
         <NButton size="small" type="primary" onClick={() => goDeviceDetail(row)}>
           查看详情
+        </NButton>
+        <NButton size="small" type="warning" onClick={() => openOfflineCmd(row)}>
+          离线指令
         </NButton>
       </NSpace>
     )
@@ -324,6 +342,63 @@ async function confirmBatchTag() {
     message.error(error?.message || '标签设置失败');
   } finally {
     batchTagLoading.value = false;
+  }
+}
+
+async function openOfflineCmd(row: BatteryItem) {
+  showOfflineCmdModal.value = true;
+  offlineCmdLoading.value = true;
+  offlineCmdForm.value = {
+    device_id: row.device_id,
+    identify: '',
+    command_type: '',
+    value: ''
+  };
+  offlineCmdHint.value = '';
+
+  try {
+    const res: any = await commandDataById(row.device_id);
+    const list = (res?.data || []) as Array<{ data_name: string; data_identifier: string; params: string; description: string }>;
+    offlineCmdOptions.value = list.map(i => ({
+      label: i.data_name,
+      value: i.data_identifier,
+      params: i.params,
+      description: i.description
+    }));
+  } catch {
+    offlineCmdOptions.value = [];
+  } finally {
+    offlineCmdLoading.value = false;
+  }
+}
+
+function handleOfflineCmdSelect(v: string) {
+  offlineCmdForm.value.identify = v;
+  const opt = offlineCmdOptions.value.find(i => i.value === v);
+  offlineCmdForm.value.command_type = opt?.label || v;
+  offlineCmdHint.value = opt?.params || opt?.description || '';
+}
+
+async function confirmOfflineCmd() {
+  if (!offlineCmdForm.value.device_id) return;
+  if (!offlineCmdForm.value.identify) {
+    message.warning('请选择指令');
+    return;
+  }
+  offlineCmdLoading.value = true;
+  try {
+    await createOfflineCommand({
+      device_id: offlineCmdForm.value.device_id,
+      command_type: offlineCmdForm.value.command_type || offlineCmdForm.value.identify,
+      identify: offlineCmdForm.value.identify,
+      value: offlineCmdForm.value.value?.trim() ? offlineCmdForm.value.value.trim() : undefined
+    });
+    message.success('离线指令已存储（设备上线后自动执行）');
+    showOfflineCmdModal.value = false;
+  } catch (e: any) {
+    message.error(e?.message || '存储失败');
+  } finally {
+    offlineCmdLoading.value = false;
   }
 }
 
@@ -537,6 +612,45 @@ onMounted(() => {
         </NFormItem>
         <NFormItem>
           <div style="color: #999; font-size: 12px">已选择 {{ selectedRowKeys.length }} 个电池</div>
+        </NFormItem>
+      </NForm>
+    </NModal>
+
+    <NModal
+      v-model:show="showOfflineCmdModal"
+      preset="dialog"
+      title="离线指令（设备离线时存储，上线后执行）"
+      positive-text="确认存储"
+      negative-text="取消"
+      @positive-click="confirmOfflineCmd"
+      :loading="offlineCmdLoading"
+    >
+      <NForm :model="offlineCmdForm" label-placement="left" label-width="100px">
+        <NFormItem label="指令" path="identify" required>
+          <NSelect
+            v-model:value="offlineCmdForm.identify"
+            :options="offlineCmdOptions"
+            placeholder="请选择指令"
+            clearable
+            style="width: 100%"
+            @update:value="handleOfflineCmdSelect"
+          />
+        </NFormItem>
+        <NFormItem v-if="offlineCmdHint" label="参数说明">
+          <div style="color: #999; font-size: 12px; white-space: pre-wrap">{{ offlineCmdHint }}</div>
+        </NFormItem>
+        <NFormItem label="参数(JSON)" path="value">
+          <NInput
+            v-model:value="offlineCmdForm.value"
+            type="textarea"
+            placeholder="可选：JSON 字符串，例如：{} 或 {\"mode\":1}"
+            :autosize="{ minRows: 3, maxRows: 8 }"
+          />
+        </NFormItem>
+        <NFormItem>
+          <div style="color: #999; font-size: 12px">
+            提示：离线指令仅用于设备离线时存储；上线后会自动执行并在“离线指令”页面查看结果。
+          </div>
         </NFormItem>
       </NForm>
     </NModal>

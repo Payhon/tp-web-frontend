@@ -150,6 +150,26 @@ const customRoutes: ElegantRoute[] = [
             }
           },
           {
+            name: 'bms_battery_offline',
+            path: '/bms/battery/offline',
+            component: 'view.bms_battery_offline',
+            meta: {
+              title: '离线指令',
+              icon: 'mdi:cloud-clock'
+            },
+            children: [
+              {
+                name: 'bms_battery_offline_cmd',
+                path: '/bms/battery/offline-command',
+                component: 'view.bms_battery_offline_cmd',
+                meta: {
+                  title: '指令列表',
+                  icon: 'mdi:format-list-bulleted'
+                }
+              }
+            ]
+          },
+          {
             name: 'bms_battery_transfer',
             path: '/bms/battery/transfer',
             component: 'view.bms_battery_transfer',

@@ -197,6 +197,26 @@ export const generatedRoutes: GeneratedRoute[] = [
             }
           },
           {
+            name: 'bms_battery_offline',
+            path: '/bms/battery/offline',
+            component: 'view.bms_battery_offline',
+            meta: {
+              title: 'bms_battery_offline',
+              i18nKey: 'route.bms_battery_offline'
+            },
+            children: [
+              {
+                name: 'bms_battery_offline_cmd',
+                path: '/bms/battery/offline/cmd',
+                component: 'view.bms_battery_offline_cmd',
+                meta: {
+                  title: 'bms_battery_offline_cmd',
+                  i18nKey: 'route.bms_battery_offline_cmd'
+                }
+              }
+            ]
+          },
+          {
             name: 'bms_battery_tag',
             path: '/bms/battery/tag',
             component: 'view.bms_battery_tag',
