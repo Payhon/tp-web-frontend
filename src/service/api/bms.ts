@@ -207,6 +207,21 @@ export const batchSendBatteryCommand = (data: {
   return request.post('/battery/batch-command', data);
 };
 
+// OTA：获取升级包列表（复用系统接口）
+export const getOtaUpgradePackageList = (params: any) => {
+  return request.get('/ota/package', { params });
+};
+
+// OTA：批量推送（BMS封装）
+export const batchPushOta = (data: { device_ids: string[]; ota_upgrade_package_id: string; name?: string; description?: string; remark?: string }) => {
+  return request.post('/battery/batch-ota', data);
+};
+
+// OTA：任务详情（复用系统接口）
+export const getOtaTaskDetailByPage = (params: any) => {
+  return request.get('/ota/task/detail', { params });
+};
+
 // BMS Dashboard
 export const getBmsDashboardKpi = () => {
   return request.get('/dashboard/kpi');

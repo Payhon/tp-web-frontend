@@ -17,7 +17,10 @@ import {
   assignBatteryTags,
   getBatteryTagList,
   createOfflineCommand,
-  batchSendBatteryCommand
+  batchSendBatteryCommand,
+  batchPushOta,
+  getOtaUpgradePackageList,
+  getOtaTaskDetailByPage
 } from '@/service/api/bms';
 
 interface BatteryItem {
@@ -96,6 +99,49 @@ const batchCmdForm = ref({
   value: '' as string
 });
 const batchCmdHint = ref<string>('');
+
+// 批量 OTA 推送
+type OtaPkgOption = { label: string; value: string; version?: string; target_version?: string | null; device_config_id?: string; device_config_name?: string };
+const showBatchOtaModal = ref(false);
+const batchOtaLoading = ref(false);
+const otaPkgOptions = ref<OtaPkgOption[]>([]);
+const batchOtaForm = ref({
+  ota_upgrade_package_id: '' as string,
+  name: '' as string
+});
+const lastOtaTaskId = ref<string>('');
+
+// OTA 任务详情
+const showOtaTaskDetailModal = ref(false);
+const otaTaskDetailLoading = ref(false);
+const otaTaskDetailList = ref<any[]>([]);
+const otaTaskDetailStats = ref<any[]>([]);
+
+function openOtaTaskDetail(taskId: string) {
+  lastOtaTaskId.value = taskId;
+  showOtaTaskDetailModal.value = true;
+  fetchOtaTaskDetail();
+}
+
+async function fetchOtaTaskDetail() {
+  if (!lastOtaTaskId.value) return;
+  otaTaskDetailLoading.value = true;
+  try {
+    const res: any = await getOtaTaskDetailByPage({
+      page: 1,
+      page_size: 200,
+      ota_upgrade_task_id: lastOtaTaskId.value
+    });
+    otaTaskDetailList.value = res?.data?.list || [];
+    otaTaskDetailStats.value = res?.data?.statistics || [];
+  } catch (e: any) {
+    message.error(e?.message || '获取OTA任务详情失败');
+    otaTaskDetailList.value = [];
+    otaTaskDetailStats.value = [];
+  } finally {
+    otaTaskDetailLoading.value = false;
+  }
+}
 
 const onlineOptions = [
   { label: '在线', value: 1 },
@@ -335,6 +381,71 @@ async function handleBatchCommand() {
     batchCmdOptions.value = [];
   } finally {
     batchCmdLoading.value = false;
+  }
+}
+
+async function handleBatchOta() {
+  if (selectedRowKeys.value.length === 0) {
+    message.warning('请先选择要推送OTA的电池');
+    return;
+  }
+  showBatchOtaModal.value = true;
+  batchOtaLoading.value = true;
+  batchOtaForm.value = { ota_upgrade_package_id: '', name: '' };
+  lastOtaTaskId.value = '';
+  try {
+    const res: any = await getOtaUpgradePackageList({ page: 1, page_size: 1000 });
+    const list = (res?.data?.list || []) as any[];
+    otaPkgOptions.value = list.map(i => ({
+      label: `${i.name} / ${i.version}${i.target_version ? ` → ${i.target_version}` : ''}${i.device_config_name ? `（${i.device_config_name}）` : ''}`,
+      value: i.id,
+      version: i.version,
+      target_version: i.target_version,
+      device_config_id: i.device_config_id,
+      device_config_name: i.device_config_name
+    }));
+  } catch {
+    otaPkgOptions.value = [];
+  } finally {
+    batchOtaLoading.value = false;
+  }
+}
+
+async function confirmBatchOta() {
+  if (!batchOtaForm.value.ota_upgrade_package_id) {
+    message.warning('请选择升级包');
+    return;
+  }
+  batchOtaLoading.value = true;
+  try {
+    const res: any = await batchPushOta({
+      device_ids: selectedRowKeys.value,
+      ota_upgrade_package_id: batchOtaForm.value.ota_upgrade_package_id,
+      name: batchOtaForm.value.name?.trim() ? batchOtaForm.value.name.trim() : undefined
+    });
+    const r = res?.data;
+    if (r) {
+      lastOtaTaskId.value = r.task_id || '';
+      const msg = `已创建OTA任务${r.task_id ? `（${r.task_id}）` : ''}：总计 ${r.total} 台，受理 ${r.accepted} 台，拒绝 ${r.rejected} 台`;
+      if (r.rejected > 0 && r.failures?.length) {
+        const failures = r.failures.map((f: any) => `${f.device_number || f.device_id}：${f.message}`).join('\n');
+        message.warning(msg + '\n拒绝明细：\n' + failures, { duration: 10000 });
+      } else {
+        message.success(msg);
+      }
+    } else {
+      message.success('批量OTA推送已提交');
+    }
+    showBatchOtaModal.value = false;
+    // 不清空选择，方便继续操作；但多数情况下推送后清空更合理
+    selectedRowKeys.value = [];
+    if (lastOtaTaskId.value) {
+      openOtaTaskDetail(lastOtaTaskId.value);
+    }
+  } catch (e: any) {
+    message.error(e?.message || '批量OTA推送失败');
+  } finally {
+    batchOtaLoading.value = false;
   }
 }
 
@@ -623,6 +734,9 @@ onMounted(() => {
           <NButton v-if="selectedRowKeys.length > 0" type="primary" @click="handleBatchCommand">
             批量下发指令({{ selectedRowKeys.length }})
           </NButton>
+          <NButton v-if="selectedRowKeys.length > 0" type="success" @click="handleBatchOta">
+            批量OTA推送({{ selectedRowKeys.length }})
+          </NButton>
         </NSpace>
       </NSpace>
 
@@ -774,6 +888,67 @@ onMounted(() => {
           </div>
         </NFormItem>
       </NForm>
+    </NModal>
+
+    <NModal
+      v-model:show="showBatchOtaModal"
+      preset="dialog"
+      title="批量OTA推送"
+      positive-text="确认推送"
+      negative-text="取消"
+      @positive-click="confirmBatchOta"
+      :loading="batchOtaLoading"
+    >
+      <NForm :model="batchOtaForm" label-placement="left" label-width="100px">
+        <NFormItem label="升级包" path="ota_upgrade_package_id" required>
+          <NSelect
+            v-model:value="batchOtaForm.ota_upgrade_package_id"
+            :options="otaPkgOptions"
+            placeholder="请选择升级包"
+            clearable
+            filterable
+            style="width: 100%"
+          />
+        </NFormItem>
+        <NFormItem label="任务名称">
+          <NInput v-model:value="batchOtaForm.name" placeholder="可选：不填则自动生成" />
+        </NFormItem>
+        <NFormItem>
+          <div style="color: #999; font-size: 12px">
+            提示：系统会为每台设备创建升级任务详情并立即推送；离线/升级中设备会在任务详情中显示失败原因。
+          </div>
+        </NFormItem>
+      </NForm>
+    </NModal>
+
+    <NModal v-model:show="showOtaTaskDetailModal" preset="card" title="OTA任务详情" style="width: 980px">
+      <template v-if="otaTaskDetailLoading">
+        <div style="padding: 12px">加载中...</div>
+      </template>
+      <template v-else>
+        <div style="margin-bottom: 12px; color: #666; font-size: 12px">
+          任务ID：{{ lastOtaTaskId }} <NButton size="tiny" style="margin-left: 8px" @click="fetchOtaTaskDetail">刷新</NButton>
+        </div>
+        <div v-if="otaTaskDetailStats?.length" style="margin-bottom: 12px">
+          <span v-for="s in otaTaskDetailStats" :key="s.status" style="margin-right: 12px; color: #666; font-size: 12px">
+            状态{{ s.status }}：{{ s.count }}
+          </span>
+        </div>
+        <NDataTable
+          :columns="[
+            { key: 'device_number', title: '序列号', minWidth: 140 },
+            { key: 'name', title: '设备名称', minWidth: 140 },
+            { key: 'current_version', title: '当前版本', minWidth: 120 },
+            { key: 'version', title: '目标版本', minWidth: 120 },
+            { key: 'status', title: '状态', minWidth: 100 },
+            { key: 'status_description', title: '状态描述', minWidth: 180 },
+            { key: 'updated_at', title: '更新时间', minWidth: 160 }
+          ]"
+          :data="otaTaskDetailList"
+          :row-key="row => row.id"
+          :scroll-x="920"
+        />
+      </template>
     </NModal>
   </div>
 </template>
