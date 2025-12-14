@@ -170,6 +170,48 @@ const customRoutes: ElegantRoute[] = [
             ]
           },
           {
+            name: 'bms_battery_ota',
+            path: '/bms/battery/ota',
+            component: 'view.bms_battery_ota',
+            meta: {
+              title: 'OTA管理',
+              icon: 'mdi:progress-wrench'
+            },
+            children: [
+              {
+                name: 'bms_battery_ota_package',
+                path: '/bms/battery/ota/package',
+                component: 'view.bms_battery_ota_package',
+                meta: {
+                  title: '升级包管理',
+                  icon: 'mdi:package-variant'
+                }
+              },
+              {
+                name: 'bms_battery_ota_task',
+                path: '/bms/battery/ota/task',
+                component: 'view.bms_battery_ota_task',
+                meta: {
+                  title: '升级任务管理',
+                  icon: 'mdi:clipboard-list-outline'
+                }
+                ,
+                children: [
+                  {
+                    name: 'bms_battery_ota_task_detail',
+                    path: '/bms/battery/ota/task/detail',
+                    component: 'view.bms_battery_ota_task_detail',
+                    meta: {
+                      title: '任务详情',
+                      icon: 'mdi:file-document-outline',
+                      hideInMenu: true
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
             name: 'bms_battery_transfer',
             path: '/bms/battery/transfer',
             component: 'view.bms_battery_transfer',

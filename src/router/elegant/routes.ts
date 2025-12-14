@@ -217,6 +217,46 @@ export const generatedRoutes: GeneratedRoute[] = [
             ]
           },
           {
+            name: 'bms_battery_ota',
+            path: '/bms/battery/ota',
+            component: 'view.bms_battery_ota',
+            meta: {
+              title: 'bms_battery_ota',
+              i18nKey: 'route.bms_battery_ota'
+            },
+            children: [
+              {
+                name: 'bms_battery_ota_package',
+                path: '/bms/battery/ota/package',
+                component: 'view.bms_battery_ota_package',
+                meta: {
+                  title: 'bms_battery_ota_package',
+                  i18nKey: 'route.bms_battery_ota_package'
+                }
+              },
+              {
+                name: 'bms_battery_ota_task',
+                path: '/bms/battery/ota/task',
+                component: 'view.bms_battery_ota_task',
+                meta: {
+                  title: 'bms_battery_ota_task',
+                  i18nKey: 'route.bms_battery_ota_task'
+                },
+                children: [
+                  {
+                    name: 'bms_battery_ota_task_detail',
+                    path: '/bms/battery/ota/task/detail',
+                    component: 'view.bms_battery_ota_task_detail',
+                    meta: {
+                      title: 'bms_battery_ota_task_detail',
+                      i18nKey: 'route.bms_battery_ota_task_detail'
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
             name: 'bms_battery_tag',
             path: '/bms/battery/tag',
             component: 'view.bms_battery_tag',

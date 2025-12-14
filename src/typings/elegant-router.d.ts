@@ -43,6 +43,10 @@ declare module "@elegant-router/types" {
     "bms_battery_model": "/bms/battery/model";
     "bms_battery_offline": "/bms/battery/offline";
     "bms_battery_offline_cmd": "/bms/battery/offline/cmd";
+    "bms_battery_ota": "/bms/battery/ota";
+    "bms_battery_ota_package": "/bms/battery/ota/package";
+    "bms_battery_ota_task": "/bms/battery/ota/task";
+    "bms_battery_ota_task_detail": "/bms/battery/ota/task/detail";
     "bms_battery_tag": "/bms/battery/tag";
     "bms_battery_transfer": "/bms/battery/transfer";
     "bms_dashboard": "/bms/dashboard";
@@ -238,6 +242,10 @@ declare module "@elegant-router/types" {
     | "bms_battery_model"
     | "bms_battery_offline"
     | "bms_battery_offline_cmd"
+    | "bms_battery_ota"
+    | "bms_battery_ota_package"
+    | "bms_battery_ota_task"
+    | "bms_battery_ota_task_detail"
     | "bms_battery_tag"
     | "bms_battery_transfer"
     | "bms_dashboard"

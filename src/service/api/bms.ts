@@ -222,6 +222,16 @@ export const getOtaTaskDetailByPage = (params: any) => {
   return request.get('/ota/task/detail', { params });
 };
 
+// OTA：任务列表（需传 ota_upgrade_package_id）
+export const getOtaTaskList = (params: any) => {
+  return request.get('/ota/task', { params });
+};
+
+// OTA：更新任务详情状态（取消/重新升级）
+export const updateOtaTaskDetailStatus = (data: { id: string; action: 1 | 6 }) => {
+  return request.put('/ota/task/detail', data);
+};
+
 // BMS Dashboard
 export const getBmsDashboardKpi = () => {
   return request.get('/dashboard/kpi');
