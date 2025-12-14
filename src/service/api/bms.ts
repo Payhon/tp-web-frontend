@@ -110,6 +110,19 @@ export const updateWarrantyStatus = (id: string, data: any) => {
   return request.put(`/warranty/${id}`, data);
 };
 
+// 电池维保记录（手动）
+export const getBatteryMaintenanceList = (params: any) => {
+  return request.get('/battery_maintenance', { params });
+};
+
+export const createBatteryMaintenance = (data: any) => {
+  return request.post('/battery_maintenance', data);
+};
+
+export const getBatteryMaintenanceDetail = (id: string) => {
+  return request.get(`/battery_maintenance/${id}`);
+};
+
 // 电池列表（设备电池）相关接口
 export const getBatteryList = (params: any) => {
   return request.get('/battery', { params });

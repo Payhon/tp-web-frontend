@@ -1,10 +1,11 @@
 <script setup lang="tsx">
 import { ref, computed } from 'vue';
-import { NButton, NCard, NDataTable, NForm, NFormItem, NInput, NSelect, NTag, NDatePicker, NModal, NSpace, useMessage } from 'naive-ui';
+import { NButton, NCard, NDataTable, NForm, NFormItem, NInput, NSelect, NTag, NDatePicker, NModal, NSpace, NTabs, NTabPane, useMessage } from 'naive-ui';
 import type { DataTableColumns } from 'naive-ui';
 import { useTable } from '@/hooks/common/table';
 import { getWarrantyList, getWarrantyDetail, updateWarrantyStatus } from '@/service/api/bms';
 import dayjs from 'dayjs';
+import BatteryMaintenance from './modules/battery-maintenance.vue'
 
 interface WarrantyItem {
   id: string;
@@ -33,6 +34,8 @@ interface WarrantyListResponse {
 }
 
 const message = useMessage();
+
+const activeTab = ref<'apply' | 'battery_maintenance'>('apply')
 
 // 列配置（提前声明为函数，避免初始化顺序问题）
 function createColumns(): DataTableColumns<WarrantyItem> {
@@ -300,65 +303,73 @@ const detailResultText = computed(() => {
 <template>
   <div class="flex-vertical-stretch gap-16px overflow-hidden <sm:overflow-auto">
     <NCard title="维保中心" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
-      <!-- 搜索区域 -->
-      <NForm
-        inline
-        :model="searchForm"
-        label-placement="left"
-        label-width="auto"
-        class="mb-4 flex flex-wrap gap-4 items-end"
-      >
-        <NFormItem label="设备编号" path="device_number">
-          <NInput
-            v-model:value="searchForm.device_number"
-            placeholder="请输入设备编号"
-            style="width: 220px"
-            clearable
-          />
-        </NFormItem>
-        <NFormItem label="申请类型" path="type">
-          <NSelect
-            v-model:value="searchForm.type"
-            :options="typeOptions"
-            placeholder="请选择申请类型"
-            clearable
-            style="width: 200px"
-          />
-        </NFormItem>
-        <NFormItem label="状态" path="status">
-          <NSelect
-            v-model:value="searchForm.status"
-            :options="statusOptions"
-            placeholder="请选择状态"
-            clearable
-            style="width: 200px"
-          />
-        </NFormItem>
-        <NFormItem label="创建时间" path="create_time">
-          <NDatePicker
-            v-model:value="searchForm.create_time"
-            type="datetimerange"
-            clearable
-            style="width: 320px"
-          />
-        </NFormItem>
-        <NFormItem>
-          <NSpace>
-            <NButton type="primary" @click="handleSearch">查询</NButton>
-            <NButton @click="handleReset">重置</NButton>
-          </NSpace>
-        </NFormItem>
-      </NForm>
+      <NTabs v-model:value="activeTab" type="line" animated>
+        <NTabPane name="apply" tab="售后申请（维修/退换货）">
+          <!-- 搜索区域 -->
+          <NForm
+            inline
+            :model="searchForm"
+            label-placement="left"
+            label-width="auto"
+            class="mb-4 flex flex-wrap gap-4 items-end"
+          >
+            <NFormItem label="设备编号" path="device_number">
+              <NInput
+                v-model:value="searchForm.device_number"
+                placeholder="请输入设备编号"
+                style="width: 220px"
+                clearable
+              />
+            </NFormItem>
+            <NFormItem label="申请类型" path="type">
+              <NSelect
+                v-model:value="searchForm.type"
+                :options="typeOptions"
+                placeholder="请选择申请类型"
+                clearable
+                style="width: 200px"
+              />
+            </NFormItem>
+            <NFormItem label="状态" path="status">
+              <NSelect
+                v-model:value="searchForm.status"
+                :options="statusOptions"
+                placeholder="请选择状态"
+                clearable
+                style="width: 200px"
+              />
+            </NFormItem>
+            <NFormItem label="创建时间" path="create_time">
+              <NDatePicker
+                v-model:value="searchForm.create_time"
+                type="datetimerange"
+                clearable
+                style="width: 320px"
+              />
+            </NFormItem>
+            <NFormItem>
+              <NSpace>
+                <NButton type="primary" @click="handleSearch">查询</NButton>
+                <NButton @click="handleReset">重置</NButton>
+              </NSpace>
+            </NFormItem>
+          </NForm>
 
-      <!-- 表格 -->
-      <NDataTable
-        :columns="columns"
-        :data="data"
-        :loading="loading"
-        :pagination="pagination"
-        :row-key="row => row.id"
-        :scroll-x="960"
-      />
+          <!-- 表格 -->
+          <NDataTable
+            :columns="columns"
+            :data="data"
+            :loading="loading"
+            :pagination="pagination"
+            :row-key="row => row.id"
+            :scroll-x="960"
+          />
+        </NTabPane>
+
+        <NTabPane name="battery_maintenance" tab="电池维保记录（手动）">
+          <BatteryMaintenance />
+        </NTabPane>
+      </NTabs>
     </NCard>
 
     <!-- 详情弹窗 -->
