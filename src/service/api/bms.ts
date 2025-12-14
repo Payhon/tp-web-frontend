@@ -244,6 +244,19 @@ export const updateOtaTaskDetailStatus = (data: { id: string; action: 1 | 6 }) =
   return request.put('/ota/task/detail', data);
 };
 
+// 参数远程查看/修改（BMS）
+export const getBatteryParams = (deviceId: string) => {
+  return request.get(`/battery/params/${deviceId}`);
+};
+
+export const requestBatteryParamsFromDevice = (data: { device_id: string; keys?: string[] }) => {
+  return request.post('/battery/params/get', data);
+};
+
+export const putBatteryParams = (data: { device_id: string; value: string }) => {
+  return request.post('/battery/params/pub', data);
+};
+
 // BMS Dashboard
 export const getBmsDashboardKpi = () => {
   return request.get('/dashboard/kpi');

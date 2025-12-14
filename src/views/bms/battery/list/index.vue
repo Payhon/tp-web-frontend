@@ -6,6 +6,7 @@ import dayjs from 'dayjs';
 import { useTable } from '@/hooks/common/table';
 import { useRouterPush } from '@/hooks/common/router';
 import { commandDataById } from '@/service/api/device';
+import ParamsModal from '@/views/bms/battery/modules/params-modal.vue';
 import {
   getBatteryList,
   getBatteryModelList,
@@ -88,6 +89,11 @@ const offlineCmdForm = ref({
   value: '' as string
 });
 const offlineCmdHint = ref<string>('');
+
+// 参数远程查看/修改
+const showParamsModal = ref(false);
+const currentParamDeviceId = ref('');
+const currentParamDeviceNumber = ref('');
 
 // 批量下发指令（在线）
 const showBatchCmdModal = ref(false);
@@ -222,6 +228,9 @@ const createColumns = (): DataTableColumns<BatteryItem> => [
       <NSpace>
         <NButton size="small" type="primary" onClick={() => goDeviceDetail(row)}>
           查看详情
+        </NButton>
+        <NButton size="small" type="info" onClick={() => openParams(row)}>
+          参数
         </NButton>
         <NButton size="small" type="warning" onClick={() => openOfflineCmd(row)}>
           离线指令
@@ -631,6 +640,12 @@ function goDeviceDetail(row: BatteryItem) {
   });
 }
 
+function openParams(row: BatteryItem) {
+  currentParamDeviceId.value = row.device_id;
+  currentParamDeviceNumber.value = row.device_number;
+  showParamsModal.value = true;
+}
+
 async function initSelectOptions() {
   try {
     const dealerRes: any = await getDealerList({ page: 1, page_size: 1000 });
@@ -950,6 +965,8 @@ onMounted(() => {
         />
       </template>
     </NModal>
+
+    <ParamsModal v-model:show="showParamsModal" :device-id="currentParamDeviceId" :device-number="currentParamDeviceNumber" />
   </div>
 </template>
 
