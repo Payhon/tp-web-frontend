@@ -92,7 +92,7 @@ const handleReset = () => {
 </script>
 
 <template>
-  <div class="flex-vertical-stretch gap-16px overflow-hidden <sm:overflow-auto">
+  <div class="flex-vertical-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
     <NCard title="设备转移记录" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
       <NForm inline :model="searchForm" label-placement="left" label-width="auto" class="mb-4 flex flex-wrap gap-4 items-end">
         <NFormItem label="设备编号" path="device_number">

@@ -672,7 +672,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex-vertical-stretch gap-16px overflow-hidden <sm:overflow-auto">
+  <div class="flex-vertical-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
     <NCard title="电池列表" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
       <NForm inline :model="searchForm" label-placement="left" label-width="auto" class="mb-4 flex flex-wrap gap-4 items-end">
         <NFormItem label="序列号" path="device_number">
@@ -854,7 +854,7 @@ onMounted(() => {
           <NInput
             v-model:value="offlineCmdForm.value"
             type="textarea"
-            placeholder="可选：JSON 字符串，例如：{} 或 {\"mode\":1}"
+            :placeholder="'可选：JSON 字符串，例如：{} 或 {&quot;mode&quot;:1}'"
             :autosize="{ minRows: 3, maxRows: 8 }"
           />
         </NFormItem>
@@ -893,7 +893,7 @@ onMounted(() => {
           <NInput
             v-model:value="batchCmdForm.value"
             type="textarea"
-            placeholder="可选：JSON 字符串，例如：{} 或 {\"mode\":1}"
+            :placeholder="'可选：JSON 字符串，例如：{} 或 {&quot;mode&quot;:1}'"
             :autosize="{ minRows: 3, maxRows: 8 }"
           />
         </NFormItem>

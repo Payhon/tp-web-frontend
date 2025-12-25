@@ -100,7 +100,7 @@ loadPackages()
 </script>
 
 <template>
-  <div class="flex-vertical-stretch gap-16px overflow-hidden <sm:overflow-auto">
+  <div class="flex-vertical-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
     <NCard title="OTA升级任务管理" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
       <NForm inline :model="searchForm" label-placement="left" label-width="auto" class="mb-4 flex flex-wrap gap-4 items-end">
         <NFormItem label="升级包" required>

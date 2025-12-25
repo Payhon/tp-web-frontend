@@ -292,3 +292,104 @@ export const getEndUserDevices = (params: any) => {
 export const forceUnbindEndUserDevice = (data: { binding_id: string }) => {
   return request.post('/end_user/force_unbind', data);
 };
+
+// ============================================================================
+// 组织管理（Org Tree - 多层级）
+// ============================================================================
+
+// 组织类型常量
+export const OrgTypes = {
+  BMS_FACTORY: 'BMS_FACTORY',
+  PACK_FACTORY: 'PACK_FACTORY',
+  DEALER: 'DEALER',
+  STORE: 'STORE'
+} as const;
+
+export const OrgTypeLabels: Record<string, string> = {
+  BMS_FACTORY: 'BMS厂家',
+  PACK_FACTORY: 'PACK厂家',
+  DEALER: '经销商',
+  STORE: '门店'
+};
+
+// 组织列表
+export const getOrgList = (params: {
+  page: number;
+  page_size: number;
+  org_type?: string;
+  name?: string;
+  status?: string;
+  parent_id?: string;
+}) => {
+  return request.get('/org', { params });
+};
+
+// 组织详情
+export const getOrgDetail = (id: string) => {
+  return request.get(`/org/${id}`);
+};
+
+// 创建组织
+export const createOrg = (data: {
+  name: string;
+  org_type: string;
+  parent_id?: string;
+  contact_person?: string;
+  phone?: string;
+  email?: string;
+  province?: string;
+  city?: string;
+  district?: string;
+  address?: string;
+  remark?: string;
+}) => {
+  return request.post('/org', data);
+};
+
+// 更新组织
+export const updateOrg = (id: string, data: {
+  name?: string;
+  contact_person?: string;
+  phone?: string;
+  email?: string;
+  province?: string;
+  city?: string;
+  district?: string;
+  address?: string;
+  status?: string;
+  remark?: string;
+}) => {
+  return request.put(`/org/${id}`, data);
+};
+
+// 删除组织
+export const deleteOrg = (id: string) => {
+  return request.delete(`/org/${id}`);
+};
+
+// 组织树
+export const getOrgTree = (params?: { org_type?: string }) => {
+  return request.get('/org/tree', { params });
+};
+
+// 设备组织转移
+export const transferDevicesToOrg = (data: {
+  device_ids: string[];
+  to_org_id?: string;
+  remark?: string;
+}) => {
+  return request.post('/device/transfer/org', data);
+};
+
+// 组织转移历史
+export const getOrgTransferHistory = (params: {
+  page: number;
+  page_size: number;
+  device_number?: string;
+  from_org_id?: string;
+  to_org_id?: string;
+  start_time?: string;
+  end_time?: string;
+}) => {
+  return request.get('/device/transfer/org/history', { params });
+};

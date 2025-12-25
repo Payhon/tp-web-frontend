@@ -91,8 +91,45 @@ const customRoutes: ElegantRoute[] = [
         path: '/bms/dealer',
         component: 'view.bms_dealer',
         meta: {
+          title: '经销商管理(旧)',
+          icon: 'mdi:account-group',
+          hide: true
+        }
+      },
+      {
+        name: 'bms_org',
+        path: '/bms/org',
+        component: 'view.bms_org',
+        meta: {
+          title: '组织管理',
+          icon: 'mdi:domain'
+        }
+      },
+      {
+        name: 'bms_org_pack-factory',
+        path: '/bms/org/pack-factory',
+        component: 'view.bms_org_pack-factory',
+        meta: {
+          title: 'PACK厂家管理',
+          icon: 'mdi:factory'
+        }
+      },
+      {
+        name: 'bms_org_dealer',
+        path: '/bms/org/dealer',
+        component: 'view.bms_org_dealer',
+        meta: {
           title: '经销商管理',
           icon: 'mdi:account-group'
+        }
+      },
+      {
+        name: 'bms_org_store',
+        path: '/bms/org/store',
+        component: 'view.bms_org_store',
+        meta: {
+          title: '门店管理',
+          icon: 'mdi:store'
         }
       },
       {
@@ -314,16 +351,28 @@ const customRoutes: ElegantRoute[] = [
 /** Create routes */
 export function createRoutes() {
   const constantRoutes: ElegantRoute[] = []
-
   const authRoutes: ElegantRoute[] = []
 
-    ;[...customRoutes, ...generatedRoutes].forEach(item => {
-      if (item.meta?.constant) {
-        constantRoutes.push(item)
-      } else {
-        authRoutes.push(item)
-      }
+  // 自定义路由名称集合（用于过滤生成的重复路由）
+  const customRouteNames = new Set<string>()
+  const collectRouteNames = (routes: ElegantRoute[]) => {
+    routes.forEach(route => {
+      if (route.name) customRouteNames.add(route.name as string)
+      if (route.children) collectRouteNames(route.children as ElegantRoute[])
     })
+  }
+  collectRouteNames(customRoutes)
+
+  // 过滤生成的路由，排除与自定义路由同名的顶层路由
+  const filteredGeneratedRoutes = generatedRoutes.filter(route => !customRouteNames.has(route.name as string))
+
+  ;[...customRoutes, ...filteredGeneratedRoutes].forEach(item => {
+    if (item.meta?.constant) {
+      constantRoutes.push(item)
+    } else {
+      authRoutes.push(item)
+    }
+  })
 
   const constantVueRoutes = transformElegantRoutesToVueRoutes(constantRoutes, layouts, views)
 

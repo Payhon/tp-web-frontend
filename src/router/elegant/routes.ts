@@ -373,6 +373,44 @@ export const generatedRoutes: GeneratedRoute[] = [
         ]
       },
       {
+        name: 'bms_org',
+        path: '/bms/org',
+        component: 'view.bms_org',
+        meta: {
+          title: 'bms_org',
+          i18nKey: 'route.bms_org'
+        },
+        children: [
+          {
+            name: 'bms_org_dealer',
+            path: '/bms/org/dealer',
+            component: 'view.bms_org_dealer',
+            meta: {
+              title: 'bms_org_dealer',
+              i18nKey: 'route.bms_org_dealer'
+            }
+          },
+          {
+            name: 'bms_org_pack-factory',
+            path: '/bms/org/pack-factory',
+            component: 'view.bms_org_pack-factory',
+            meta: {
+              title: 'bms_org_pack-factory',
+              i18nKey: 'route.bms_org_pack-factory'
+            }
+          },
+          {
+            name: 'bms_org_store',
+            path: '/bms/org/store',
+            component: 'view.bms_org_store',
+            meta: {
+              title: 'bms_org_store',
+              i18nKey: 'route.bms_org_store'
+            }
+          }
+        ]
+      },
+      {
         name: 'bms_system',
         path: '/bms/system',
         meta: {

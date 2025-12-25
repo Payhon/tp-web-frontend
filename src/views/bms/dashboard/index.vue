@@ -74,7 +74,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex-vertical-stretch gap-16px overflow-hidden <sm:overflow-auto">
+  <div class="flex-vertical-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
     <NCard title="BMS 看板" :bordered="false" size="small" class="card-wrapper">
       <NGrid cols="1 s:2 m:4" responsive="screen" :x-gap="16" :y-gap="16">
         <NGridItem>

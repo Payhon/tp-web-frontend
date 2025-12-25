@@ -157,5 +157,16 @@
   "route.bms_ops_operation_log": "操作记录",
   "route.bms_system": "系统管理",
   "route.bms_system_user": "账号管理",
-  "route.bms_system_role": "角色管理"
+  "route.bms_system_role": "角色管理",
+  "route.bms_org": "组织管理",
+  "route.bms_org_management": "组织管理",
+  "route.bms_org_pack_factory": "PACK厂家管理",
+  "route.bms_org_pack-factory": "PACK厂家管理",
+  "route.bms_org_dealer": "经销商管理",
+  "route.bms_org_store": "门店管理",
+  "route.bms_pack_factory": "PACK厂家管理",
+  "route.bms_store": "门店管理",
+  "route.bms_end": "终端用户",
+  "route.bms_battery": "电池管理",
+  "route.bms_dealer_detail": "经销商详情"
 }

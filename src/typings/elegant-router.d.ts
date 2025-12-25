@@ -58,6 +58,10 @@ declare module "@elegant-router/types" {
     "bms_ops_activation_log": "/bms/ops/activation/log";
     "bms_ops_operation": "/bms/ops/operation";
     "bms_ops_operation_log": "/bms/ops/operation/log";
+    "bms_org": "/bms/org";
+    "bms_org_dealer": "/bms/org/dealer";
+    "bms_org_pack-factory": "/bms/org/pack-factory";
+    "bms_org_store": "/bms/org/store";
     "bms_system": "/bms/system";
     "bms_system_role": "/bms/system/role";
     "bms_system_user": "/bms/system/user";
@@ -253,6 +257,10 @@ declare module "@elegant-router/types" {
     | "bms_end_user"
     | "bms_ops_activation_log"
     | "bms_ops_operation_log"
+    | "bms_org_dealer"
+    | "bms_org"
+    | "bms_org_pack-factory"
+    | "bms_org_store"
     | "bms_system_role"
     | "bms_system_user"
     | "bms_warranty"

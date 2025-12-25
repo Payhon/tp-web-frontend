@@ -301,7 +301,7 @@ const detailResultText = computed(() => {
 </script>
 
 <template>
-  <div class="flex-vertical-stretch gap-16px overflow-hidden <sm:overflow-auto">
+  <div class="flex-vertical-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
     <NCard title="维保中心" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
       <NTabs v-model:value="activeTab" type="line" animated>
         <NTabPane name="apply" tab="售后申请（维修/退换货）">

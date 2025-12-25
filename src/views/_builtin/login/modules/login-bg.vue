@@ -21,7 +21,7 @@ const bgColor = computed(() => {
   <div class="absolute-lt z-1 wh-full overflow-hidden">
     <!--
  <template v-if="!bgColor">
-      <div class="absolute -right-300px -top-900px <sm:(-right-100px -top-1170px)">
+      <div class="absolute -right-300px -top-900px lt-sm:(-right-100px -top-1170px)">
 @@ -34,14 +81,10 @@ const bgColor = computed(() => {
 -->
     <NImage

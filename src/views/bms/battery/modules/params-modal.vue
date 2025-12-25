@@ -182,7 +182,7 @@ const columns = computed<DataTableColumns<ParamRow>>(() => [
     minWidth: 240,
     render: r =>
       isWritable(r.read_write_flag) ? (
-        <NInput v-model:value={r.inputValue} placeholder="支持 JSON，例如：1 / true / {\"mode\":1}" />
+        <NInput v-model:value={r.inputValue} placeholder={'支持 JSON，例如：1 / true / {"mode":1}'} />
       ) : (
         '--'
       )

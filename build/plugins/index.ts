@@ -15,7 +15,10 @@ export function setupVitePlugins(viteEnv: Env.ImportMeta) {
       }
     }),
     vueJsx(),
-    VueDevtools(),
+    VueDevtools({
+      // 禁用组件检查器，避免与 TSX 语法冲突
+      componentInspector: false
+    }),
     setupElegantRouter(),
     setupUnocss(viteEnv),
     ...setupUnplugin(viteEnv),

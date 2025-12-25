@@ -85,12 +85,22 @@ function replaceKeys(data: ElegantConstRoute[]): ElegantRoute[] {
     const pageKey = homeRoutePath || name
 
     if (item.parent_id === '0') {
-      component = transformLayoutAndPageToComponent('base', item.element_type === 1 ? '' : pageKey)
+      // 根级路由：使用 base 布局，只有 element_type=3 (页面) 时才有页面组件
+      component = transformLayoutAndPageToComponent('base', item.element_type === 3 ? pageKey : '')
     } else {
-      component = transformLayoutAndPageToComponent(
-        item.element_type === 1 ? 'base' : '',
-        item.element_type === 1 ? '' : pageKey
-      )
+      // 非根级路由：
+      // - element_type=1 或 2 (菜单/文件夹)：不需要页面组件，只需要布局或为空
+      // - element_type=3 (页面)：需要页面组件
+      if (item.element_type === 3) {
+        // 页面类型：使用页面组件
+        component = transformLayoutAndPageToComponent('', pageKey)
+      } else if (item.element_type === 2) {
+        // 文件夹类型：不需要组件（由子路由提供内容）
+        component = ''
+      } else {
+        // 其他类型（如 element_type=1）：使用布局
+        component = transformLayoutAndPageToComponent('base', '')
+      }
     }
     const route: Partial<ElegantRoute> = {
       // id: item.id,

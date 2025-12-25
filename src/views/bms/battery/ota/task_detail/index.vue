@@ -116,7 +116,7 @@ watch(
 </script>
 
 <template>
-  <div class="flex-vertical-stretch gap-16px overflow-hidden <sm:overflow-auto">
+  <div class="flex-vertical-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
     <NCard :title="`OTA任务详情：${taskId || '-'}`" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
       <div class="mb-4 flex items-center justify-between">
         <div />
