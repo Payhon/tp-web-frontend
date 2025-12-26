@@ -28,16 +28,18 @@ export function usePanelPollingManager(dependencies: {
       dependencies.pollingManager.clearAllTasks()
 
       // 获取所有组件的轮询配置
-      const allComponents = dependencies.stateManager.nodes
+      const allComponents = dependencies.stateManager.nodes
+
       allComponents.forEach(component => {
         const componentId = component.id
         // 从 ConfigurationManager 读取组件级别的轮询配置
         const config = dependencies.configurationManager.getConfiguration(componentId)
-
+
         let pollingConfig = config?.component?.polling
 
         // 🔥 关键修复：预览模式下自动启用轮询（如果组件有数据源）
-        if (!pollingConfig && config?.dataSource) {          pollingConfig = {
+        if (!pollingConfig && config?.dataSource) {
+          pollingConfig = {
             enabled: true,
             interval: 30000,
             immediate: true
@@ -47,7 +49,7 @@ export function usePanelPollingManager(dependencies: {
           dependencies.configurationManager.updateConfiguration(componentId, 'component.polling', pollingConfig)
         }
 
-        if (pollingConfig && pollingConfig.enabled) {
+        if (pollingConfig && pollingConfig.enabled) {
           const interval = pollingConfig.interval || 30000
 
           // 创建轮询任务（但不自动启动）
@@ -70,7 +72,7 @@ export function usePanelPollingManager(dependencies: {
                     console.error(`⚠️ [PanelPollingManager] 组件数据源配置不存在: ${componentId}`)
                     return
                   }
-
+
                   // 获取组件类型
                   const component = dependencies.stateManager.nodes.find(n => n.id === componentId)
                   const componentType = component?.type || 'unknown'
@@ -83,7 +85,8 @@ export function usePanelPollingManager(dependencies: {
                     componentId,
                     componentType,
                     config.dataSource
-                  )                } catch (bridgeError) {
+                  )
+                } catch (bridgeError) {
                   console.error(`❌ [PanelPollingManager] VisualEditorBridge 调用失败: ${componentId}`, bridgeError)
                   console.error(`⚠️ [PanelPollingManager] 轮询执行失败: ${componentId}`)
                 }
@@ -93,14 +96,16 @@ export function usePanelPollingManager(dependencies: {
             },
             autoStart: false // 统一不自动启动，由全局开关控制
           })
-
+
           // 启动这个任务
           dependencies.pollingManager.startTask(taskId)
-        } else {        }
+        } else {
+        }
       })
 
       // 最终轮询任务统计
-      const finalStats = dependencies.pollingManager.getStatistics()
+      const finalStats = dependencies.pollingManager.getStatistics()
+
       // 🔛 启用全局轮询开关
       dependencies.pollingManager.enableGlobalPolling()
     } catch (error) {
@@ -136,8 +141,7 @@ export function usePanelPollingManager(dependencies: {
    * 轮询禁用事件处理
    * 当轮询被禁用时触发
    */
-  const handlePollingDisabled = () => {
-  }
+  const handlePollingDisabled = () => {}
 
   return {
     // 状态变量

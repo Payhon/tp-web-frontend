@@ -16,7 +16,7 @@ export default {
   dataDriven: false, // 这是一个纯展示性组件，版本信息由静态配置提供，而非外部数据源驱动
   interactionCapabilities: {
     // 声明组件支持点击事件和导航功能
-    supportedEvents: ['click', 'navigate'],
+    supportedEvents: ['click', 'navigate']
   },
   permission: '不限'
 } as ComponentDefinition

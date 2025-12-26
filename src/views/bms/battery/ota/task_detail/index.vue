@@ -81,7 +81,7 @@ const columns = computed<DataTableColumns<any>>(() => [
   { key: 'name', title: '设备名称', minWidth: 160, render: r => r.name || '--' },
   { key: 'current_version', title: '当前版本', minWidth: 120, render: r => r.current_version || '--' },
   { key: 'version', title: '目标版本', minWidth: 120, render: r => r.version || '--' },
-  { key: 'step', title: '进度', minWidth: 90, render: r => (r.step ?? '--') },
+  { key: 'step', title: '进度', minWidth: 90, render: r => r.step ?? '--' },
   { key: 'updated_at', title: '更新时间', minWidth: 160, render: r => r.updated_at || '--' },
   {
     key: 'status',
@@ -97,7 +97,12 @@ const columns = computed<DataTableColumns<any>>(() => [
     fixed: 'right',
     render: r => (
       <NSpace>
-        <NButton size="small" type="warning" disabled={!(r.status === 1 || r.status === 2 || r.status === 3)} onClick={() => cancelUpgrade(r.id)}>
+        <NButton
+          size="small"
+          type="warning"
+          disabled={!(r.status === 1 || r.status === 2 || r.status === 3)}
+          onClick={() => cancelUpgrade(r.id)}
+        >
           取消
         </NButton>
         <NButton size="small" type="primary" disabled={r.status !== 5} onClick={() => retryUpgrade(r.id)}>
@@ -117,11 +122,16 @@ watch(
 
 <template>
   <div class="flex-vertical-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
-    <NCard :title="`OTA任务详情：${taskId || '-'}`" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
+    <NCard
+      :title="`OTA任务详情：${taskId || '-'}`"
+      :bordered="false"
+      size="small"
+      class="sm:flex-1-hidden card-wrapper"
+    >
       <div class="mb-4 flex items-center justify-between">
         <div />
         <NSpace>
-          <NButton @click="fetchDetail" :loading="loading">刷新</NButton>
+          <NButton :loading="loading" @click="fetchDetail">刷新</NButton>
         </NSpace>
       </div>
 
@@ -141,4 +151,3 @@ watch(
   height: 100%;
 }
 </style>
-

@@ -17,7 +17,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed } from 'vue'
 
 // 定义组件的 props
 const props = defineProps({
@@ -30,14 +30,14 @@ const props = defineProps({
     type: String,
     default: '#67c23a'
   }
-});
+})
 
 // 计算样式，根据传入的颜色 props 生成背景渐变
 const cardStyle = computed(() => ({
   backgroundImage: `linear-gradient(45deg, ${props.startColor} 0%, ${props.endColor} 25%, ${props.startColor} 50%, ${props.endColor} 75%, ${props.startColor} 100%)`,
   backgroundSize: '400% 400%', // 确保动效所需的背景尺寸
   animation: 'dazzling-gradient 10s ease-in-out infinite' // 确保动画不被覆盖
-}));
+}))
 </script>
 
 <style lang="scss" scoped>
@@ -124,13 +124,7 @@ const cardStyle = computed(() => ({
   /*
     为暗黑模式协调的深蓝绿色渐变
   */
-  background-image: linear-gradient(
-    45deg,
-    #1d3a5c,
-    #2c5282,
-    #2b6cb0,
-    #2a5c40
-  );
+  background-image: linear-gradient(45deg, #1d3a5c, #2c5282, #2b6cb0, #2a5c40);
   color: #e5e7eb; /* Tailwind gray-200 */
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
 }

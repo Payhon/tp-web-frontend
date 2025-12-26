@@ -504,9 +504,7 @@ const handleExport = () => {
             <template #trigger>
               <NButton size="small" type="tertiary" @click.stop.prevent="handleToggleFullscreen($event)">
                 <template #icon>
-                  <SvgIcon
-                    :icon="isFullscreen ? 'material-symbols:fullscreen-exit' : 'material-symbols:fullscreen'"
-                  />
+                  <SvgIcon :icon="isFullscreen ? 'material-symbols:fullscreen-exit' : 'material-symbols:fullscreen'" />
                 </template>
               </NButton>
             </template>
@@ -516,11 +514,7 @@ const handleExport = () => {
 
         <!-- 编辑/预览按钮 - 预览改为跳转新页面 -->
         <NDivider vertical />
-        <NButton
-          size="small"
-          type="primary"
-          @click="handleModeChange('preview')"
-        >
+        <NButton size="small" type="primary" @click="handleModeChange('preview')">
           <template #icon>
             <SvgIcon icon="material-symbols:visibility-outline" />
           </template>

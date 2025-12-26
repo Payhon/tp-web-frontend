@@ -1,11 +1,7 @@
 <template>
   <div class="form-field">
     <!-- 文本输入框 -->
-    <n-form-item
-      v-if="setting.type === 'input'"
-      :label="setting.label"
-      :required="setting.required"
-    >
+    <n-form-item v-if="setting.type === 'input'" :label="setting.label" :required="setting.required">
       <n-input
         :value="modelValue"
         :placeholder="setting.placeholder"
@@ -18,11 +14,7 @@
     </n-form-item>
 
     <!-- 文本域 -->
-    <n-form-item
-      v-else-if="setting.type === 'textarea'"
-      :label="setting.label"
-      :required="setting.required"
-    >
+    <n-form-item v-else-if="setting.type === 'textarea'" :label="setting.label" :required="setting.required">
       <n-input
         type="textarea"
         :value="modelValue"
@@ -37,11 +29,7 @@
     </n-form-item>
 
     <!-- 数字输入框 -->
-    <n-form-item
-      v-else-if="setting.type === 'input-number'"
-      :label="setting.label"
-      :required="setting.required"
-    >
+    <n-form-item v-else-if="setting.type === 'input-number'" :label="setting.label" :required="setting.required">
       <n-input-number
         :value="modelValue"
         :placeholder="setting.placeholder"
@@ -58,27 +46,15 @@
     </n-form-item>
 
     <!-- 颜色选择器 -->
-    <n-form-item
-      v-else-if="setting.type === 'color-picker'"
-      :label="setting.label"
-      :required="setting.required"
-    >
-      <n-color-picker
-        :value="modelValue"
-        :disabled="setting.disabled || readonly"
-        @update:value="handleValueChange"
-      />
+    <n-form-item v-else-if="setting.type === 'color-picker'" :label="setting.label" :required="setting.required">
+      <n-color-picker :value="modelValue" :disabled="setting.disabled || readonly" @update:value="handleValueChange" />
       <template v-if="setting.description" #feedback>
         <span class="field-description">{{ setting.description }}</span>
       </template>
     </n-form-item>
 
     <!-- 滑块 -->
-    <n-form-item
-      v-else-if="setting.type === 'slider'"
-      :label="setting.label"
-      :required="setting.required"
-    >
+    <n-form-item v-else-if="setting.type === 'slider'" :label="setting.label" :required="setting.required">
       <n-slider
         :value="modelValue"
         :disabled="setting.disabled || readonly"
@@ -93,27 +69,15 @@
     </n-form-item>
 
     <!-- 开关 -->
-    <n-form-item
-      v-else-if="setting.type === 'switch'"
-      :label="setting.label"
-      :required="setting.required"
-    >
-      <n-switch
-        :value="modelValue"
-        :disabled="setting.disabled || readonly"
-        @update:value="handleValueChange"
-      />
+    <n-form-item v-else-if="setting.type === 'switch'" :label="setting.label" :required="setting.required">
+      <n-switch :value="modelValue" :disabled="setting.disabled || readonly" @update:value="handleValueChange" />
       <template v-if="setting.description" #feedback>
         <span class="field-description">{{ setting.description }}</span>
       </template>
     </n-form-item>
 
     <!-- 下拉选择 -->
-    <n-form-item
-      v-else-if="setting.type === 'select'"
-      :label="setting.label"
-      :required="setting.required"
-    >
+    <n-form-item v-else-if="setting.type === 'select'" :label="setting.label" :required="setting.required">
       <n-select
         :value="modelValue"
         :placeholder="setting.placeholder"
@@ -127,38 +91,18 @@
     </n-form-item>
 
     <!-- 多选框 -->
-    <n-form-item
-      v-else-if="setting.type === 'checkbox'"
-      :label="setting.label"
-      :required="setting.required"
-    >
-      <n-checkbox
-        :checked="modelValue"
-        :disabled="setting.disabled || readonly"
-        @update:checked="handleValueChange"
-      />
+    <n-form-item v-else-if="setting.type === 'checkbox'" :label="setting.label" :required="setting.required">
+      <n-checkbox :checked="modelValue" :disabled="setting.disabled || readonly" @update:checked="handleValueChange" />
       <template v-if="setting.description" #feedback>
         <span class="field-description">{{ setting.description }}</span>
       </template>
     </n-form-item>
 
     <!-- 单选框组 -->
-    <n-form-item
-      v-else-if="setting.type === 'radio-group'"
-      :label="setting.label"
-      :required="setting.required"
-    >
-      <n-radio-group
-        :value="modelValue"
-        :disabled="setting.disabled || readonly"
-        @update:value="handleValueChange"
-      >
+    <n-form-item v-else-if="setting.type === 'radio-group'" :label="setting.label" :required="setting.required">
+      <n-radio-group :value="modelValue" :disabled="setting.disabled || readonly" @update:value="handleValueChange">
         <n-space>
-          <n-radio
-            v-for="option in setting.options"
-            :key="option.value"
-            :value="option.value"
-          >
+          <n-radio v-for="option in setting.options" :key="option.value" :value="option.value">
             {{ option.label }}
           </n-radio>
         </n-space>
@@ -169,11 +113,7 @@
     </n-form-item>
 
     <!-- 日期选择器 -->
-    <n-form-item
-      v-else-if="setting.type === 'date-picker'"
-      :label="setting.label"
-      :required="setting.required"
-    >
+    <n-form-item v-else-if="setting.type === 'date-picker'" :label="setting.label" :required="setting.required">
       <n-date-picker
         :value="modelValue"
         :placeholder="setting.placeholder"
@@ -187,27 +127,15 @@
     </n-form-item>
 
     <!-- 动态标签 -->
-    <n-form-item
-      v-else-if="setting.type === 'dynamic-tags'"
-      :label="setting.label"
-      :required="setting.required"
-    >
-      <n-dynamic-tags
-        :value="modelValue"
-        :disabled="setting.disabled || readonly"
-        @update:value="handleValueChange"
-      />
+    <n-form-item v-else-if="setting.type === 'dynamic-tags'" :label="setting.label" :required="setting.required">
+      <n-dynamic-tags :value="modelValue" :disabled="setting.disabled || readonly" @update:value="handleValueChange" />
       <template v-if="setting.description" #feedback>
         <span class="field-description">{{ setting.description }}</span>
       </template>
     </n-form-item>
 
     <!-- Vue 组件渲染器 -->
-    <n-form-item
-      v-else-if="setting.type === 'vue-component'"
-      :label="setting.label"
-      :required="setting.required"
-    >
+    <n-form-item v-else-if="setting.type === 'vue-component'" :label="setting.label" :required="setting.required">
       <component
         :is="setting.component"
         :model-value="modelValue"
@@ -221,11 +149,7 @@
     </n-form-item>
 
     <!-- 未知类型的字段 -->
-    <n-form-item
-      v-else
-      :label="setting.label"
-      :required="setting.required"
-    >
+    <n-form-item v-else :label="setting.label" :required="setting.required">
       <n-input
         :value="modelValue"
         :placeholder="setting.placeholder"

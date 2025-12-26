@@ -153,7 +153,12 @@ onMounted(() => {
     </NCard>
 
     <!-- 编辑弹窗 -->
-    <NModal v-model:show="showEditModal" :title="$t('device_template.editTemplateInfo')" preset="card" class="edit-modal">
+    <NModal
+      v-model:show="showEditModal"
+      :title="$t('device_template.editTemplateInfo')"
+      preset="card"
+      class="edit-modal"
+    >
       <TemplateEditForm :template-id="templateId" @success="handleEditSuccess" @cancel="showEditModal = false" />
     </NModal>
   </div>

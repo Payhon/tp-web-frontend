@@ -358,8 +358,7 @@ watch(
 // 监听数据变化
 watch(
   () => props.data,
-  newData => {
-  },
+  newData => {},
   { deep: true }
 )
 

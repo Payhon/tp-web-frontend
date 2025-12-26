@@ -31,15 +31,10 @@ export class AutoRegistry {
    * 验证组件定义是否有效
    */
   private isValidComponentDefinition(definition: any): definition is ComponentDefinition {
-    const isComponentValid = definition.component &&
-      (typeof definition.component === 'object' || typeof definition.component === 'function')
+    const isComponentValid =
+      definition.component && (typeof definition.component === 'object' || typeof definition.component === 'function')
 
-    return (
-      definition &&
-      typeof definition.type === 'string' &&
-      typeof definition.name === 'string' &&
-      isComponentValid
-    )
+    return definition && typeof definition.type === 'string' && typeof definition.name === 'string' && isComponentValid
   }
 
   /**
@@ -97,13 +92,12 @@ export class AutoRegistry {
           // 根据组件ID获取分类信息
           const categoryInfo = getCategoryFromComponentId(componentId)
 
-
           // 增强组件定义
           const enhancedDefinition = {
             ...definition,
             mainCategory: categoryInfo.mainCategory,
             subCategory: categoryInfo.subCategory,
-            category: `${categoryInfo.mainCategory}/${categoryInfo.subCategory}`,
+            category: `${categoryInfo.mainCategory}/${categoryInfo.subCategory}`
           }
 
           // 生成分类信息

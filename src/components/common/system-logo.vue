@@ -18,7 +18,7 @@ withDefaults(defineProps<Props>(), {
     <!-- {{sysSettingStore  }} -->
     <n-image
       :width="width"
-      :src="sysSettingStore.logo_background === '' ? '/favicon.svg' : sysSettingStore.logo_background"
+      :src="sysSettingStore.logo_background === '' ? '/logo.svg' : sysSettingStore.logo_background"
     />
     <!-- <v-else icon-local-logo /> -->
   </div>

@@ -1,6 +1,18 @@
 <script setup lang="tsx">
 import { computed, ref } from 'vue'
-import { NButton, NCard, NDataTable, NForm, NFormItem, NInput, NModal, NPopconfirm, NSelect, NSpace, useMessage } from 'naive-ui'
+import {
+  NButton,
+  NCard,
+  NDataTable,
+  NForm,
+  NFormItem,
+  NInput,
+  NModal,
+  NPopconfirm,
+  NSelect,
+  NSpace,
+  useMessage
+} from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import { useTable } from '@/hooks/common/table'
 import { getOtaUpgradePackageList, uploadOtaUpgradePackageFile } from '@/service/api/bms'
@@ -85,7 +97,10 @@ function createColumns(): DataTableColumns<OtaPackageItem> {
   ]
 }
 
-const { data, loading, pagination, columns, getData, updateSearchParams } = useTable<OtaPackageItem, typeof getOtaUpgradePackageList>({
+const { data, loading, pagination, columns, getData, updateSearchParams } = useTable<
+  OtaPackageItem,
+  typeof getOtaUpgradePackageList
+>({
   apiFn: getOtaUpgradePackageList,
   apiParams: { page: 1, page_size: 10 },
   transformer: (res: any) => {
@@ -258,12 +273,24 @@ getData()
 <template>
   <div class="flex-vertical-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
     <NCard title="OTA升级包管理" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
-      <NForm inline :model="searchForm" label-placement="left" label-width="auto" class="mb-4 flex flex-wrap gap-4 items-end">
+      <NForm
+        inline
+        :model="searchForm"
+        label-placement="left"
+        label-width="auto"
+        class="mb-4 flex flex-wrap gap-4 items-end"
+      >
         <NFormItem label="升级包名称">
           <NInput v-model:value="searchForm.name" placeholder="支持模糊搜索" style="width: 220px" clearable />
         </NFormItem>
         <NFormItem label="设备配置">
-          <NSelect v-model:value="searchForm.device_config_id" :options="deviceConfigOptions" clearable filterable style="width: 260px" />
+          <NSelect
+            v-model:value="searchForm.device_config_id"
+            :options="deviceConfigOptions"
+            clearable
+            filterable
+            style="width: 260px"
+          />
         </NFormItem>
         <NFormItem>
           <NSpace>
@@ -302,14 +329,31 @@ getData()
           <NInput v-model:value="form.module" placeholder="可选" />
         </NFormItem>
         <NFormItem label="包类型" required>
-          <NSelect v-model:value="form.package_type" :options="[{ label: '差分', value: 1 }, { label: '整包', value: 2 }]" />
+          <NSelect
+            v-model:value="form.package_type"
+            :options="[
+              { label: '差分', value: 1 },
+              { label: '整包', value: 2 }
+            ]"
+          />
         </NFormItem>
         <NFormItem label="签名算法" required>
-          <NSelect v-model:value="form.signature_type" :options="[{ label: 'MD5', value: 'MD5' }, { label: 'SHA256', value: 'SHA256' }]" />
+          <NSelect
+            v-model:value="form.signature_type"
+            :options="[
+              { label: 'MD5', value: 'MD5' },
+              { label: 'SHA256', value: 'SHA256' }
+            ]"
+          />
         </NFormItem>
         <NFormItem label="升级包固件" required>
           <NSpace align="center" style="width: 100%">
-            <NInput v-model:value="form.package_url" readonly placeholder="请先上传固件，系统会自动生成 package_url" style="flex: 1" />
+            <NInput
+              v-model:value="form.package_url"
+              readonly
+              placeholder="请先上传固件，系统会自动生成 package_url"
+              style="flex: 1"
+            />
             <NButton type="primary" :loading="uploading" @click="handleUploadFirmware">选择并上传</NButton>
           </NSpace>
           <div style="color: #999; font-size: 12px; margin-top: 6px">
@@ -341,4 +385,3 @@ getData()
   height: 100%;
 }
 </style>
-

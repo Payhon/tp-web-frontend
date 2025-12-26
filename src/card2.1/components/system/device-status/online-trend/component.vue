@@ -1,7 +1,11 @@
 <template>
-  <div class="h-full bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden">
+  <div
+    class="h-full bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden"
+  >
     <!-- 卡片标题栏 -->
-    <div class="flex justify-between items-center p-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-gray-700 dark:to-gray-800">
+    <div
+      class="flex justify-between items-center p-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-gray-700 dark:to-gray-800"
+    >
       <div class="flex items-center space-x-3">
         <div class="p-2 bg-cyan-100 dark:bg-cyan-900 rounded-lg">
           <img :src="wifiIcon" alt="WiFi" class="w-5 h-5" />
@@ -12,7 +16,9 @@
       </div>
 
       <!-- 在线率显示 -->
-      <div class="flex items-center space-x-2 bg-white dark:bg-gray-700 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600">
+      <div
+        class="flex items-center space-x-2 bg-white dark:bg-gray-700 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600"
+      >
         <img :src="onlineRateIcon" alt="Online Rate" class="w-4 h-4" />
         <span class="text-sm font-medium text-blue-600 dark:text-blue-400">
           {{ onlineRateText }}
@@ -23,11 +29,7 @@
     <!-- 图表容器 -->
     <div class="flex-1 p-4 min-h-0">
       <div class="h-full relative">
-        <VChart
-          :option="chartOption"
-          autoresize
-          class="w-full h-full"
-        />
+        <VChart :option="chartOption" autoresize class="w-full h-full" />
       </div>
     </div>
   </div>

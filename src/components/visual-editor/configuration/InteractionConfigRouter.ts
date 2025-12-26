@@ -57,8 +57,7 @@ export class InteractionConfigRouter {
   // 配置变更监听器
   private configChangeListeners = new Map<string, ((configs: InteractionConfig[]) => void)[]>()
 
-  private constructor() {
-  }
+  private constructor() {}
 
   static getInstance(): InteractionConfigRouter {
     if (!InteractionConfigRouter.instance) {
@@ -71,7 +70,6 @@ export class InteractionConfigRouter {
    * 🔥 核心方法：注册组件的交互配置
    */
   registerComponentConfigs(componentId: string, configs: InteractionConfig[]): void {
-
     // 清理旧配置和监听器
     this.clearComponentListeners(componentId)
 
@@ -89,7 +87,6 @@ export class InteractionConfigRouter {
    * 🔥 核心方法：注册组件实例，使其能够被监听
    */
   registerComponentInstance(componentId: string, componentExpose: any): void {
-
     this.componentCache.set(componentId, componentExpose)
 
     // 立即尝试注册监听器（如果配置已存在）
@@ -106,7 +103,6 @@ export class InteractionConfigRouter {
     if (!configs || !componentExpose) {
       return
     }
-
 
     const listeners: InteractionListener[] = []
 
@@ -135,17 +131,14 @@ export class InteractionConfigRouter {
 
     // 保存监听器引用
     this.listenerMap.set(componentId, listeners)
-
   }
 
   /**
    * 注册点击事件监听器
    */
   private registerClickListener(listener: InteractionListener, componentExpose: any): void {
-
     // 通过DOM事件委托注册点击监听器
     const handleClick = async (event: Event) => {
-
       // 检查条件（如果有）
       if (listener.config.condition && !this.checkCondition(listener.config.condition, null)) {
         return
@@ -164,7 +157,6 @@ export class InteractionConfigRouter {
       listener.cleanup = () => {
         componentElement.removeEventListener('click', handleClick)
       }
-
     } else {
       console.warn(`❌ [InteractionConfigRouter] 未找到组件元素: ${listener.componentId}`)
     }
@@ -174,7 +166,6 @@ export class InteractionConfigRouter {
    * 注册悬停事件监听器
    */
   private registerHoverListener(listener: InteractionListener, componentExpose: any): void {
-
     const handleMouseEnter = async (event: Event) => {
       await this.executeResponses(listener.config.responses, listener.componentId)
     }
@@ -194,7 +185,6 @@ export class InteractionConfigRouter {
         componentElement.removeEventListener('mouseenter', handleMouseEnter)
         componentElement.removeEventListener('mouseleave', handleMouseLeave)
       }
-
     } else {
       console.warn(`❌ [InteractionConfigRouter] 未找到组件元素: ${listener.componentId}`)
     }
@@ -214,12 +204,10 @@ export class InteractionConfigRouter {
       return
     }
 
-
     try {
       const unwatch = componentExpose.watchProperty(
         listener.config.watchedProperty,
         async (newValue: any, oldValue: any) => {
-
           // 检查条件
           let conditionMet = true
           if (listener.config.condition) {
@@ -235,7 +223,6 @@ export class InteractionConfigRouter {
 
       // 保存unwatch函数
       listener.unwatch = unwatch
-
     } catch (error) {
       console.error(`❌ [InteractionConfigRouter] 注册属性监听器失败:`, error)
     }
@@ -245,7 +232,6 @@ export class InteractionConfigRouter {
    * 🔥 核心方法：执行交互响应
    */
   private async executeResponses(responses: InteractionConfig['responses'], sourceComponentId: string): Promise<void> {
-
     for (const response of responses) {
       switch (response.action) {
         case 'jump':
@@ -264,7 +250,6 @@ export class InteractionConfigRouter {
    * 执行跳转响应
    */
   private executeJumpResponse(response: InteractionConfig['responses'][0]): void {
-
     if (response.value) {
       if (response.target === '_blank') {
         window.open(response.value, '_blank')
@@ -277,7 +262,10 @@ export class InteractionConfigRouter {
   /**
    * 🔥 关键方法：执行跨组件属性修改响应
    */
-  private async executeModifyResponse(response: InteractionConfig['responses'][0], sourceComponentId: string): Promise<void> {
+  private async executeModifyResponse(
+    response: InteractionConfig['responses'][0],
+    sourceComponentId: string
+  ): Promise<void> {
     if (!response.targetComponentId || !response.targetProperty) {
       console.warn(`❌ [InteractionConfigRouter] 属性修改响应缺少目标信息:`, response)
       return
@@ -285,7 +273,6 @@ export class InteractionConfigRouter {
 
     // 🔥 直接使用组件ID，无需 "self" 概念
     const actualTargetComponentId = response.targetComponentId
-
 
     try {
       // 🔥 关键：通过ConfigurationIntegrationBridge更新目标组件配置
@@ -299,17 +286,17 @@ export class InteractionConfigRouter {
       )
 
       if (success) {
-
         // 🔥 发送属性变更事件，触发数据源动态参数更新
-        window.dispatchEvent(new CustomEvent('property-change', {
-          detail: {
-            componentId: actualTargetComponentId,
-            propertyName: response.targetProperty,
-            newValue: response.value,
-            source: 'interaction'
-          }
-        }))
-
+        window.dispatchEvent(
+          new CustomEvent('property-change', {
+            detail: {
+              componentId: actualTargetComponentId,
+              propertyName: response.targetProperty,
+              newValue: response.value,
+              source: 'interaction'
+            }
+          })
+        )
       } else {
         console.warn(`❌ [InteractionConfigRouter] 跨组件属性修改失败`)
       }
@@ -357,7 +344,6 @@ export class InteractionConfigRouter {
   private clearComponentListeners(componentId: string): void {
     const listeners = this.listenerMap.get(componentId)
     if (listeners) {
-
       listeners.forEach(listener => {
         if (listener.unwatch) {
           listener.unwatch()
@@ -375,7 +361,6 @@ export class InteractionConfigRouter {
    * 移除组件的所有配置和监听器
    */
   unregisterComponent(componentId: string): void {
-
     this.clearComponentListeners(componentId)
     this.configMap.delete(componentId)
     this.componentCache.delete(componentId)

@@ -6,6 +6,12 @@ export const fetchNotificationServicesEmail = async () => {
   return data
 }
 
+/** 短信服务配置 */
+export const fetchNotificationServicesSMS = async () => {
+  const data = await request.get<Api.NotificationServices.SMS | null>(`/notification/services/config/SME_CODE`)
+  return data
+}
+
 /** 修改通知服务配置 */
 export const editNotificationServices = async (params: any) => {
   const data = await request.post<Api.BaseApi.Data>('/notification/services/config', params)

@@ -78,9 +78,9 @@ export const gaugeChartDefinition: ComponentDefinition = {
 
   // 功能特性
   features: {
-    realtime: true,       // 支持实时数据更新
-    dataBinding: true,    // 支持数据绑定
-    configurable: true    // 可配置
+    realtime: true, // 支持实时数据更新
+    dataBinding: true, // 支持数据绑定
+    configurable: true // 可配置
   },
 
   // 数据源定义
@@ -109,37 +109,31 @@ export const gaugeChartDefinition: ComponentDefinition = {
     supportedEvents: ['click', 'hover', 'dataChange'],
 
     // 可触发的交互动作类型
-    availableActions: [
-      'navigateToUrl',
-      'updateComponentData',
-      'changeVisibility',
-      'showNotification',
-      'emitEvent'
-    ],
+    availableActions: ['navigateToUrl', 'updateComponentData', 'changeVisibility', 'showNotification', 'emitEvent'],
 
     // 可被其他组件监听的属性列表
     watchableProperties: {
-      'value': {
+      value: {
         type: 'number',
         description: '当前数值',
         defaultValue: 75
       },
-      'min': {
+      min: {
         type: 'number',
         description: '最小值',
         defaultValue: 0
       },
-      'max': {
+      max: {
         type: 'number',
         description: '最大值',
         defaultValue: 100
       },
-      'title': {
+      title: {
         type: 'string',
         description: '标题',
         defaultValue: '数据指标'
       },
-      'percentage': {
+      percentage: {
         type: 'number',
         description: '百分比值（自动计算）',
         defaultValue: 0
@@ -166,79 +160,82 @@ export const gaugeChartDefinition: ComponentDefinition = {
   },
 
   // 🔒 属性暴露白名单配置
-  propertyWhitelist: createPropertyWhitelist({
-    // 🔒 核心数据属性 - 可在交互中使用
-    value: {
-      level: 'public',
-      type: 'number',
-      description: '当前数值',
-      defaultValue: 75,
-      visibleInInteraction: true,
-      visibleInDebug: true
-    },
-    min: {
-      level: 'public',
-      type: 'number',
-      description: '最小值',
-      defaultValue: 0,
-      visibleInInteraction: true,
-      visibleInDebug: true
-    },
-    max: {
-      level: 'public',
-      type: 'number',
-      description: '最大值',
-      defaultValue: 100,
-      visibleInInteraction: true,
-      visibleInDebug: true
-    },
-    title: {
-      level: 'public',
-      type: 'string',
-      description: '标题',
-      defaultValue: '数据指标',
-      visibleInInteraction: true,
-      visibleInDebug: true
-    },
+  propertyWhitelist: createPropertyWhitelist(
+    {
+      // 🔒 核心数据属性 - 可在交互中使用
+      value: {
+        level: 'public',
+        type: 'number',
+        description: '当前数值',
+        defaultValue: 75,
+        visibleInInteraction: true,
+        visibleInDebug: true
+      },
+      min: {
+        level: 'public',
+        type: 'number',
+        description: '最小值',
+        defaultValue: 0,
+        visibleInInteraction: true,
+        visibleInDebug: true
+      },
+      max: {
+        level: 'public',
+        type: 'number',
+        description: '最大值',
+        defaultValue: 100,
+        visibleInInteraction: true,
+        visibleInDebug: true
+      },
+      title: {
+        level: 'public',
+        type: 'string',
+        description: '标题',
+        defaultValue: '数据指标',
+        visibleInInteraction: true,
+        visibleInDebug: true
+      },
 
-    // 🔒 计算属性 - 只读，供交互系统使用
-    percentage: {
-      level: 'public',
-      type: 'number',
-      description: '百分比值（自动计算）',
-      defaultValue: 0,
-      readonly: true,
-      visibleInInteraction: true,
-      visibleInDebug: true
-    },
+      // 🔒 计算属性 - 只读，供交互系统使用
+      percentage: {
+        level: 'public',
+        type: 'number',
+        description: '百分比值（自动计算）',
+        defaultValue: 0,
+        readonly: true,
+        visibleInInteraction: true,
+        visibleInDebug: true
+      },
 
-    // 🔒 状态属性 - 只读
-    lastUpdated: {
-      level: 'public',
-      type: 'string',
-      description: '最后更新时间',
-      readonly: true,
-      visibleInInteraction: false,
-      visibleInDebug: true
-    },
+      // 🔒 状态属性 - 只读
+      lastUpdated: {
+        level: 'public',
+        type: 'string',
+        description: '最后更新时间',
+        readonly: true,
+        visibleInInteraction: false,
+        visibleInDebug: true
+      },
 
-    // 🔒 基础UI属性 - 受保护级别
-    visible: {
-      level: 'protected',
-      type: 'boolean',
-      description: '组件可见性',
-      defaultValue: true,
-      visibleInInteraction: true,
-      visibleInDebug: true
+      // 🔒 基础UI属性 - 受保护级别
+      visible: {
+        level: 'protected',
+        type: 'boolean',
+        description: '组件可见性',
+        defaultValue: true,
+        visibleInInteraction: true,
+        visibleInDebug: true
+      }
+    },
+    {
+      enabled: true,
+      defaultLevel: 'public',
+      audit: {
+        logAccess: process.env.NODE_ENV === 'development',
+        logModification: true
+      }
     }
-  }, {
-    enabled: true,
-    defaultLevel: 'public',
-    audit: {
-      logAccess: process.env.NODE_ENV === 'development',
-      logModification: true
-    }
-  })
+  )
 }
 
 export default gaugeChartDefinition

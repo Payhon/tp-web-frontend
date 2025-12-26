@@ -100,6 +100,10 @@ const props = defineProps<{
   rowClick?: () => void // 表格行点击回调
   initPage?: number
   initPageSize?: number
+  /** 视图类型控制：默认 ['card','list','map'] */
+  viewTypes?: Array<'card' | 'list' | 'map'>
+  /** 初始视图：默认 'card' */
+  initialViewType?: 'card' | 'list' | 'map'
 }>()
 
 const { loading, startLoading, endLoading } = useLoading()
@@ -383,12 +387,21 @@ const getConfigImageUrl = (imagePath: string | undefined): string => {
 // 导入图标组件（修复图标显示问题）
 import { ListOutline, MapOutline, GridOutline as CardIcon } from '@vicons/ionicons5'
 
-// 定义可用视图，修复图标引用
-const availableViews = [
+// 定义默认可用视图（可通过 props.viewTypes 限制）
+const defaultAvailableViews = [
   { key: 'card', icon: CardIcon, label: 'views.card' },
   { key: 'list', icon: ListOutline, label: 'views.list' },
   { key: 'map', icon: MapOutline, label: 'views.map' }
 ]
+const availableViews = computed(() => {
+  const viewTypes = props.viewTypes?.length ? props.viewTypes : (['card', 'list', 'map'] as const)
+  return defaultAvailableViews.filter(v => viewTypes.includes(v.key as any))
+})
+const initialView = computed(() => {
+  const desired = props.initialViewType || 'card'
+  if (availableViews.value.some(v => v.key === desired)) return desired
+  return availableViews.value[0]?.key || 'list'
+})
 const formSize = ref(undefined)
 const router = useRouter()
 // 处理告警铃铛图标点击事件
@@ -407,7 +420,7 @@ const handleWarningClick = (item: DeviceItem) => {
 
 <template>
   <AdvancedListLayout
-    :initial-view="'card'"
+    :initial-view="initialView"
     :available-views="availableViews"
     @query="handleLayoutQuery"
     @reset="handleLayoutReset"
@@ -534,7 +547,12 @@ const handleWarningClick = (item: DeviceItem) => {
                 </template>
                 <template #footer-icon>
                   <div class="footer-icon-container">
-                    <img v-if="item.image_url" :src="getConfigImageUrl(item.image_url)" alt="config image" class="config-image" />
+                    <img
+                      v-if="item.image_url"
+                      :src="getConfigImageUrl(item.image_url)"
+                      alt="config image"
+                      class="config-image"
+                    />
                     <SvgIcon v-else local-icon="defaultdevice" class="config-image" />
                   </div>
                 </template>

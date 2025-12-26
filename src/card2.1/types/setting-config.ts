@@ -41,7 +41,7 @@ export enum SettingControlType {
 /**
  * 设置项配置接口
  * 对应组件配置界面的每个设置项，用于生成动态配置表单
- * 
+ *
  * @template T - 设置项值的类型
  */
 export interface Setting<T = unknown> {
@@ -331,7 +331,7 @@ export function createSetting(type: string, label: string, field: string, option
 /**
  * 创建自定义配置的辅助函数
  * 支持多种调用方式以保持向后兼容性
- * 
+ *
  * @template T - 自定义配置对象的类型
  * @param typeOrCustomize - 组件类型或自定义配置对象
  * @param customize - 自定义配置对象（当第一个参数是类型时）
@@ -360,14 +360,14 @@ export function createCustomConfig<T extends Record<string, unknown>>(
     // 第二种方式：单一配置对象（向后兼容）
     const config = typeOrCustomize as T & { type?: string }
     const { type, ...customizeObj } = config
-    
+
     if (!type) {
       throw new Error('配置对象必须包含 type 字段')
     }
-    
+
     return {
       type,
-      root: { transform: customize as any || transform },
+      root: { transform: (customize as any) || transform },
       customize: customizeObj as T
     }
   }

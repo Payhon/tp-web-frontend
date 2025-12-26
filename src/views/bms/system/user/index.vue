@@ -87,7 +87,9 @@ function createColumns(): DataTableColumns<any> {
       key: 'status',
       title: '状态',
       minWidth: 100,
-      render: row => <NTag type={row.status === 'N' ? 'success' : 'warning'}>{row.status === 'N' ? '启用' : '禁用'}</NTag>
+      render: row => (
+        <NTag type={row.status === 'N' ? 'success' : 'warning'}>{row.status === 'N' ? '启用' : '禁用'}</NTag>
+      )
     },
     { key: 'created_at', title: '创建时间', minWidth: 160, render: row => String(row.created_at || '--') },
     {
@@ -124,7 +126,10 @@ const apiGetUserList = async (params: any) => {
   return { res, params }
 }
 
-const { data, loading, filteredColumns, pagination, getData, updateSearchParams } = useTable<any, typeof apiGetUserList>({
+const { data, loading, filteredColumns, pagination, getData, updateSearchParams } = useTable<
+  any,
+  typeof apiGetUserList
+>({
   apiFn: apiGetUserList,
   apiParams: {
     page: 1,
@@ -307,7 +312,13 @@ getData()
 <template>
   <div class="flex-vertical-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
     <NCard title="账号管理" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
-      <NForm inline :model="searchForm" label-placement="left" label-width="auto" class="mb-4 flex flex-wrap gap-4 items-end">
+      <NForm
+        inline
+        :model="searchForm"
+        label-placement="left"
+        label-width="auto"
+        class="mb-4 flex flex-wrap gap-4 items-end"
+      >
         <NFormItem label="手机号">
           <NInput v-model:value="searchForm.phone_number" placeholder="手机号" style="width: 200px" clearable />
         </NFormItem>
@@ -342,7 +353,12 @@ getData()
       />
     </NCard>
 
-    <NModal v-model:show="modalVisible" preset="card" :title="modalType === 'create' ? '新增账号' : '编辑账号'" style="width: 640px">
+    <NModal
+      v-model:show="modalVisible"
+      preset="card"
+      :title="modalType === 'create' ? '新增账号' : '编辑账号'"
+      style="width: 640px"
+    >
       <NForm label-placement="left" label-width="120" :model="form">
         <NFormItem label="账号类型" required>
           <NSelect
@@ -400,4 +416,3 @@ getData()
   height: 100%;
 }
 </style>
-

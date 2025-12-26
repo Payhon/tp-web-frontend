@@ -6,13 +6,9 @@
       <div class="tool-group">
         <n-tooltip trigger="hover" placement="bottom">
           <template #trigger>
-            <button
-              class="tool-button"
-              :class="{ active: currentTool === 'select' }"
-              @click="setTool('select')"
-            >
+            <button class="tool-button" :class="{ active: currentTool === 'select' }" @click="setTool('select')">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="m3 3 7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/>
+                <path d="m3 3 7.07 16.97 2.51-7.39 7.39-2.51L3 3z" />
               </svg>
             </button>
           </template>
@@ -21,16 +17,12 @@
 
         <n-tooltip trigger="hover" placement="bottom">
           <template #trigger>
-            <button
-              class="tool-button"
-              :class="{ active: currentTool === 'hand' }"
-              @click="setTool('hand')"
-            >
+            <button class="tool-button" :class="{ active: currentTool === 'hand' }" @click="setTool('hand')">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M18 11V6a2 2 0 0 0-4 0v5"/>
-                <path d="M14 10V4a2 2 0 0 0-4 0v2"/>
-                <path d="M10 10.5V6a2 2 0 0 0-4 0v11a2 2 0 0 0 2 2h2"/>
-                <path d="m7 15-1.76-1.76a2 2 0 0 0-2.83 2.83l3.6 3.6a7.5 7.5 0 0 0 10.6 0L19 18"/>
+                <path d="M18 11V6a2 2 0 0 0-4 0v5" />
+                <path d="M14 10V4a2 2 0 0 0-4 0v2" />
+                <path d="M10 10.5V6a2 2 0 0 0-4 0v11a2 2 0 0 0 2 2h2" />
+                <path d="m7 15-1.76-1.76a2 2 0 0 0-2.83 2.83l3.6 3.6a7.5 7.5 0 0 0 10.6 0L19 18" />
               </svg>
             </button>
           </template>
@@ -44,13 +36,9 @@
       <div class="tool-group">
         <n-tooltip trigger="hover" placement="bottom">
           <template #trigger>
-            <button
-              class="tool-button"
-              :class="{ active: currentTool === 'rectangle' }"
-              @click="setTool('rectangle')"
-            >
+            <button class="tool-button" :class="{ active: currentTool === 'rectangle' }" @click="setTool('rectangle')">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
               </svg>
             </button>
           </template>
@@ -59,13 +47,9 @@
 
         <n-tooltip trigger="hover" placement="bottom">
           <template #trigger>
-            <button
-              class="tool-button"
-              :class="{ active: currentTool === 'diamond' }"
-              @click="setTool('diamond')"
-            >
+            <button class="tool-button" :class="{ active: currentTool === 'diamond' }" @click="setTool('diamond')">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polygon points="12,2 22,12 12,22 2,12"/>
+                <polygon points="12,2 22,12 12,22 2,12" />
               </svg>
             </button>
           </template>
@@ -74,13 +58,9 @@
 
         <n-tooltip trigger="hover" placement="bottom">
           <template #trigger>
-            <button
-              class="tool-button"
-              :class="{ active: currentTool === 'ellipse' }"
-              @click="setTool('ellipse')"
-            >
+            <button class="tool-button" :class="{ active: currentTool === 'ellipse' }" @click="setTool('ellipse')">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/>
+                <circle cx="12" cy="12" r="10" />
               </svg>
             </button>
           </template>
@@ -94,14 +74,10 @@
       <div class="tool-group">
         <n-tooltip trigger="hover" placement="bottom">
           <template #trigger>
-            <button
-              class="tool-button"
-              :class="{ active: currentTool === 'arrow' }"
-              @click="setTool('arrow')"
-            >
+            <button class="tool-button" :class="{ active: currentTool === 'arrow' }" @click="setTool('arrow')">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="5" y1="12" x2="19" y2="12"/>
-                <polyline points="12,5 19,12 12,19"/>
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12,5 19,12 12,19" />
               </svg>
             </button>
           </template>
@@ -110,13 +86,9 @@
 
         <n-tooltip trigger="hover" placement="bottom">
           <template #trigger>
-            <button
-              class="tool-button"
-              :class="{ active: currentTool === 'line' }"
-              @click="setTool('line')"
-            >
+            <button class="tool-button" :class="{ active: currentTool === 'line' }" @click="setTool('line')">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="5" y1="12" x2="19" y2="12"/>
+                <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
             </button>
           </template>
@@ -130,14 +102,10 @@
       <div class="tool-group">
         <n-tooltip trigger="hover" placement="bottom">
           <template #trigger>
-            <button
-              class="tool-button"
-              :class="{ active: currentTool === 'pencil' }"
-              @click="setTool('pencil')"
-            >
+            <button class="tool-button" :class="{ active: currentTool === 'pencil' }" @click="setTool('pencil')">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="m18 2 4 4-14 14H4v-4L18 2z"/>
-                <path d="m13.5 6.5 4 4"/>
+                <path d="m18 2 4 4-14 14H4v-4L18 2z" />
+                <path d="m13.5 6.5 4 4" />
               </svg>
             </button>
           </template>
@@ -146,15 +114,11 @@
 
         <n-tooltip trigger="hover" placement="bottom">
           <template #trigger>
-            <button
-              class="tool-button"
-              :class="{ active: currentTool === 'text' }"
-              @click="setTool('text')"
-            >
+            <button class="tool-button" :class="{ active: currentTool === 'text' }" @click="setTool('text')">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="4,7 4,4 20,4 20,7"/>
-                <line x1="9" y1="20" x2="15" y2="20"/>
-                <line x1="12" y1="4" x2="12" y2="20"/>
+                <polyline points="4,7 4,4 20,4 20,7" />
+                <line x1="9" y1="20" x2="15" y2="20" />
+                <line x1="12" y1="4" x2="12" y2="20" />
               </svg>
             </button>
           </template>
@@ -168,15 +132,11 @@
       <div class="tool-group">
         <n-tooltip trigger="hover" placement="bottom">
           <template #trigger>
-            <button
-              class="tool-button"
-              :class="{ active: currentTool === 'image' }"
-              @click="setTool('image')"
-            >
+            <button class="tool-button" :class="{ active: currentTool === 'image' }" @click="setTool('image')">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                <circle cx="9" cy="9" r="2"/>
-                <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                <circle cx="9" cy="9" r="2" />
+                <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
               </svg>
             </button>
           </template>
@@ -185,15 +145,11 @@
 
         <n-tooltip trigger="hover" placement="bottom">
           <template #trigger>
-            <button
-              class="tool-button"
-              :class="{ active: currentTool === 'eraser' }"
-              @click="setTool('eraser')"
-            >
+            <button class="tool-button" :class="{ active: currentTool === 'eraser' }" @click="setTool('eraser')">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/>
-                <path d="M22 21H7"/>
-                <path d="m5 11 9 9"/>
+                <path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21" />
+                <path d="M22 21H7" />
+                <path d="m5 11 9 9" />
               </svg>
             </button>
           </template>
@@ -203,18 +159,14 @@
     </div>
 
     <!-- 属性工具栏 - 浮动在主工具栏下方 -->
-    <div class="property-toolbar" v-if="showPropertyToolbar">
+    <div v-if="showPropertyToolbar" class="property-toolbar">
       <!-- 笔画样式 -->
       <div class="property-group">
         <span class="property-label">描边</span>
         <div class="stroke-style-buttons">
-          <button
-            class="property-button"
-            :class="{ active: strokeStyle === 'solid' }"
-            @click="setStrokeStyle('solid')"
-          >
+          <button class="property-button" :class="{ active: strokeStyle === 'solid' }" @click="setStrokeStyle('solid')">
             <svg width="20" height="4" viewBox="0 0 20 4">
-              <line x1="0" y1="2" x2="20" y2="2" stroke="currentColor" stroke-width="2"/>
+              <line x1="0" y1="2" x2="20" y2="2" stroke="currentColor" stroke-width="2" />
             </svg>
           </button>
           <button
@@ -223,7 +175,7 @@
             @click="setStrokeStyle('dashed')"
           >
             <svg width="20" height="4" viewBox="0 0 20 4">
-              <line x1="0" y1="2" x2="20" y2="2" stroke="currentColor" stroke-width="2" stroke-dasharray="4,2"/>
+              <line x1="0" y1="2" x2="20" y2="2" stroke="currentColor" stroke-width="2" stroke-dasharray="4,2" />
             </svg>
           </button>
           <button
@@ -232,7 +184,7 @@
             @click="setStrokeStyle('dotted')"
           >
             <svg width="20" height="4" viewBox="0 0 20 4">
-              <line x1="0" y1="2" x2="20" y2="2" stroke="currentColor" stroke-width="2" stroke-dasharray="1,2"/>
+              <line x1="0" y1="2" x2="20" y2="2" stroke="currentColor" stroke-width="2" stroke-dasharray="1,2" />
             </svg>
           </button>
         </div>
@@ -250,7 +202,7 @@
             @click="setFillStyle('none')"
           >
             <svg width="16" height="16" viewBox="0 0 16 16">
-              <rect x="2" y="2" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1"/>
+              <rect x="2" y="2" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1" />
             </svg>
           </button>
           <button
@@ -259,7 +211,7 @@
             @click="setFillStyle('solid')"
           >
             <svg width="16" height="16" viewBox="0 0 16 16">
-              <rect x="2" y="2" width="12" height="12" fill="currentColor"/>
+              <rect x="2" y="2" width="12" height="12" fill="currentColor" />
             </svg>
           </button>
           <button
@@ -268,13 +220,13 @@
             @click="setFillStyle('hachure')"
           >
             <svg width="16" height="16" viewBox="0 0 16 16">
-              <rect x="2" y="2" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1"/>
+              <rect x="2" y="2" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1" />
               <g stroke="currentColor" stroke-width="0.5">
-                <line x1="3" y1="3" x2="13" y2="13"/>
-                <line x1="3" y1="6" x2="13" y2="16"/>
-                <line x1="3" y1="9" x2="10" y2="16"/>
-                <line x1="6" y1="3" x2="13" y2="10"/>
-                <line x1="9" y1="3" x2="13" y2="7"/>
+                <line x1="3" y1="3" x2="13" y2="13" />
+                <line x1="3" y1="6" x2="13" y2="16" />
+                <line x1="3" y1="9" x2="10" y2="16" />
+                <line x1="6" y1="3" x2="13" y2="10" />
+                <line x1="9" y1="3" x2="13" y2="7" />
               </g>
             </svg>
           </button>
@@ -287,22 +239,14 @@
       <div class="property-group">
         <span class="property-label">粗细</span>
         <div class="stroke-width-buttons">
-          <button
-            class="property-button"
-            :class="{ active: strokeWidth === 'thin' }"
-            @click="setStrokeWidth('thin')"
-          >
+          <button class="property-button" :class="{ active: strokeWidth === 'thin' }" @click="setStrokeWidth('thin')">
             <svg width="20" height="4" viewBox="0 0 20 4">
-              <line x1="0" y1="2" x2="20" y2="2" stroke="currentColor" stroke-width="1"/>
+              <line x1="0" y1="2" x2="20" y2="2" stroke="currentColor" stroke-width="1" />
             </svg>
           </button>
-          <button
-            class="property-button"
-            :class="{ active: strokeWidth === 'bold' }"
-            @click="setStrokeWidth('bold')"
-          >
+          <button class="property-button" :class="{ active: strokeWidth === 'bold' }" @click="setStrokeWidth('bold')">
             <svg width="20" height="4" viewBox="0 0 20 4">
-              <line x1="0" y1="2" x2="20" y2="2" stroke="currentColor" stroke-width="2"/>
+              <line x1="0" y1="2" x2="20" y2="2" stroke="currentColor" stroke-width="2" />
             </svg>
           </button>
           <button
@@ -311,7 +255,7 @@
             @click="setStrokeWidth('extra-bold')"
           >
             <svg width="20" height="4" viewBox="0 0 20 4">
-              <line x1="0" y1="2" x2="20" y2="2" stroke="currentColor" stroke-width="3"/>
+              <line x1="0" y1="2" x2="20" y2="2" stroke="currentColor" stroke-width="3" />
             </svg>
           </button>
         </div>
@@ -327,7 +271,7 @@
           :min="0"
           :max="100"
           :step="10"
-          style="width: 80px;"
+          style="width: 80px"
           size="small"
           @update:value="setOpacity"
         />
@@ -339,10 +283,10 @@
     <div class="action-toolbar">
       <n-tooltip trigger="hover" placement="left">
         <template #trigger>
-          <button class="action-button" @click="undo" :disabled="!canUndo">
+          <button class="action-button" :disabled="!canUndo" @click="undo">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 7v6h6"/>
-              <path d="m21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>
+              <path d="M3 7v6h6" />
+              <path d="m21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
             </svg>
           </button>
         </template>
@@ -351,9 +295,9 @@
 
       <n-tooltip trigger="hover" placement="left">
         <template #trigger>
-          <button class="action-button" @click="redo" :disabled="!canRedo">
+          <button class="action-button" :disabled="!canRedo" @click="redo">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="m21 7-6-6v6h-6a9 9 0 0 0 0 18h3"/>
+              <path d="m21 7-6-6v6h-6a9 9 0 0 0 0 18h3" />
             </svg>
           </button>
         </template>
@@ -366,10 +310,10 @@
         <template #trigger>
           <button class="action-button" @click="zoomIn">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8"/>
-              <path d="m21 21-4.35-4.35"/>
-              <line x1="11" y1="8" x2="11" y2="14"/>
-              <line x1="8" y1="11" x2="14" y2="11"/>
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
+              <line x1="11" y1="8" x2="11" y2="14" />
+              <line x1="8" y1="11" x2="14" y2="11" />
             </svg>
           </button>
         </template>
@@ -380,9 +324,9 @@
         <template #trigger>
           <button class="action-button" @click="zoomOut">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8"/>
-              <path d="m21 21-4.35-4.35"/>
-              <line x1="8" y1="11" x2="14" y2="11"/>
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
+              <line x1="8" y1="11" x2="14" y2="11" />
             </svg>
           </button>
         </template>
@@ -393,9 +337,9 @@
         <template #trigger>
           <button class="action-button" @click="resetZoom">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8"/>
-              <path d="m21 21-4.35-4.35"/>
-              <rect x="8" y="8" width="6" height="6" rx="1"/>
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
+              <rect x="8" y="8" width="6" height="6" rx="1" />
             </svg>
           </button>
         </template>
@@ -443,8 +387,8 @@ const emit = defineEmits<{
   'fill-style-change': [style: string]
   'stroke-width-change': [width: string]
   'opacity-change': [opacity: number]
-  'undo': []
-  'redo': []
+  undo: []
+  redo: []
   'zoom-in': []
   'zoom-out': []
   'reset-zoom': []
@@ -526,7 +470,7 @@ function resetZoom() {
 }
 
 // 监听工具变化，自动调整属性面板显示
-watch(currentTool, (newTool) => {
+watch(currentTool, newTool => {
   // 不同工具可能有不同的默认属性
   if (newTool === 'text') {
     fillStyle.value = 'none'

@@ -4,39 +4,23 @@
     <n-card title="基础配置" size="small">
       <n-space vertical :size="12">
         <n-form-item label="图表标题">
-          <n-input
-            v-model:value="localConfig.title"
-            placeholder="数据趋势"
-            @update:value="handleConfigChange"
-          />
+          <n-input v-model:value="localConfig.title" placeholder="数据趋势" @update:value="handleConfigChange" />
         </n-form-item>
 
         <n-form-item label="显示图例">
-          <n-switch
-            v-model:value="localConfig.showLegend"
-            @update:value="handleConfigChange"
-          />
+          <n-switch v-model:value="localConfig.showLegend" @update:value="handleConfigChange" />
         </n-form-item>
 
         <n-form-item label="平滑曲线">
-          <n-switch
-            v-model:value="localConfig.smooth"
-            @update:value="handleConfigChange"
-          />
+          <n-switch v-model:value="localConfig.smooth" @update:value="handleConfigChange" />
         </n-form-item>
 
         <n-form-item label="显示面积">
-          <n-switch
-            v-model:value="localConfig.showArea"
-            @update:value="handleConfigChange"
-          />
+          <n-switch v-model:value="localConfig.showArea" @update:value="handleConfigChange" />
         </n-form-item>
 
         <n-form-item label="显示网格">
-          <n-switch
-            v-model:value="localConfig.showGrid"
-            @update:value="handleConfigChange"
-          />
+          <n-switch v-model:value="localConfig.showGrid" @update:value="handleConfigChange" />
         </n-form-item>
       </n-space>
     </n-card>
@@ -45,19 +29,11 @@
     <n-card title="坐标轴配置" size="small">
       <n-space vertical :size="12">
         <n-form-item label="X轴标签">
-          <n-input
-            v-model:value="localConfig.xAxisLabel"
-            placeholder="时间"
-            @update:value="handleConfigChange"
-          />
+          <n-input v-model:value="localConfig.xAxisLabel" placeholder="时间" @update:value="handleConfigChange" />
         </n-form-item>
 
         <n-form-item label="Y轴标签">
-          <n-input
-            v-model:value="localConfig.yAxisLabel"
-            placeholder="数值"
-            @update:value="handleConfigChange"
-          />
+          <n-input v-model:value="localConfig.yAxisLabel" placeholder="数值" @update:value="handleConfigChange" />
         </n-form-item>
       </n-space>
     </n-card>
@@ -74,18 +50,11 @@
         </n-form-item>
 
         <n-form-item label="面积颜色">
-          <n-color-picker
-            v-model:value="localConfig.areaColor"
-            :show-alpha="true"
-            @update:value="handleConfigChange"
-          />
+          <n-color-picker v-model:value="localConfig.areaColor" :show-alpha="true" @update:value="handleConfigChange" />
         </n-form-item>
 
         <n-form-item label="显示数据点">
-          <n-switch
-            v-model:value="localConfig.showDataPoints"
-            @update:value="handleConfigChange"
-          />
+          <n-switch v-model:value="localConfig.showDataPoints" @update:value="handleConfigChange" />
         </n-form-item>
 
         <n-form-item v-if="localConfig.showDataPoints" label="数据点大小">
@@ -144,7 +113,7 @@ const handleConfigChange = () => {
 // 监听外部配置变化
 watch(
   () => props.config,
-  (newConfig) => {
+  newConfig => {
     localConfig.value = { ...newConfig }
   },
   { deep: true }

@@ -1,17 +1,13 @@
 <template>
   <div class="digit-indicator-setting">
     <n-form :model="config" label-placement="left" label-width="auto" size="small">
-
       <!-- 图标样式 -->
       <n-divider title-placement="left">
         <span class="section-title">📱 图标样式</span>
       </n-divider>
 
       <n-form-item label="">
-        <IconSelector
-          :default-icon="config.iconName"
-          @icon-selected="handleIconSelect"
-        />
+        <IconSelector :default-icon="config.iconName" @icon-selected="handleIconSelect" />
       </n-form-item>
 
       <!-- 风格套装选择 -->
@@ -20,31 +16,17 @@
       </n-divider>
 
       <n-form-item label="">
-        <n-space vertical style="width: 100%;">
+        <n-space vertical style="width: 100%">
           <n-grid :cols="2" :x-gap="8" :y-gap="8">
             <n-grid-item v-for="preset in stylePresets" :key="preset.name">
-              <n-card
-                size="small"
-                hoverable
-                class="preset-card"
-                @click="applyPreset(preset)"
-              >
+              <n-card size="small" hoverable class="preset-card" @click="applyPreset(preset)">
                 <div class="preset-content">
                   <div class="preset-name">{{ preset.name }}</div>
                   <div class="preset-description">{{ preset.description }}</div>
                   <div class="preset-preview">
-                    <div
-                      class="color-dot icon-color"
-                      :style="{ backgroundColor: preset.value.iconColor }"
-                    ></div>
-                    <div
-                      class="color-dot value-color"
-                      :style="{ backgroundColor: preset.value.valueColor }"
-                    ></div>
-                    <div
-                      class="color-dot unit-color"
-                      :style="{ backgroundColor: preset.value.unitColor }"
-                    ></div>
+                    <div class="color-dot icon-color" :style="{ backgroundColor: preset.value.iconColor }"></div>
+                    <div class="color-dot value-color" :style="{ backgroundColor: preset.value.valueColor }"></div>
+                    <div class="color-dot unit-color" :style="{ backgroundColor: preset.value.unitColor }"></div>
                   </div>
                 </div>
               </n-card>
@@ -54,8 +36,8 @@
           <n-button
             size="small"
             type="tertiary"
+            style="align-self: flex-start; margin-top: 8px"
             @click="openJsonEditor"
-            style="align-self: flex-start; margin-top: 8px;"
           >
             🔧 高级定制 (JSON)
           </n-button>
@@ -75,19 +57,14 @@
       </n-form-item>
 
       <!-- JSON编辑器模态框 -->
-      <n-modal
-        v-model:show="showJsonEditor"
-        preset="card"
-        title="高级配置 - JSON编辑"
-        style="width: 600px;"
-      >
+      <n-modal v-model:show="showJsonEditor" preset="card" title="高级配置 - JSON编辑" style="width: 600px">
         <n-space vertical>
           <n-input
             v-model:value="jsonConfigText"
             type="textarea"
             :rows="15"
             placeholder="编辑配置JSON..."
-            style="font-family: monospace; font-size: 12px;"
+            style="font-family: monospace; font-size: 12px"
           />
           <n-space justify="end">
             <n-button @click="showJsonEditor = false">取消</n-button>
@@ -106,19 +83,7 @@
  */
 
 import { ref, watch, nextTick } from 'vue'
-import {
-  NForm,
-  NFormItem,
-  NDivider,
-  NSpace,
-  NButton,
-  NModal,
-  NInput,
-  NCard,
-  NGrid,
-  NGridItem,
-  NSwitch
-} from 'naive-ui'
+import { NForm, NFormItem, NDivider, NSpace, NButton, NModal, NInput, NCard, NGrid, NGridItem, NSwitch } from 'naive-ui'
 import IconSelector from '@/components/common/icon-selector.vue'
 import type { DigitIndicatorCustomize } from './settingConfig'
 import { customConfig } from './settingConfig'
@@ -306,7 +271,7 @@ const stylePresets = [
 ]
 
 // 应用预制风格 - 保留用户的悬停效果设置
-const applyPreset = (preset: typeof stylePresets[0]) => {
+const applyPreset = (preset: (typeof stylePresets)[0]) => {
   const currentHoverSetting = config.value.enableHover // 保存当前悬停设置
   Object.assign(config.value, preset.value)
   config.value.enableHover = currentHoverSetting // 恢复悬停设置
@@ -339,7 +304,7 @@ const applyJsonConfig = () => {
 // 监听配置变化并向上传递
 watch(
   config,
-  (newConfig) => {
+  newConfig => {
     if (!props.readonly && !isUpdatingFromProps.value) {
       emit('update:modelValue', { ...newConfig })
       emit('change', { ...newConfig })
@@ -351,7 +316,7 @@ watch(
 // 监听外部配置变化
 watch(
   () => props.modelValue,
-  (newValue) => {
+  newValue => {
     if (newValue && !isUpdatingFromProps.value) {
       isUpdatingFromProps.value = true
       try {

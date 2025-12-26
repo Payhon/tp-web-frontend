@@ -1,7 +1,11 @@
 <template>
-  <div class="h-full bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden">
+  <div
+    class="h-full bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden"
+  >
     <!-- 卡片标题栏 -->
-    <div class="flex items-center p-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-gray-700 dark:to-gray-800">
+    <div
+      class="flex items-center p-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-gray-700 dark:to-gray-800"
+    >
       <div class="flex items-center space-x-3">
         <div class="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
           <Icon icon="mdi:history" class="text-lg text-purple-600 dark:text-purple-400" />
@@ -24,7 +28,10 @@
           >
             <!-- 图标 -->
             <div class="flex-shrink-0 mr-3">
-              <div v-if="route.icon" class="p-1.5 bg-blue-100 dark:bg-blue-900 rounded-md group-hover:bg-blue-200 dark:group-hover:bg-blue-800 transition-colors">
+              <div
+                v-if="route.icon"
+                class="p-1.5 bg-blue-100 dark:bg-blue-900 rounded-md group-hover:bg-blue-200 dark:group-hover:bg-blue-800 transition-colors"
+              >
                 <SvgIcon :icon="route.icon" class="w-4 h-4 text-blue-600 dark:text-blue-400" />
               </div>
               <div v-else class="p-1.5 bg-gray-100 dark:bg-gray-600 rounded-md">
@@ -38,7 +45,12 @@
                 {{ getRouteDisplayTitle(route) }}
               </div>
               <div class="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
-                {{ route.path }}{{ route.query && Object.keys(route.query).length ? '?' + new URLSearchParams(route.query as any).toString() : '' }}
+                {{ route.path
+                }}{{
+                  route.query && Object.keys(route.query).length
+                    ? '?' + new URLSearchParams(route.query as any).toString()
+                    : ''
+                }}
               </div>
             </div>
 
@@ -61,9 +73,7 @@
         <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">
           {{ $t('card.recentlyVisited.noRecords') }}
         </div>
-        <div class="text-xs text-gray-400 dark:text-gray-500">
-          开始浏览页面以查看访问记录
-        </div>
+        <div class="text-xs text-gray-400 dark:text-gray-500">开始浏览页面以查看访问记录</div>
       </div>
     </div>
   </div>

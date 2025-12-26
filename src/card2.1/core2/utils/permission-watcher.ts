@@ -62,7 +62,6 @@ class PermissionWatcher {
     this.updateCurrentAuthority()
 
     if (oldAuthority !== this.currentAuthority) {
-
       // 通知所有监听器
       this.callbacks.forEach(callback => {
         try {
@@ -114,7 +113,7 @@ export function triggerPermissionCheck() {
 export function setupStorageListener() {
   // 监听同一标签页内的 localStorage 变化
   const originalSetItem = localStorage.setItem
-  localStorage.setItem = function(key: string, value: string) {
+  localStorage.setItem = function (key: string, value: string) {
     const oldValue = localStorage.getItem(key)
     originalSetItem.call(this, key, value)
 

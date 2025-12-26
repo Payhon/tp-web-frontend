@@ -29,7 +29,6 @@
           :multi-data-source-config="props.multiDataSourceConfigStore?.[item.raw.id]"
           class="grid-node-wrapper"
           :event-stop-propagation="false"
-
           @node-click="() => handleNodeSelect(item.i)"
           @node-contextmenu="(nodeId, event) => handleContextMenu(event, nodeId)"
           @title-update="handleTitleUpdate"
@@ -62,23 +61,26 @@ import { ContextMenu } from '@/components/visual-editor/renderers/base'
 import type { VisualEditorWidget, GraphData } from '@/components/visual-editor/types'
 import { smartDeepClone } from '@/utils/deep-clone'
 
-const props = withDefaults(defineProps<{
-  graphData: any
-  readonly?: boolean
-  staticGrid?: boolean
-  // 将 any 改为 Partial<GridLayoutPlusConfig>，避免不必要的 any
-  gridConfig?: Partial<GridLayoutPlusConfig>
-  // 新增：控制是否显示标题
-  showWidgetTitles?: boolean
-  // 新增：可配置主键字段名，默认 'i'
-  idKey?: string
-}>(), {
-  readonly: false,
-  staticGrid: false,
-  gridConfig: () => ({}),
-  showWidgetTitles: false,
-  idKey: 'i'
-})
+const props = withDefaults(
+  defineProps<{
+    graphData: any
+    readonly?: boolean
+    staticGrid?: boolean
+    // 将 any 改为 Partial<GridLayoutPlusConfig>，避免不必要的 any
+    gridConfig?: Partial<GridLayoutPlusConfig>
+    // 新增：控制是否显示标题
+    showWidgetTitles?: boolean
+    // 新增：可配置主键字段名，默认 'i'
+    idKey?: string
+  }>(),
+  {
+    readonly: false,
+    staticGrid: false,
+    gridConfig: () => ({}),
+    showWidgetTitles: false,
+    idKey: 'i'
+  }
+)
 const emit = defineEmits(['node-select', 'request-settings'])
 
 const router = useRouter()
@@ -150,13 +152,15 @@ const gridConfig = computed<GridLayoutPlusConfig>(() => {
     useStyleCursor: true,
     restoreOnDrag: false,
     // 🔥 合并外部配置，但排除间距相关配置
-    ...(props.gridConfig ? {
-      colNum: props.gridConfig.colNum,
-      rowHeight: props.gridConfig.rowHeight,
-      isDraggable: props.gridConfig.isDraggable,
-      isResizable: props.gridConfig.isResizable,
-      staticGrid: props.gridConfig.staticGrid
-    } : {})
+    ...(props.gridConfig
+      ? {
+          colNum: props.gridConfig.colNum,
+          rowHeight: props.gridConfig.rowHeight,
+          isDraggable: props.gridConfig.isDraggable,
+          isResizable: props.gridConfig.isResizable,
+          staticGrid: props.gridConfig.staticGrid
+        }
+      : {})
   }
 
   // 确保开关配置正确应用
@@ -192,8 +196,8 @@ const nodesToLayout = (nodes: VisualEditorWidget[]): ExtendedGridLayoutPlusItem[
     const isLocked = (node as any)._isLocked === true
 
     // ✅ 如果节点被锁定，禁止拖动和调整大小
-    const allowDrag = !isReadOnly.value && !effectiveStatic && !isLocked && (props.gridConfig?.isDraggable !== false)
-    const allowResize = !isReadOnly.value && !effectiveStatic && !isLocked && (props.gridConfig?.isResizable !== false)
+    const allowDrag = !isReadOnly.value && !effectiveStatic && !isLocked && props.gridConfig?.isDraggable !== false
+    const allowResize = !isReadOnly.value && !effectiveStatic && !isLocked && props.gridConfig?.isResizable !== false
 
     const item = {
       i: node.id,
@@ -234,8 +238,8 @@ watch(
     // 🔥 修复：使用与 nodesToLayout 相同的逻辑
     // 只有在明确禁用（值为 false）时才禁用交互，undefined 时默认允许
     const effectiveStatic = Boolean(staticGridOverride || configStatic)
-    const allowDrag = !props.readonly && !effectiveStatic && (configDraggable !== false)
-    const allowResize = !props.readonly && !effectiveStatic && (configResizable !== false)
+    const allowDrag = !props.readonly && !effectiveStatic && configDraggable !== false
+    const allowResize = !props.readonly && !effectiveStatic && configResizable !== false
 
     layout.value = layout.value.map(item => ({
       ...item,

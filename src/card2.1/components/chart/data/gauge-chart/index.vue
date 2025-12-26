@@ -1,5 +1,5 @@
 <template>
-  <div class="gauge-chart-container" ref="chartContainerRef">
+  <div ref="chartContainerRef" class="gauge-chart-container">
     <div ref="chartRef" class="gauge-chart"></div>
   </div>
 </template>
@@ -220,14 +220,11 @@ watch(
 )
 
 // 监听显示值变化
-watch(
-  [displayValue, displayMin, displayMax, displayTitle],
-  () => {
-    nextTick(() => {
-      updateChart()
-    })
-  }
-)
+watch([displayValue, displayMin, displayMax, displayTitle], () => {
+  nextTick(() => {
+    updateChart()
+  })
+})
 
 // 组件挂载
 onMounted(() => {

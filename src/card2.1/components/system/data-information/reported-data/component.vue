@@ -1,7 +1,11 @@
 <template>
-  <div class="h-full bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden">
+  <div
+    class="h-full bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden"
+  >
     <!-- 卡片标题栏 - 紧凑设计 -->
-    <div class="flex justify-between items-center px-3 py-2 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-gray-700 dark:to-gray-800">
+    <div
+      class="flex justify-between items-center px-3 py-2 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-gray-700 dark:to-gray-800"
+    >
       <div class="flex items-center space-x-2">
         <div class="p-1.5 bg-green-100 dark:bg-green-900 rounded-md">
           <Icon icon="mdi:database-arrow-up" class="text-sm text-green-600 dark:text-green-400" />
@@ -21,11 +25,7 @@
         @click="toggleRefresh"
       >
         <template #icon>
-          <Icon
-            icon="mdi:refresh"
-            class="text-xs"
-            :class="{ 'animate-spin': isRefreshing }"
-          />
+          <Icon icon="mdi:refresh" class="text-xs" :class="{ 'animate-spin': isRefreshing }" />
         </template>
       </n-button>
     </div>
@@ -99,7 +99,9 @@
                     class="border border-gray-200 dark:border-gray-600 rounded-md overflow-hidden"
                   >
                     <template #default="{ item: pair }">
-                      <div class="grid grid-cols-2 gap-2 px-2 py-1.5 text-xs border-b border-gray-100 dark:border-gray-600 last:border-b-0">
+                      <div
+                        class="grid grid-cols-2 gap-2 px-2 py-1.5 text-xs border-b border-gray-100 dark:border-gray-600 last:border-b-0"
+                      >
                         <!-- 左列 -->
                         <div v-if="pair.left" class="space-y-1">
                           <div
@@ -138,7 +140,10 @@
                   </BottomUpInfiniteScroller>
 
                   <!-- 无遥测数据 - 减少内边距 -->
-                  <div v-else class="text-xs text-center py-2 text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-600 rounded-md">
+                  <div
+                    v-else
+                    class="text-xs text-center py-2 text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-600 rounded-md"
+                  >
                     {{ $t('card.reportedData.noTelemetry') }}
                   </div>
                 </div>

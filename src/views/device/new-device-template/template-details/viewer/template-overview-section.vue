@@ -106,9 +106,9 @@ const copyJson = (): void => {
       </div>
       <div class="info-item">
         <span class="label">{{ $t('common.creationTime') }}:</span>
-        <span class="value">{{
-          templateData?.created_at ? new Date(templateData.created_at).toLocaleString() : '--'
-        }}</span>
+        <span class="value">
+          {{ templateData?.created_at ? new Date(templateData.created_at).toLocaleString() : '--' }}
+        </span>
       </div>
       <div v-if="tags.length > 0" class="info-item">
         <span class="label">{{ $t('generate.labels') }}:</span>

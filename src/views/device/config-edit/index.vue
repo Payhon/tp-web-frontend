@@ -176,7 +176,7 @@ const handleSubmit = async () => {
       message.error((error && 'message' in error && error.message) || $t('generate.editFailed'))
       return { error: true }
     })
-    
+
     loading.value = false
 
     if (!res.error) {
@@ -398,7 +398,9 @@ function handleDeviceTypeChange(newValue: string | number) {
           <FormInput v-model:protocol-config="protocol_config" :form-elements="formElements"></FormInput>
         </NFormItem>
         <NFlex justify="flex-start">
-          <NButton type="primary" @click="handleSubmit" :loading="loading">{{ $t('page.login.common.confirm') }}</NButton>
+          <NButton type="primary" :loading="loading" @click="handleSubmit">
+            {{ $t('page.login.common.confirm') }}
+          </NButton>
         </NFlex>
       </NForm>
     </NCard>

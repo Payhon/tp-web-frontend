@@ -1,7 +1,11 @@
 <template>
-  <div class="h-full bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden">
+  <div
+    class="h-full bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden"
+  >
     <!-- 卡片标题栏 -->
-    <div class="flex items-center p-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-gray-700 dark:to-gray-800">
+    <div
+      class="flex items-center p-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-gray-700 dark:to-gray-800"
+    >
       <div class="flex items-center space-x-3">
         <div class="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
           <Icon icon="mdi:account-group" class="text-lg text-purple-600 dark:text-purple-400" />
@@ -17,7 +21,9 @@
       <n-spin :show="loading">
         <div class="h-full flex gap-4">
           <!-- 左侧统计数据 -->
-          <div class="w-1/3 flex flex-col justify-around py-2 flex-shrink-0 border-r border-gray-200 dark:border-gray-700 pr-4 space-y-4">
+          <div
+            class="w-1/3 flex flex-col justify-around py-2 flex-shrink-0 border-r border-gray-200 dark:border-gray-700 pr-4 space-y-4"
+          >
             <!-- 总用户数 -->
             <div class="text-center bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
               <div class="text-xs text-gray-600 dark:text-gray-400 mb-1">
@@ -72,13 +78,7 @@
             </div>
 
             <!-- 图表 -->
-            <v-chart
-              v-else-if="!loading"
-              ref="chartRef"
-              class="w-full h-full"
-              :option="chartOption"
-              autoresize
-            />
+            <v-chart v-else-if="!loading" ref="chartRef" class="w-full h-full" :option="chartOption" autoresize />
           </div>
         </div>
       </n-spin>
@@ -97,26 +97,14 @@ import { NSpin, NNumberAnimation } from 'naive-ui'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { BarChart } from 'echarts/charts'
-import {
-  TitleComponent,
-  TooltipComponent,
-  GridComponent,
-  ToolboxComponent
-} from 'echarts/components'
+import { TitleComponent, TooltipComponent, GridComponent, ToolboxComponent } from 'echarts/components'
 import VChart, { THEME_KEY } from 'vue-echarts'
 import { useThemeStore } from '@/store/modules/theme'
 import { tenant } from '@/service/api/system-data'
 import { $t } from '@/locales'
 
 // ECharts 组件注册
-use([
-  CanvasRenderer,
-  BarChart,
-  TitleComponent,
-  TooltipComponent,
-  GridComponent,
-  ToolboxComponent
-])
+use([CanvasRenderer, BarChart, TitleComponent, TooltipComponent, GridComponent, ToolboxComponent])
 
 const themeStore = useThemeStore()
 const loading = ref(true)

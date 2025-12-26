@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
-import { NModal, NForm, NFormItem, NInput, NInputNumber, NButton, NSpace } from 'naive-ui';
+import { ref, watch, computed } from 'vue'
+import { NModal, NForm, NFormItem, NInput, NInputNumber, NButton, NSpace } from 'naive-ui'
 
 interface Props {
-  visible: boolean;
-  type: 'add' | 'edit';
-  data?: any;
+  visible: boolean
+  type: 'add' | 'edit'
+  data?: any
 }
 
-const props = defineProps<Props>();
-const emit = defineEmits(['update:visible', 'submit']);
+const props = defineProps<Props>()
+const emit = defineEmits(['update:visible', 'submit'])
 
-const formRef = ref();
+const formRef = ref()
 const formData = ref({
   name: '',
   voltage_rated: 0,
@@ -20,23 +20,23 @@ const formData = ref({
   nominal_power: 0,
   warranty_months: 0,
   description: ''
-});
+})
 
 const rules = {
   name: { required: true, message: '请输入型号名称', trigger: 'blur' },
   voltage_rated: { required: true, type: 'number', message: '请输入额定电压', trigger: 'blur' },
   capacity_rated: { required: true, type: 'number', message: '请输入额定容量', trigger: 'blur' },
   cell_count: { required: true, type: 'number', message: '请输入电芯数量', trigger: 'blur' }
-};
+}
 
-const title = computed(() => (props.type === 'add' ? '新增电池型号' : '编辑电池型号'));
+const title = computed(() => (props.type === 'add' ? '新增电池型号' : '编辑电池型号'))
 
 watch(
   () => props.visible,
-  (val) => {
+  val => {
     if (val) {
       if (props.type === 'edit' && props.data) {
-        formData.value = { ...props.data };
+        formData.value = { ...props.data }
       } else {
         formData.value = {
           name: '',
@@ -46,33 +46,27 @@ watch(
           nominal_power: 0,
           warranty_months: 0,
           description: ''
-        };
+        }
       }
     }
   }
-);
+)
 
 const handleClose = () => {
-  emit('update:visible', false);
-};
+  emit('update:visible', false)
+}
 
 const handleSubmit = () => {
   formRef.value?.validate((errors: any) => {
     if (!errors) {
-      emit('submit', formData.value);
+      emit('submit', formData.value)
     }
-  });
-};
+  })
+}
 </script>
 
 <template>
-  <NModal
-    :show="visible"
-    :title="title"
-    preset="card"
-    style="width: 600px"
-    @close="handleClose"
-  >
+  <NModal :show="visible" :title="title" preset="card" style="width: 600px" @close="handleClose">
     <NForm
       ref="formRef"
       :model="formData"
@@ -100,11 +94,7 @@ const handleSubmit = () => {
         <NInputNumber v-model:value="formData.warranty_months" placeholder="请输入质保期" :precision="0" />
       </NFormItem>
       <NFormItem label="描述" path="description">
-        <NInput
-          v-model:value="formData.description"
-          type="textarea"
-          placeholder="请输入描述"
-        />
+        <NInput v-model:value="formData.description" type="textarea" placeholder="请输入描述" />
       </NFormItem>
     </NForm>
     <template #footer>

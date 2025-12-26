@@ -12,7 +12,6 @@ import { rendererManager } from '@/components/visual-editor/renderers/base/Rende
  * 这个函数应该在应用启动时调用
  */
 export function registerAllRenderers(): void {
-
   try {
     // TODO: 暂时注释掉 Canvas 渲染器注册，直到重新实现工厂
     // 注册 Canvas 渲染器
@@ -22,7 +21,7 @@ export function registerAllRenderers(): void {
     //   icon: 'i-material-symbols-grid-view-outline'
     // })
 
-    // 
+    //
 
     // TODO: 注册其他渲染器
     // 注册 GridStack 渲染器
@@ -33,7 +32,6 @@ export function registerAllRenderers(): void {
     // })
 
     const stats = rendererManager.getPerformanceStats()
-
   } catch (error) {
     console.error('❌ [RendererRegistry] 渲染器注册失败:', error)
     throw error

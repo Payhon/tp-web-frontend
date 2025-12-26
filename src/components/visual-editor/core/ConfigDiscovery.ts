@@ -36,9 +36,7 @@ const LEGACY_CONFIG_PATTERNS = [
 ]
 
 // Visual Editor 专用配置组件路径
-const VISUAL_EDITOR_CONFIG_PATTERNS = [
-  './src/components/visual-editor/components/config/*Config.vue'
-]
+const VISUAL_EDITOR_CONFIG_PATTERNS = ['./src/components/visual-editor/components/config/*Config.vue']
 
 // ====== 配置组件元数据 ======
 

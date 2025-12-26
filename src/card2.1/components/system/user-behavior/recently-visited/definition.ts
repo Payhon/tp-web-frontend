@@ -16,7 +16,7 @@ export default {
   dataDriven: false, // 这是一个纯交互性组件，基于localStorage数据提供导航功能，不依赖外部数据源
   interactionCapabilities: {
     // 声明组件支持点击事件和导航功能
-    supportedEvents: ['click', 'navigate'],
+    supportedEvents: ['click', 'navigate']
   },
   permission: '不限'
 } as ComponentDefinition

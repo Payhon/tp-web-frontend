@@ -1,2 +1,2 @@
-import component from './component.vue';
-export default component;
+import component from './component.vue'
+export default component

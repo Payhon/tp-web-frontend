@@ -9,30 +9,18 @@
               v-model:value="localConfig.value"
               :min="0"
               :max="1000"
-              @update:value="handleUpdate"
               placeholder="请输入当前值"
+              @update:value="handleUpdate"
             />
           </n-form-item>
           <n-form-item label="最小值">
-            <n-input-number
-              v-model:value="localConfig.min"
-              @update:value="handleUpdate"
-              placeholder="请输入最小值"
-            />
+            <n-input-number v-model:value="localConfig.min" placeholder="请输入最小值" @update:value="handleUpdate" />
           </n-form-item>
           <n-form-item label="最大值">
-            <n-input-number
-              v-model:value="localConfig.max"
-              @update:value="handleUpdate"
-              placeholder="请输入最大值"
-            />
+            <n-input-number v-model:value="localConfig.max" placeholder="请输入最大值" @update:value="handleUpdate" />
           </n-form-item>
           <n-form-item label="单位">
-            <n-input
-              v-model:value="localConfig.unit"
-              @update:value="handleUpdate"
-              placeholder="如：℃、%、RPM"
-            />
+            <n-input v-model:value="localConfig.unit" placeholder="如：℃、%、RPM" @update:value="handleUpdate" />
           </n-form-item>
         </n-space>
       </n-card>
@@ -41,40 +29,19 @@
       <n-card title="🎨 样式配置" size="small" embedded>
         <n-space vertical :size="12">
           <n-form-item label="标题">
-            <n-input
-              v-model:value="localConfig.title"
-              @update:value="handleUpdate"
-              placeholder="请输入标题"
-            />
+            <n-input v-model:value="localConfig.title" placeholder="请输入标题" @update:value="handleUpdate" />
           </n-form-item>
           <n-form-item label="标题颜色">
-            <n-color-picker
-              v-model:value="localConfig.titleColor"
-              @update:value="handleUpdate"
-              :show-alpha="false"
-            />
+            <n-color-picker v-model:value="localConfig.titleColor" :show-alpha="false" @update:value="handleUpdate" />
           </n-form-item>
           <n-form-item label="数值颜色">
-            <n-color-picker
-              v-model:value="localConfig.valueColor"
-              @update:value="handleUpdate"
-              :show-alpha="false"
-            />
+            <n-color-picker v-model:value="localConfig.valueColor" :show-alpha="false" @update:value="handleUpdate" />
           </n-form-item>
           <n-form-item label="仪表盘大小">
-            <n-input
-              v-model:value="localConfig.radius"
-              @update:value="handleUpdate"
-              placeholder="如：75%"
-            />
+            <n-input v-model:value="localConfig.radius" placeholder="如：75%" @update:value="handleUpdate" />
           </n-form-item>
           <n-form-item label="指针厚度">
-            <n-input-number
-              v-model:value="localConfig.thickness"
-              :min="1"
-              :max="50"
-              @update:value="handleUpdate"
-            />
+            <n-input-number v-model:value="localConfig.thickness" :min="1" :max="50" @update:value="handleUpdate" />
           </n-form-item>
         </n-space>
       </n-card>
@@ -102,14 +69,7 @@
  */
 
 import { ref, watch } from 'vue'
-import {
-  NSpace,
-  NCard,
-  NFormItem,
-  NInput,
-  NInputNumber,
-  NColorPicker
-} from 'naive-ui'
+import { NSpace, NCard, NFormItem, NInput, NInputNumber, NColorPicker } from 'naive-ui'
 import type { GaugeChartCustomize } from './settingConfig'
 import { customConfig } from './settingConfig'
 
@@ -144,7 +104,7 @@ const handleUpdate = () => {
  */
 watch(
   () => props.config,
-  (newConfig) => {
+  newConfig => {
     if (newConfig) {
       localConfig.value = { ...customConfig, ...newConfig }
     }

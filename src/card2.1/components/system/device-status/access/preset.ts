@@ -1,4 +1,4 @@
-import type { ComponentPreset } from '@/card2.1/core2';
+import type { ComponentPreset } from '@/card2.1/core2'
 
 /**
  * @description 预设配置
@@ -12,5 +12,5 @@ export default [
     // props: {}, // 由于组件没有可配置的 props，此项为空
     // interaction: {}, // 可以在此预设交互行为，例如点击后跳转到特定页面
     // layout: { w: 2, h: 2 }, // 可以预设组件在画布中的默认大小
-  },
-] as ComponentPreset[];
+  }
+] as ComponentPreset[]

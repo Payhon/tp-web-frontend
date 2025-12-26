@@ -177,11 +177,7 @@ export class InteractionManager {
   /**
    * 执行交互动作
    */
-  private async executeAction(
-    event: Event,
-    context: InteractionContext,
-    action: InteractionAction
-  ): Promise<void> {
+  private async executeAction(event: Event, context: InteractionContext, action: InteractionAction): Promise<void> {
     try {
       // 查找处理器
       const handlers = Array.from(this.handlers.values())
@@ -212,11 +208,7 @@ export class InteractionManager {
   /**
    * 导航处理器
    */
-  private async handleNavigate(
-    event: Event,
-    context: InteractionContext,
-    action: InteractionAction
-  ): Promise<void> {
+  private async handleNavigate(event: Event, context: InteractionContext, action: InteractionAction): Promise<void> {
     if (!action.target) {
       console.warn('[InteractionManager] 导航动作缺少目标路径')
       return
@@ -236,11 +228,7 @@ export class InteractionManager {
   /**
    * 显示消息处理器
    */
-  private async handleShowMessage(
-    event: Event,
-    context: InteractionContext,
-    action: InteractionAction
-  ): Promise<void> {
+  private async handleShowMessage(event: Event, context: InteractionContext, action: InteractionAction): Promise<void> {
     const message = action.message || '交互消息'
 
     // 在实际项目中，这里应该使用消息提示组件
@@ -257,11 +245,7 @@ export class InteractionManager {
   /**
    * 更新数据处理器
    */
-  private async handleUpdateData(
-    event: Event,
-    context: InteractionContext,
-    action: InteractionAction
-  ): Promise<void> {
+  private async handleUpdateData(event: Event, context: InteractionContext, action: InteractionAction): Promise<void> {
     if (!action.data) {
       console.warn('[InteractionManager] 更新数据动作缺少数据')
       return

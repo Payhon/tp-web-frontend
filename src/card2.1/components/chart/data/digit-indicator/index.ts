@@ -106,32 +106,29 @@ const digitIndicatorDefinition: ComponentDefinition = {
   // ===== 交互能力声明 =====
   interactionCapabilities: {
     supportedEvents: ['click', 'hover', 'dataChange'],
-    availableActions: [
-      'navigateToUrl', 'updateComponentData', 'changeVisibility',
-      'showNotification', 'emitEvent'
-    ],
+    availableActions: ['navigateToUrl', 'updateComponentData', 'changeVisibility', 'showNotification', 'emitEvent'],
     watchableProperties: {
-      'value': {
+      value: {
         type: 'string',
         description: '当前显示的数值',
         defaultValue: '45'
       },
-      'unit': {
+      unit: {
         type: 'string',
         description: '数值单位',
         defaultValue: '%'
       },
-      'metricsName': {
+      metricsName: {
         type: 'string',
         description: '指标名称/标题',
         defaultValue: '湿度'
       },
-      'iconColor': {
+      iconColor: {
         type: 'string',
         description: '图标颜色',
         defaultValue: '#1890ff'
       },
-      'iconName': {
+      iconName: {
         type: 'string',
         description: '图标名称',
         defaultValue: 'Water'
@@ -157,42 +154,45 @@ const digitIndicatorDefinition: ComponentDefinition = {
 
   // ===== 属性暴露白名单配置 =====
   // 只暴露核心业务属性，不暴露样式配置属性
-  propertyWhitelist: createPropertyWhitelist({
-    // 核心业务属性 - 数据相关
-    value: {
-      level: 'public',
-      type: 'string',
-      description: '当前显示的数值',
-      defaultValue: '45',
-      visibleInInteraction: true,
-      visibleInDebug: true
+  propertyWhitelist: createPropertyWhitelist(
+    {
+      // 核心业务属性 - 数据相关
+      value: {
+        level: 'public',
+        type: 'string',
+        description: '当前显示的数值',
+        defaultValue: '45',
+        visibleInInteraction: true,
+        visibleInDebug: true
+      },
+      unit: {
+        level: 'public',
+        type: 'string',
+        description: '数值单位',
+        defaultValue: '%',
+        visibleInInteraction: true,
+        visibleInDebug: true
+      },
+      metricsName: {
+        level: 'public',
+        type: 'string',
+        description: '指标名称/标题',
+        defaultValue: '湿度',
+        visibleInInteraction: true,
+        visibleInDebug: true
+      }
+      // 注意：样式属性（iconColor、iconSize、valueColor 等）不在白名单中
+      // 这些属性只能通过配置面板修改，不能被其他组件访问或交互系统绑定
     },
-    unit: {
-      level: 'public',
-      type: 'string',
-      description: '数值单位',
-      defaultValue: '%',
-      visibleInInteraction: true,
-      visibleInDebug: true
-    },
-    metricsName: {
-      level: 'public',
-      type: 'string',
-      description: '指标名称/标题',
-      defaultValue: '湿度',
-      visibleInInteraction: true,
-      visibleInDebug: true
+    {
+      enabled: true,
+      defaultLevel: 'public',
+      audit: {
+        logAccess: process.env.NODE_ENV === 'development',
+        logModification: true
+      }
     }
-    // 注意：样式属性（iconColor、iconSize、valueColor 等）不在白名单中
-    // 这些属性只能通过配置面板修改，不能被其他组件访问或交互系统绑定
-  }, {
-    enabled: true,
-    defaultLevel: 'public',
-    audit: {
-      logAccess: process.env.NODE_ENV === 'development',
-      logModification: true
-    }
-  })
+  )
 }
 
 export default digitIndicatorDefinition

@@ -5,22 +5,19 @@
       <n-divider title-placement="left">
         <span style="font-size: 12px; color: var(--text-color-2)">基本配置</span>
       </n-divider>
-      
+
       <n-form-item label="标题">
         <n-input v-model:value="config.title" placeholder="请输入标题" />
       </n-form-item>
-      
+
       <n-form-item label="金额">
-        <n-input-number 
-          v-model:value="config.amount" 
-          placeholder="请输入金额"
-        />
+        <n-input-number v-model:value="config.amount" placeholder="请输入金额" />
       </n-form-item>
-      
+
       <n-form-item label="简介">
-        <n-input 
-          v-model:value="config.description" 
-          type="textarea" 
+        <n-input
+          v-model:value="config.description"
+          type="textarea"
           placeholder="请输入简介信息"
           :autosize="{ minRows: 2, maxRows: 4 }"
         />
@@ -35,13 +32,7 @@
  */
 
 import { ref, watch, nextTick } from 'vue'
-import { 
-  NForm, 
-  NFormItem, 
-  NInput, 
-  NInputNumber, 
-  NDivider
-} from 'naive-ui'
+import { NForm, NFormItem, NInput, NInputNumber, NDivider } from 'naive-ui'
 import type { AlertStatusCustomize } from './settingConfig'
 
 // Props - 配置表单接收的是扁平的自定义配置对象
@@ -78,7 +69,7 @@ const isUpdatingFromProps = ref(false)
 // 监听配置变化并向上传递
 watch(
   config,
-  (newConfig) => {
+  newConfig => {
     if (!props.readonly && !isUpdatingFromProps.value) {
       emit('update:modelValue', { ...newConfig })
       emit('change', { ...newConfig })
@@ -90,7 +81,7 @@ watch(
 // 监听外部配置变化
 watch(
   () => props.modelValue,
-  (newValue) => {
+  newValue => {
     if (newValue && !isUpdatingFromProps.value) {
       isUpdatingFromProps.value = true
       try {

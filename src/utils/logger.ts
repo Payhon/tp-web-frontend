@@ -23,7 +23,7 @@ interface LoggerConfig {
 const DEFAULT_CONFIG: LoggerConfig = {
   enabled: import.meta.env.DEV,
   level: import.meta.env.DEV ? LogLevel.DEBUG : LogLevel.WARN,
-  prefix: '[ThingsPanel]',
+  prefix: '[FJIA Cloud]',
   timestamp: true
 }
 

@@ -108,10 +108,7 @@ export class PropertyExposureManager implements IPropertyExposureManager {
   getStats() {
     const whitelists = this.getAllPropertyWhitelists()
     const totalComponents = Object.keys(whitelists).length
-    const totalProperties = Object.values(whitelists).reduce(
-      (sum, whitelist) => sum + Object.keys(whitelist).length,
-      0
-    )
+    const totalProperties = Object.values(whitelists).reduce((sum, whitelist) => sum + Object.keys(whitelist).length, 0)
 
     return {
       totalComponents,
@@ -131,11 +128,7 @@ export class PropertyExposureManager implements IPropertyExposureManager {
    * 获取组件的白名单属性（向后兼容旧系统）
    * 兼容旧系统的 getWhitelistedProperties 方法
    */
-  getWhitelistedProperties(
-    componentType: string,
-    accessLevel?: string,
-    context?: any
-  ): Record<string, any> {
+  getWhitelistedProperties(componentType: string, accessLevel?: string, context?: any): Record<string, any> {
     const whitelist = this.propertyWhitelists.get(componentType)
 
     if (!whitelist) {

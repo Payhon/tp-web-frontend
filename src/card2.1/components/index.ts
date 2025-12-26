@@ -26,7 +26,7 @@ async function ensureInitialized(): Promise<void> {
 
   try {
     // 使用 **/* 模式，动态扫描所有组件的 index.ts 文件
-    const allModules = import.meta.glob('./**/index.ts', { eager: true });
+    const allModules = import.meta.glob('./**/index.ts', { eager: true })
 
     // 处理已加载的模块
     const loadedModules: Record<string, any> = {}
@@ -40,7 +40,6 @@ async function ensureInitialized(): Promise<void> {
     await autoRegistry.autoRegister(loadedModules)
 
     isInitialized = true
-
   } catch (error) {
     console.error('❌ [ensureInitialized] 组件初始化失败:', error)
     throw error
@@ -151,13 +150,7 @@ export async function getComponentStats() {
       categories.map(category => [category.name, autoRegistry.getComponentsByCategory(category.name).length])
     ),
     supportedDataSources: Array.from(new Set(components.flatMap(c => c.supportedDataSources || []))),
-    versions: Array.from(
-      new Set(
-        components
-          .map(c => c.version)
-          .filter(Boolean)
-      )
-    )
+    versions: Array.from(new Set(components.map(c => c.version).filter(Boolean)))
   }
 }
 

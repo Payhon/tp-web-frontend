@@ -21,12 +21,7 @@ export type InteractionEventType =
 /**
  * 交互动作类型
  */
-export type InteractionActionType =
-  | 'navigate'
-  | 'showMessage'
-  | 'updateData'
-  | 'toggleVisibility'
-  | 'custom'
+export type InteractionActionType = 'navigate' | 'showMessage' | 'updateData' | 'toggleVisibility' | 'custom'
 
 /**
  * 交互动作配置

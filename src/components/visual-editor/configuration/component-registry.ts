@@ -14,8 +14,12 @@ import { configurationIntegrationBridge as configurationManager } from '@/compon
 import type { ComponentDataRequirement } from '@/core/data-architecture/types/simple-types'
 
 // 动态导入组件避免循环依赖问题
-const BaseConfigForm = defineAsyncComponent(() => import('@/components/visual-editor/renderers/base/BaseConfigForm.vue'))
-const ComponentConfigForm = defineAsyncComponent(() => import('@/components/visual-editor/renderers/base/ComponentConfigForm.vue'))
+const BaseConfigForm = defineAsyncComponent(
+  () => import('@/components/visual-editor/renderers/base/BaseConfigForm.vue')
+)
+const ComponentConfigForm = defineAsyncComponent(
+  () => import('@/components/visual-editor/renderers/base/ComponentConfigForm.vue')
+)
 const InteractionConfigWrapper = defineAsyncComponent(
   () => import('@/components/visual-editor/configuration/InteractionConfigWrapper.vue')
 )
@@ -44,7 +48,7 @@ const shouldShowComponentConfig = (componentId: string, widget?: any): boolean =
     // 检查Card2.1组件是否有configComponent
     if (widget?.metadata?.card2Definition) {
       const hasConfigComponent = !!widget.metadata.card2Definition.configComponent
-      
+
       return hasConfigComponent
     }
 
@@ -63,20 +67,21 @@ const shouldShowComponentConfig = (componentId: string, widget?: any): boolean =
  * 只有声明了交互能力的组件才显示交互配置
  */
 const shouldShowInteractionConfig = (componentId: string, widget?: any): boolean => {
-  try {
+  try {
     // 检查Card2.1组件的交互能力声明
     if (widget?.metadata?.card2Definition) {
       const card2Definition = widget.metadata.card2Definition
       const hasInteractionCapabilities = !!(
         card2Definition.interactionCapabilities &&
         (card2Definition.interactionCapabilities.supportedEvents?.length > 0 ||
-         card2Definition.interactionCapabilities.availableActions?.length > 0)
+          card2Definition.interactionCapabilities.availableActions?.length > 0)
       )
-
+
       return hasInteractionCapabilities
     }
 
-    // 对于传统组件，暂时返回false    return false
+    // 对于传统组件，暂时返回false
+    return false
   } catch (error) {
     console.error(`❌ [ComponentRegistry] 交互配置检查出错`, { componentId, error })
     return false
@@ -89,7 +94,6 @@ const shouldShowInteractionConfig = (componentId: string, widget?: any): boolean
  */
 const shouldShowDataSourceConfig = (componentId: string, widget?: any): boolean => {
   try {
-    
     if (process.env.NODE_ENV === 'development') {
     }
 
@@ -101,7 +105,7 @@ const shouldShowDataSourceConfig = (componentId: string, widget?: any): boolean 
         card2Definition.dataRequirements?.primaryData ||
         card2Definition.dataSources?.length > 0
       )
-
+
       if (hasDataNeeds) {
         return true // Card2.1组件有数据源定义，立即显示
       }
@@ -115,7 +119,8 @@ const shouldShowDataSourceConfig = (componentId: string, widget?: any): boolean 
         'triple-data-display' // 需要3个数据源
       ]
 
-      if (dataSourceComponents.includes(widget.type)) {        return true
+      if (dataSourceComponents.includes(widget.type)) {
+        return true
       }
 
       // 明确不需要数据源的组件
@@ -126,11 +131,13 @@ const shouldShowDataSourceConfig = (componentId: string, widget?: any): boolean 
         'alarm-count' // 统计组件
       ]
 
-      if (noDataSourceComponents.includes(widget.type)) {        return false
+      if (noDataSourceComponents.includes(widget.type)) {
+        return false
       }
     }
 
-    // 默认不显示数据源配置    return false
+    // 默认不显示数据源配置
+    return false
   } catch (error) {
     console.error(`❌ [ComponentRegistry] 数据源配置检查出错`, { componentId, error })
     return false
@@ -199,7 +206,8 @@ export const getVisibleConfigLayers = (componentId?: string, widget?: any): Conf
         return shouldShow
       }
       if (layer.name === 'interaction') {
-        const shouldShow = shouldShowInteractionConfig(componentId, widget)        return shouldShow
+        const shouldShow = shouldShowInteractionConfig(componentId, widget)
+        return shouldShow
       }
       return true
     })
@@ -222,7 +230,6 @@ export const getConfigLayer = (layerName: string): ConfigLayerDefinition | undef
 export const refreshComponentDefinitions = async (widget?: any): Promise<boolean> => {
   try {
     if (!widget?.metadata?.card2Definition?.configComponent && widget?.type) {
-      
       // 尝试从全局获取组件定义
       const getComponentDefinition = async (type: string) => {
         try {
@@ -234,7 +241,7 @@ export const refreshComponentDefinitions = async (widget?: any): Promise<boolean
           return undefined
         }
       }
-      
+
       const definition = await getComponentDefinition(widget.type)
       if (definition?.configComponent) {
         // 更新widget的metadata（这需要与PanelEditorV2集成）

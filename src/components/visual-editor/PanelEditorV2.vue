@@ -86,7 +86,7 @@ const emit = defineEmits<{
   'widget-added': [widget: any]
   'node-select': [nodeId: string]
   'editor-ready': [editor: any]
-  'save': [state: any] // 保存事件，传递当前状态
+  save: [state: any] // 保存事件，传递当前状态
   'save-success': [] // 保存成功事件
   'save-error': [error: any] // 保存失败事件
   'config-loaded': [] // 🔥 配置加载完成事件
@@ -150,7 +150,7 @@ const { setPreviewMode, isPreviewMode } = usePreviewMode()
 // 🔥 监听全局预览模式变化，同步到组件内部状态
 watch(
   () => isPreviewMode.value,
-  (newPreviewMode) => {
+  newPreviewMode => {
     const shouldBeEditing = !newPreviewMode
     if (isEditing.value !== shouldBeEditing) {
       isEditing.value = shouldBeEditing
@@ -184,8 +184,6 @@ const componentExecutorRegistry = ref(new Map<string, () => Promise<void>>())
 
 // 🔥 关键修复：数据执行触发器 - 处理配置变更事件并触发数据源重新执行
 const handleDataExecutionTrigger = async (event: ConfigChangeEvent) => {
-
-
   // 检查是否需要触发数据执行
   if (!event.context?.shouldTriggerExecution) {
     return
@@ -196,11 +194,9 @@ const handleDataExecutionTrigger = async (event: ConfigChangeEvent) => {
     try {
       await executor()
     } catch (error) {
-
-        console.error(`组件数据源执行失败: ${event.componentId}`, error)
+      console.error(`组件数据源执行失败: ${event.componentId}`, error)
     }
   } else {
-
     // 🔥 新增：直接调用核心数据架构系统来执行数据源
     try {
       const { SimpleDataBridge } = await import('@/core/data-architecture/SimpleDataBridge')
@@ -345,12 +341,14 @@ const getState = () => {
           interaction: {}
         },
         // 🔥 兼容性：保留数据源基本定义信息
-        card2Definition: widget.metadata?.card2Definition ? {
-          type: widget.metadata.card2Definition.type,
-          name: widget.metadata.card2Definition.name,
-          description: widget.metadata.card2Definition.description,
-          dataSources: widget.metadata.card2Definition.dataSources
-        } : undefined
+        card2Definition: widget.metadata?.card2Definition
+          ? {
+              type: widget.metadata.card2Definition.type,
+              name: widget.metadata.card2Definition.name,
+              description: widget.metadata.card2Definition.description,
+              dataSources: widget.metadata.card2Definition.dataSources
+            }
+          : undefined
       }
     }
 
@@ -388,9 +386,7 @@ const setState = async (state: any) => {
     for (const widget of widgets) {
       // 🔥 统一配置架构：恢复统一配置到组件元数据
 
-
       if (widget.metadata?.unifiedConfig) {
-
         // 使用ConfigurationIntegrationBridge的setConfiguration一次性设置完整配置
         configurationManager.setConfiguration(widget.id, widget.metadata.unifiedConfig, widget.type)
         // 🔍 验证配置是否真的更新了
@@ -430,10 +426,12 @@ const setState = async (state: any) => {
             if (latestConfig) {
               return latestConfig
             } else {
-              return widget.metadata?.unifiedConfig || {
-                component: widget.properties || {},
-                dataSource: widget.dataSource || null
-              }
+              return (
+                widget.metadata?.unifiedConfig || {
+                  component: widget.properties || {},
+                  dataSource: widget.dataSource || null
+                }
+              )
             }
           })()
         }
@@ -537,7 +535,6 @@ onMounted(async () => {
 
     // 🔥 已迁移：数据源管理现在通过核心数据架构系统处理
     // 组件执行器注册表现在由 Card2Wrapper 自行管理
-
   } catch (error) {
     console.error('初始化管理器失败:', error)
   }
@@ -966,7 +963,6 @@ const handleRequestCurrentData = (componentId: string) => {
  */
 const refreshCard2Definitions = async () => {
   try {
-
     // 🔥 修复：从 stateManager.nodes 获取组件列表，而不是从 editorConfig.widgets
     const currentWidgets = toRaw(stateManager.nodes)
     if (!currentWidgets || !Array.isArray(currentWidgets) || currentWidgets.length === 0) {
@@ -981,7 +977,6 @@ const refreshCard2Definitions = async () => {
     for (let i = 0; i < updatedWidgets.length; i++) {
       const widget = updatedWidgets[i]
       if (widget.metadata?.needsCard2Refresh) {
-
         try {
           const registeredDefinition = await getComponentDefinition(widget.type)
           if (registeredDefinition && registeredDefinition.configComponent) {

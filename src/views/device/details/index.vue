@@ -309,7 +309,7 @@ const getPlatform = computed(() => {
     <n-card>
       <div class="mb-4">
         <div style="display: flex; margin-top: -5px">
-          <span style="margin-right: 20px; font-size:18px">{{ name || '--' }}</span>
+          <span style="margin-right: 20px; font-size: 18px">{{ name || '--' }}</span>
           <NButton v-show="true" type="primary" style="margin-top: -5px" @click="editConfig">
             {{ $t('common.edit') }}
           </NButton>
@@ -346,10 +346,7 @@ const getPlatform = computed(() => {
           </n-card>
         </n-modal>
 
-        <DeviceStatusHistory
-          v-model:visible="showStatusHistoryDialog"
-          :device-id="(d_id || '')"
-        />
+        <DeviceStatusHistory v-model:visible="showStatusHistoryDialog" :device-id="d_id || ''" />
 
         <NFlex style="margin-top: 8px">
           <div class="mr-4">
@@ -372,7 +369,7 @@ const getPlatform = computed(() => {
           <!-- 在线/离线，弹窗展示详情 -->
           <div
             class="mr-4"
-            style="display: flex; cursor: pointer; align-items: center;"
+            style="display: flex; cursor: pointer; align-items: center"
             @click="showStatusHistoryDialog = true"
           >
             <!-- <span class="mr-2">{{ $t('generate.status') }}:</span> -->
@@ -391,11 +388,7 @@ const getPlatform = computed(() => {
             </span>
 
             <!-- 历史记录 -->
-            <SvgIcon
-              local-icon="history"
-              style="margin-left: 5px;"
-              class="text-18px text-primary"
-            />
+            <SvgIcon local-icon="history" style="margin-left: 5px" class="text-18px text-primary" />
           </div>
           <div class="mr-4" style="display: flex">
             <template v-if="alarmStatus === true">

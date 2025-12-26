@@ -28,7 +28,12 @@ const searchForm = ref({
 async function loadPackages() {
   try {
     const res: any = await getOtaUpgradePackageList({ page: 1, page_size: 1000 })
-    const list = (res?.data?.list || []) as Array<{ id: string; name: string; version: string; target_version?: string | null }>
+    const list = (res?.data?.list || []) as Array<{
+      id: string
+      name: string
+      version: string
+      target_version?: string | null
+    }>
     pkgOptions.value = list.map(i => ({
       label: `${i.name} / ${i.version}${i.target_version ? ` → ${i.target_version}` : ''}`,
       value: i.id
@@ -60,7 +65,10 @@ function createColumns(): DataTableColumns<OtaTaskItem> {
   ]
 }
 
-const { data, loading, pagination, columns, getData, updateSearchParams } = useTable<OtaTaskItem, typeof getOtaTaskList>({
+const { data, loading, pagination, columns, getData, updateSearchParams } = useTable<
+  OtaTaskItem,
+  typeof getOtaTaskList
+>({
   apiFn: getOtaTaskList,
   apiParams: { page: 1, page_size: 10, ota_upgrade_package_id: '' },
   transformer: (res: any) => {
@@ -102,9 +110,21 @@ loadPackages()
 <template>
   <div class="flex-vertical-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
     <NCard title="OTA升级任务管理" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
-      <NForm inline :model="searchForm" label-placement="left" label-width="auto" class="mb-4 flex flex-wrap gap-4 items-end">
+      <NForm
+        inline
+        :model="searchForm"
+        label-placement="left"
+        label-width="auto"
+        class="mb-4 flex flex-wrap gap-4 items-end"
+      >
         <NFormItem label="升级包" required>
-          <NSelect v-model:value="searchForm.ota_upgrade_package_id" :options="pkgOptions" filterable clearable style="width: 420px" />
+          <NSelect
+            v-model:value="searchForm.ota_upgrade_package_id"
+            :options="pkgOptions"
+            filterable
+            clearable
+            style="width: 420px"
+          />
         </NFormItem>
         <NFormItem>
           <NSpace>
@@ -130,4 +150,3 @@ loadPackages()
   height: 100%;
 }
 </style>
-

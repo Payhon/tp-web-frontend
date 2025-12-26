@@ -88,9 +88,7 @@ export class ComponentRegistry implements IComponentRegistry {
    */
   getStats() {
     const components = this.getAll()
-    const multiDataSourceComponents = components.filter(
-      comp => comp.dataSources && comp.dataSources.length > 1
-    ).length
+    const multiDataSourceComponents = components.filter(comp => comp.dataSources && comp.dataSources.length > 1).length
 
     return {
       totalComponents: components.length,

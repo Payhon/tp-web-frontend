@@ -5,4 +5,3 @@ import ManagementRole from '@/views/management/role/index.vue'
 <template>
   <ManagementRole />
 </template>
-

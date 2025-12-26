@@ -1,7 +1,11 @@
 <template>
   <div class="interaction-config-wrapper">
     <!-- 🔥 调试信息 -->
-    <div v-if="isDevelopment" class="debug-info" style="margin-bottom: 12px; padding: 8px; background: #f5f5f5; border-radius: 4px; font-size: 12px;">
+    <div
+      v-if="isDevelopment"
+      class="debug-info"
+      style="margin-bottom: 12px; padding: 8px; background: #f5f5f5; border-radius: 4px; font-size: 12px"
+    >
       <div><strong>调试信息:</strong></div>
       <div>NodeId: {{ props.nodeId }}</div>
       <div>ComponentId: {{ componentId }}</div>
@@ -69,7 +73,6 @@ const interactionConfigs = ref<InteractionConfig[]>([])
 
 // 🔥 从统一配置中心加载交互配置
 const loadInteractionConfigs = (): void => {
-
   try {
     // 从stateManager读取配置
     if (editorContext?.stateManager) {
@@ -91,13 +94,11 @@ const loadInteractionConfigs = (): void => {
     const config = configurationManager.getConfiguration(componentId.value)
     const configs = config?.interaction?.configs || []
 
-
     // 更新本地状态
     interactionConfigs.value = configs
 
     // 🔥 关键：向路由器注册配置
     interactionConfigRouter.registerComponentConfigs(componentId.value, configs)
-
   } catch (error) {
     console.error(`❌ [InteractionConfigWrapper] 加载交互配置失败:`, error)
     interactionConfigs.value = []
@@ -106,15 +107,9 @@ const loadInteractionConfigs = (): void => {
 
 // 🔥 交互配置更新处理器
 const handleInteractionConfigUpdate = (configs: InteractionConfig[]): void => {
-
   try {
     // 🔥 第一步：保存到ConfigurationManager
-    configurationManager.updateConfiguration(
-      componentId.value,
-      'interaction',
-      { configs },
-      props.widget?.type
-    )
+    configurationManager.updateConfiguration(componentId.value, 'interaction', { configs }, props.widget?.type)
 
     // 🔥 第二步：保存到stateManager（统一配置中心）
     if (editorContext?.stateManager) {
@@ -135,7 +130,6 @@ const handleInteractionConfigUpdate = (configs: InteractionConfig[]): void => {
         } else {
           node.metadata.unifiedConfig.interaction.configs = configs
         }
-
       }
     }
 
@@ -144,33 +138,37 @@ const handleInteractionConfigUpdate = (configs: InteractionConfig[]): void => {
 
     // 🔥 第四步：向路由器注册更新的配置（会自动重新注册监听器）
     interactionConfigRouter.registerComponentConfigs(componentId.value, configs)
-
-
   } catch (error) {
     console.error('❌ [InteractionConfigWrapper] 保存交互配置失败:', error)
   }
 }
 
 // 监听widget变化，重新加载配置
-watch(() => props.widget, (newWidget, oldWidget) => {
-  loadInteractionConfigs()
-}, { immediate: true })
+watch(
+  () => props.widget,
+  (newWidget, oldWidget) => {
+    loadInteractionConfigs()
+  },
+  { immediate: true }
+)
 
 // 监听nodeId变化，防止节点切换时数据不更新
-watch(() => componentId.value, (newComponentId, oldComponentId) => {
-  if (newComponentId !== oldComponentId) {
-    // 清理旧组件
-    if (oldComponentId) {
-      interactionConfigRouter.unregisterComponent(oldComponentId)
+watch(
+  () => componentId.value,
+  (newComponentId, oldComponentId) => {
+    if (newComponentId !== oldComponentId) {
+      // 清理旧组件
+      if (oldComponentId) {
+        interactionConfigRouter.unregisterComponent(oldComponentId)
+      }
+      // 加载新配置
+      loadInteractionConfigs()
     }
-    // 加载新配置
-    loadInteractionConfigs()
   }
-})
+)
 
 // 🔥 生命周期管理
 onMounted(() => {
-
   // 初始化加载配置
   nextTick(() => {
     loadInteractionConfigs()
@@ -178,7 +176,6 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-
   // 🔥 清理路由器中的组件配置和监听器
   interactionConfigRouter.unregisterComponent(componentId.value)
 })

@@ -269,7 +269,7 @@ export class ConfigurationStateManager {
     section: K,
     sectionConfig: WidgetConfiguration[K],
     source: ConfigurationVersion['source'] = 'user',
-    forceUpdate = false  // 🔥 新增：强制更新标志，用于跨组件交互
+    forceUpdate = false // 🔥 新增：强制更新标志，用于跨组件交互
   ): boolean {
     const lockKey = `${componentId}_${section}`
 
@@ -577,7 +577,7 @@ export class ConfigurationStateManager {
     // 检查缓存
     const cacheKey = this.generateValidationCacheKey(configuration, context)
     const cached = this.validationCache.get(cacheKey)
-    if (cached && (Date.now() - cached.timestamp) < this.VALIDATION_CACHE_TTL) {
+    if (cached && Date.now() - cached.timestamp < this.VALIDATION_CACHE_TTL) {
       return cached.result
     }
 
@@ -704,9 +704,7 @@ export class ConfigurationStateManager {
         templates = templates.filter(t => t.componentType === filter.componentType)
       }
       if (filter.tags) {
-        templates = templates.filter(t =>
-          filter.tags!.some(tag => t.metadata.tags.includes(tag))
-        )
+        templates = templates.filter(t => filter.tags!.some(tag => t.metadata.tags.includes(tag)))
       }
       if (filter.isBuiltIn !== undefined) {
         templates = templates.filter(t => t.metadata.isBuiltIn === filter.isBuiltIn)
@@ -974,7 +972,11 @@ export class ConfigurationStateManager {
   /**
    * 保存配置快照到内存存储
    */
-  private saveConfigurationSnapshot(componentId: string, version: ConfigurationVersion, configuration: WidgetConfiguration): void {
+  private saveConfigurationSnapshot(
+    componentId: string,
+    version: ConfigurationVersion,
+    configuration: WidgetConfiguration
+  ): void {
     if (!this.configurationSnapshots.has(componentId)) {
       this.configurationSnapshots.set(componentId, new Map())
     }
@@ -984,7 +986,9 @@ export class ConfigurationStateManager {
 
     // 限制快照数量，防止内存溢出
     if (snapshots.size > this.DEFAULT_MAX_HISTORY * 2) {
-      const versions = Array.from(snapshots.keys()).map(Number).sort((a, b) => a - b)
+      const versions = Array.from(snapshots.keys())
+        .map(Number)
+        .sort((a, b) => a - b)
       const toDelete = versions.slice(0, versions.length - this.DEFAULT_MAX_HISTORY)
       toDelete.forEach(v => snapshots.delete(v.toString()))
     }
@@ -993,7 +997,10 @@ export class ConfigurationStateManager {
   /**
    * 更新版本历史记录
    */
-  private updateVersionHistory(currentHistory: ConfigurationVersion[], newVersion: ConfigurationVersion): ConfigurationVersion[] {
+  private updateVersionHistory(
+    currentHistory: ConfigurationVersion[],
+    newVersion: ConfigurationVersion
+  ): ConfigurationVersion[] {
     const updatedHistory = [...currentHistory, newVersion]
 
     // 按时间戳排序（最新的在前）
@@ -1289,13 +1296,15 @@ export class ConfigurationStateManager {
     builtInTemplates.forEach(template => {
       this.configurationTemplates.set(template.id, template)
     })
-
   }
 
   /**
    * 应用模板参数到配置
    */
-  private applyTemplateParameters(template: ConfigurationTemplate, parameters: Record<string, any>): WidgetConfiguration {
+  private applyTemplateParameters(
+    template: ConfigurationTemplate,
+    parameters: Record<string, any>
+  ): WidgetConfiguration {
     const config = this.deepClone(template.configuration)
 
     if (!template.parameters) {
@@ -1355,7 +1364,7 @@ export function useConfigurationState() {
       section: K,
       sectionConfig: WidgetConfiguration[K],
       source?: ConfigurationVersion['source'],
-      forceUpdate?: boolean  // 🔥 新增：强制更新参数
+      forceUpdate?: boolean // 🔥 新增：强制更新参数
     ) => configurationStateManager.updateConfigurationSection(componentId, section, sectionConfig, source, forceUpdate),
 
     // 版本信息
@@ -1375,35 +1384,30 @@ export function useConfigurationState() {
     // 🆕 配置验证
     validateConfig: (config: WidgetConfiguration, context?: ValidationContext) =>
       configurationStateManager.validateConfiguration(config, context),
-    registerValidationRule: (rule: ValidationRule) =>
-      configurationStateManager.registerValidationRule(rule),
-    removeValidationRule: (ruleName: string) =>
-      configurationStateManager.removeValidationRule(ruleName),
+    registerValidationRule: (rule: ValidationRule) => configurationStateManager.registerValidationRule(rule),
+    removeValidationRule: (ruleName: string) => configurationStateManager.removeValidationRule(ruleName),
     getValidationRules: () => configurationStateManager.getValidationRules(),
-    setValidationEnabled: (enabled: boolean) =>
-      configurationStateManager.setValidationEnabled(enabled),
+    setValidationEnabled: (enabled: boolean) => configurationStateManager.setValidationEnabled(enabled),
     clearValidationCache: () => configurationStateManager.clearValidationCache(),
 
     // 🆕 配置模板管理
-    registerTemplate: (template: ConfigurationTemplate) =>
-      configurationStateManager.registerTemplate(template),
+    registerTemplate: (template: ConfigurationTemplate) => configurationStateManager.registerTemplate(template),
     getTemplate: (templateId: string) => configurationStateManager.getTemplate(templateId),
-    getTemplates: (filter?: {
-      category?: string
-      componentType?: string
-      tags?: string[]
-      isBuiltIn?: boolean
-    }) => configurationStateManager.getTemplates(filter),
+    getTemplates: (filter?: { category?: string; componentType?: string; tags?: string[]; isBuiltIn?: boolean }) =>
+      configurationStateManager.getTemplates(filter),
     applyTemplate: (templateId: string, componentId: string, parameters?: Record<string, any>, author?: string) =>
       configurationStateManager.applyTemplate(templateId, componentId, parameters, author),
-    createTemplateFromConfig: (componentId: string, templateInfo: {
-      name: string
-      description: string
-      category: string
-      componentType: string
-      author: string
-      tags?: string[]
-    }) => configurationStateManager.createTemplateFromConfiguration(componentId, templateInfo),
+    createTemplateFromConfig: (
+      componentId: string,
+      templateInfo: {
+        name: string
+        description: string
+        category: string
+        componentType: string
+        author: string
+        tags?: string[]
+      }
+    ) => configurationStateManager.createTemplateFromConfiguration(componentId, templateInfo),
     removeTemplate: (templateId: string) => configurationStateManager.removeTemplate(templateId),
     getTemplateApplicationHistory: (componentId: string) =>
       configurationStateManager.getTemplateApplicationHistory(componentId),

@@ -33,11 +33,17 @@
         <n-divider>🔍 调试信息</n-divider>
         <div class="debug-section">
           <span class="debug-label">统一配置值:</span>
-          <pre class="debug-value debug-scrollable">{{ JSON.stringify({
-            title: unifiedConfig.component?.title,
-            amount: unifiedConfig.component?.amount,
-            description: unifiedConfig.component?.description
-          }, null, 2) }}</pre>
+          <pre class="debug-value debug-scrollable">{{
+            JSON.stringify(
+              {
+                title: unifiedConfig.component?.title,
+                amount: unifiedConfig.component?.amount,
+                description: unifiedConfig.component?.description
+              },
+              null,
+              2
+            )
+          }}</pre>
         </div>
         <div class="debug-section">
           <span class="debug-label">数据源值:</span>
@@ -45,19 +51,31 @@
         </div>
         <div class="debug-section">
           <span class="debug-label">最终显示值（数据源优先）:</span>
-          <pre class="debug-value debug-scrollable">{{ JSON.stringify({
-            title: getDisplayValue('title', '未设置'),
-            amount: getDisplayValue('amount', 0),
-            description: getDisplayValue('description', '无描述')
-          }, null, 2) }}</pre>
+          <pre class="debug-value debug-scrollable">{{
+            JSON.stringify(
+              {
+                title: getDisplayValue('title', '未设置'),
+                amount: getDisplayValue('amount', 0),
+                description: getDisplayValue('description', '无描述')
+              },
+              null,
+              2
+            )
+          }}</pre>
         </div>
         <div class="debug-section">
           <span class="debug-label">数据来源分析:</span>
-          <pre class="debug-value debug-scrollable">{{ JSON.stringify({
-            title: getDataSource('title'),
-            amount: getDataSource('amount'),
-            description: getDataSource('description')
-          }, null, 2) }}</pre>
+          <pre class="debug-value debug-scrollable">{{
+            JSON.stringify(
+              {
+                title: getDataSource('title'),
+                amount: getDataSource('amount'),
+                description: getDataSource('description')
+              },
+              null,
+              2
+            )
+          }}</pre>
         </div>
       </div>
 
@@ -84,15 +102,15 @@ import type { AlertStatusCustomize } from './settingConfig'
 
 // 组件属性接口 - 支持统一配置架构
 interface Props {
-  config: AlertStatusCustomize  // 接收扁平的配置对象
+  config: AlertStatusCustomize // 接收扁平的配置对象
   data?: Record<string, unknown>
-  componentId?: string  // 🔥 新增：组件ID用于配置管理
+  componentId?: string // 🔥 新增：组件ID用于配置管理
 }
 
 // 组件事件 - 用于通知配置变更
 interface Emits {
   (e: 'update:config', config: AlertStatusCustomize): void
-  (e: 'update:unified-config', config: UnifiedCard2Configuration): void  // 🔥 新增：统一配置变更事件
+  (e: 'update:unified-config', config: UnifiedCard2Configuration): void // 🔥 新增：统一配置变更事件
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -104,7 +122,6 @@ const emit = defineEmits<Emits>()
 // 🔥 获取初始统一配置 - 从Card2Wrapper的统一配置架构获取
 function getInitialUnifiedConfig(): UnifiedCard2Configuration | undefined {
   if (!props.componentId) return undefined
-
 
   try {
     // 通过DOM查找Card2Wrapper实例获取完整配置
@@ -134,10 +151,10 @@ const {
   config,
   displayData,
   unifiedConfig,
-  updateConfig: updateCard2Config,   // 🔥 重命名避免冲突
-  updateUnifiedConfigWithSync,       // 🔥 使用增强版配置更新（自动同步）
+  updateConfig: updateCard2Config, // 🔥 重命名避免冲突
+  updateUnifiedConfigWithSync, // 🔥 使用增强版配置更新（自动同步）
   getFullConfiguration,
-  cleanupAutoSync,                   // 🔥 清理函数
+  cleanupAutoSync, // 🔥 清理函数
   // 🔥 新增：属性暴露功能（现在自动处理，但保留接口）
   exposeProperty,
   exposeProperties,
@@ -148,18 +165,21 @@ const {
   config: props.config,
   data: props.data,
   componentId: props.componentId,
-  initialUnifiedConfig: getInitialUnifiedConfig()  // 🔥 传递初始统一配置
+  initialUnifiedConfig: getInitialUnifiedConfig() // 🔥 传递初始统一配置
 })
 
 const message = useMessage()
 
 // 🔥 核心数据获取函数：修复为完全基于统一配置
 const getDisplayValue = (field: string, defaultValue: any) => {
-
   // 🔥 关键修复：title, amount, description 是组件配置属性，优先从统一配置获取
   if (['title', 'amount', 'description'].includes(field)) {
     // 只从统一配置中的组件配置获取
-    if (unifiedConfig.value.component && field in unifiedConfig.value.component && unifiedConfig.value.component[field] !== undefined) {
+    if (
+      unifiedConfig.value.component &&
+      field in unifiedConfig.value.component &&
+      unifiedConfig.value.component[field] !== undefined
+    ) {
       const value = unifiedConfig.value.component[field]
       return String(value)
     }
@@ -170,12 +190,22 @@ const getDisplayValue = (field: string, defaultValue: any) => {
 
   // 🔥 其他字段可以继续使用原来的逻辑（先数据源，后配置，最后默认值）
   // 1. 优先使用数据源数据（这是执行结果）
-  if (props.data && typeof props.data === 'object' && field in props.data && props.data[field] !== undefined && props.data[field] !== null) {
+  if (
+    props.data &&
+    typeof props.data === 'object' &&
+    field in props.data &&
+    props.data[field] !== undefined &&
+    props.data[field] !== null
+  ) {
     return String(props.data[field])
   }
 
   // 2. 回退到统一配置中的组件配置
-  if (unifiedConfig.value.component && field in unifiedConfig.value.component && unifiedConfig.value.component[field] !== undefined) {
+  if (
+    unifiedConfig.value.component &&
+    field in unifiedConfig.value.component &&
+    unifiedConfig.value.component[field] !== undefined
+  ) {
     return String(unifiedConfig.value.component[field])
   }
 
@@ -186,12 +216,22 @@ const getDisplayValue = (field: string, defaultValue: any) => {
 // 🔥 数据来源分析函数：判断数据来自哪里
 const getDataSource = (field: string) => {
   // 检查数据源数据
-  if (props.data && typeof props.data === 'object' && field in props.data && props.data[field] !== undefined && props.data[field] !== null) {
+  if (
+    props.data &&
+    typeof props.data === 'object' &&
+    field in props.data &&
+    props.data[field] !== undefined &&
+    props.data[field] !== null
+  ) {
     return `数据源: ${props.data[field]}`
   }
 
   // 检查配置数据
-  if (unifiedConfig.value.component && field in unifiedConfig.value.component && unifiedConfig.value.component[field] !== undefined) {
+  if (
+    unifiedConfig.value.component &&
+    field in unifiedConfig.value.component &&
+    unifiedConfig.value.component[field] !== undefined
+  ) {
     return `配置: ${unifiedConfig.value.component[field]}`
   }
 
@@ -225,7 +265,7 @@ const isConfigEqual = (a: any, b: any): boolean => {
 // 🔥 监听统一配置变化 - 现在属性暴露由 useCard2Props 自动处理
 watch(
   () => unifiedConfig.value,
-  (newUnifiedConfig) => {
+  newUnifiedConfig => {
     // 🔥 属性暴露现在由 useCard2Props 自动处理，无需手动调用
   },
   { deep: true, immediate: true }
@@ -234,14 +274,12 @@ watch(
 // 🔥 监听数据源变化 - 现在属性暴露由 useCard2Props 自动处理
 watch(
   () => props.data,
-  () => {
-  },
+  () => {},
   { deep: true, immediate: true }
 )
 
 // 生命周期管理
-onMounted(() => {
-})
+onMounted(() => {})
 
 onUnmounted(() => {
   // 🔥 调用 Hook 提供的清理函数
@@ -250,7 +288,6 @@ onUnmounted(() => {
 
 // 🔥 简化的配置更新函数 - 直接使用统一配置管理
 const updateConfig = (partialCustomize: Partial<AlertStatusCustomize>) => {
-
   // 🔥 关键修复：直接使用 updateCard2Config 更新组件配置层
   updateCard2Config('component', partialCustomize)
 
@@ -272,7 +309,6 @@ const updateConfig = (partialCustomize: Partial<AlertStatusCustomize>) => {
 
   // 🔥 发出更新事件
   emit('update:config', partialCustomize)
-
 }
 
 // 修改标题
@@ -345,14 +381,13 @@ const resetToDefault = () => {
 
 // 测试数据源
 const testDataSource = () => {
-
   message.info('数据源测试信息已输出到控制台，请按F12查看')
 }
 
 // 🔥 简化的外部接口，大部分功能已由 useCard2Props 自动处理
 const expose = {
   getFullConfiguration,
-  updateConfig,  // 使用简化的本地更新函数
+  updateConfig, // 使用简化的本地更新函数
   // 🔥 保留：属性监听接口，供交互引擎使用
   watchProperty: (propertyName: string, callback: (newValue: any, oldValue: any) => void) => {
     return watchProperty(propertyName, callback)

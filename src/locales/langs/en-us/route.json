@@ -104,6 +104,8 @@
   "route.alarm_notification-record": "Notification Record",
   "route.walarm_arning-message": "Warning Message",
   "route.management_notification": "Notification  Configuration",
+  "route.management_app-auth-config": "APP Auth Configuration",
+  "route.management_permission": "Permission Management",
   "route.irrigation": "Irrigation",
   "route.irrigation_time": "Irrigation Time",
   "route.irrigation_group": "Irrigation Group",

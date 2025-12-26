@@ -62,14 +62,10 @@ function createColumns(): DataTableColumns<Item> {
   ]
 }
 
-const {
-  data,
-  loading,
-  filteredColumns,
-  pagination,
-  getData,
-  updateSearchParams
-} = useTable<Item, typeof getBatteryMaintenanceList>({
+const { data, loading, filteredColumns, pagination, getData, updateSearchParams } = useTable<
+  Item,
+  typeof getBatteryMaintenanceList
+>({
   apiFn: getBatteryMaintenanceList,
   apiParams: { page: 1, page_size: 10 },
   transformer: (res: any) => {
@@ -150,7 +146,12 @@ function openCreate() {
 }
 
 async function submitCreate() {
-  if (!createForm.value.device_number || !createForm.value.fault_type || !createForm.value.maintainer || !createForm.value.maintain_at) {
+  if (
+    !createForm.value.device_number ||
+    !createForm.value.fault_type ||
+    !createForm.value.maintainer ||
+    !createForm.value.maintain_at
+  ) {
     message.warning('请填写：设备编号/故障类型/维修人员/维修时间')
     return
   }
@@ -265,7 +266,13 @@ getData()
       </NSpace>
     </NModal>
 
-    <NModal v-model:show="detailVisible" preset="card" title="维保记录详情" style="width: 720px" :loading="detailLoading">
+    <NModal
+      v-model:show="detailVisible"
+      preset="card"
+      title="维保记录详情"
+      style="width: 720px"
+      :loading="detailLoading"
+    >
       <div v-if="detailData">
         <div class="mb-8px">设备编号：{{ detailData.device_number }}</div>
         <div class="mb-8px">型号：{{ detailData.battery_model || '--' }}</div>
@@ -281,4 +288,3 @@ getData()
     </NModal>
   </NCard>
 </template>
-

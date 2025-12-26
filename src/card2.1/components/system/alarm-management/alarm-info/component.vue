@@ -1,7 +1,11 @@
 <template>
-  <div class="h-full bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden">
+  <div
+    class="h-full bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden"
+  >
     <!-- 卡片标题栏 -->
-    <div class="flex justify-between items-center p-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-800">
+    <div
+      class="flex justify-between items-center p-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-800"
+    >
       <div class="flex items-center space-x-3">
         <div class="p-2 bg-red-100 dark:bg-red-900 rounded-lg">
           <Icon icon="mdi:alert-circle-outline" class="text-lg text-red-600 dark:text-red-400" />

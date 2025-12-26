@@ -143,13 +143,7 @@ getTableData()
         <NInput v-model:value="queryParams.user_phone" class="w-220px" placeholder="激活用户手机号" />
       </NFormItem>
       <NFormItem label="时间范围">
-        <NDatePicker
-          v-model:value="range"
-          type="datetimerange"
-          clearable
-          separator="-"
-          @update:value="pickerChange"
-        />
+        <NDatePicker v-model:value="range" type="datetimerange" clearable separator="-" @update:value="pickerChange" />
       </NFormItem>
       <NFormItem label="方式">
         <NSelect v-model:value="queryParams.method" class="w-160px" :options="methodOptions" />
@@ -171,4 +165,3 @@ getTableData()
     />
   </NCard>
 </template>
-

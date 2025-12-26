@@ -10,25 +10,25 @@ import type { TSConfig } from '@/card2.1/types/setting-config'
  */
 export interface GaugeChartCustomize {
   // 数据配置
-  value?: number          // 当前值
-  min?: number           // 最小值
-  max?: number           // 最大值
-  unit?: string          // 单位
+  value?: number // 当前值
+  min?: number // 最小值
+  max?: number // 最大值
+  unit?: string // 单位
 
   // 样式配置
-  title?: string         // 标题
-  titleColor?: string    // 标题颜色
-  valueColor?: string    // 数值颜色
+  title?: string // 标题
+  titleColor?: string // 标题颜色
+  valueColor?: string // 数值颜色
 
   // 仪表盘颜色配置
-  gaugeColor?: string[]  // 仪表盘颜色渐变数组
+  gaugeColor?: string[] // 仪表盘颜色渐变数组
 
   // 尺寸配置
-  radius?: string        // 仪表盘半径
-  thickness?: number     // 仪表盘厚度
+  radius?: string // 仪表盘半径
+  thickness?: number // 仪表盘厚度
 
   // 动画配置
-  animationDuration?: number  // 动画持续时间（毫秒）
+  animationDuration?: number // 动画持续时间（毫秒）
 }
 
 /**

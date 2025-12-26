@@ -1,5 +1,5 @@
 <template>
-  <div class="bar-chart-container" ref="chartContainerRef">
+  <div ref="chartContainerRef" class="bar-chart-container">
     <div ref="chartRef" class="bar-chart"></div>
   </div>
 </template>
@@ -161,7 +161,7 @@ const updateChart = () => {
                 { offset: 0, color: config.barColor || '#5470c6' },
                 { offset: 1, color: config.barGradientColor || '#91cc75' }
               ])
-            : (config.barColor || '#5470c6'),
+            : config.barColor || '#5470c6',
           borderRadius: [4, 4, 0, 0]
         },
         emphasis: {

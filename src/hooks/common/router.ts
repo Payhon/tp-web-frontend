@@ -32,8 +32,13 @@ export function useRouterPush(inSetup = true) {
     const routeLocation: RouteLocationRaw = {
       name: key
     }
-    if (query) {
-      routeLocation.query = query
+    const recordMetaQuery = (router.getRoutes().find(r => r.name === key)?.meta as any)?.query as
+      | Record<string, string>
+      | undefined
+
+    const mergedQuery = { ...(recordMetaQuery || {}), ...(query || {}) }
+    if (Object.keys(mergedQuery).length) {
+      routeLocation.query = mergedQuery
     }
 
     if (params) {

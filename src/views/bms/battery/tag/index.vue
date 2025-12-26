@@ -1,6 +1,18 @@
 <script setup lang="tsx">
 import { computed, ref } from 'vue'
-import { NButton, NCard, NColorPicker, NDataTable, NForm, NFormItem, NInput, NModal, NPopconfirm, NSpace, useMessage } from 'naive-ui'
+import {
+  NButton,
+  NCard,
+  NColorPicker,
+  NDataTable,
+  NForm,
+  NFormItem,
+  NInput,
+  NModal,
+  NPopconfirm,
+  NSpace,
+  useMessage
+} from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import { useTable } from '@/hooks/common/table'
 import { createBatteryTag, deleteBatteryTag, getBatteryTagList, updateBatteryTag } from '@/service/api/bms'
@@ -61,7 +73,10 @@ function createColumns(): DataTableColumns<TagItem> {
   ]
 }
 
-const { data, loading, filteredColumns, pagination, getData, updateSearchParams } = useTable<TagItem, typeof getBatteryTagList>({
+const { data, loading, filteredColumns, pagination, getData, updateSearchParams } = useTable<
+  TagItem,
+  typeof getBatteryTagList
+>({
   apiFn: getBatteryTagList,
   apiParams: { page: 1, page_size: 10 },
   transformer: (res: any) => {
@@ -95,7 +110,11 @@ function handleReset() {
 const modalVisible = ref(false)
 const modalType = ref<'create' | 'edit'>('create')
 const saving = ref(false)
-const form = ref<{ id?: string; name: string; scene: string; color: string | null }>({ name: '', scene: '', color: null })
+const form = ref<{ id?: string; name: string; scene: string; color: string | null }>({
+  name: '',
+  scene: '',
+  color: null
+})
 
 const title = computed(() => (modalType.value === 'create' ? '新增标签' : '编辑标签'))
 
@@ -155,7 +174,13 @@ getData()
 <template>
   <div class="flex-vertical-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
     <NCard title="标签管理" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
-      <NForm inline :model="searchForm" label-placement="left" label-width="auto" class="mb-4 flex flex-wrap gap-4 items-end">
+      <NForm
+        inline
+        :model="searchForm"
+        label-placement="left"
+        label-width="auto"
+        class="mb-4 flex flex-wrap gap-4 items-end"
+      >
         <NFormItem label="标签名称">
           <NInput v-model:value="searchForm.name" placeholder="支持模糊搜索" style="width: 220px" clearable />
         </NFormItem>
@@ -208,4 +233,3 @@ getData()
   height: 100%;
 }
 </style>
-

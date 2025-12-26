@@ -115,7 +115,7 @@ declare namespace Api {
       orders: number
       /** 类型 */
       // element_type: 1 | 2 | 3 | 4 | 5;
-      element_type: 1 | 3
+      element_type: 1 | 3 | 4
       /** 访问标识 */
       authority: any
       /** 描述 */
@@ -380,6 +380,14 @@ declare namespace Api {
       id: string
       config: string
       email_config: any
+      notice_type: string
+      remark: string
+      status: string
+    }
+    interface SMS {
+      id: string
+      config: string
+      sme_config: any
       notice_type: string
       remark: string
       status: string

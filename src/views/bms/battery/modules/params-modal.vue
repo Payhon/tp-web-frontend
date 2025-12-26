@@ -2,7 +2,12 @@
 import { computed, ref, watch } from 'vue'
 import { NButton, NDataTable, NInput, NModal, NPagination, NSpace, NTabPane, NTabs, NTag, useMessage } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
-import { getBatteryParamSetLogs, getBatteryParams, putBatteryParams, requestBatteryParamsFromDevice } from '@/service/api/bms'
+import {
+  getBatteryParamSetLogs,
+  getBatteryParams,
+  putBatteryParams,
+  requestBatteryParamsFromDevice
+} from '@/service/api/bms'
 
 type ParamRow = {
   id: string
@@ -62,7 +67,8 @@ async function fetchParams() {
     rows.value = list.map((r: any) => ({
       ...r,
       checked: false,
-      inputValue: r.value === null || r.value === undefined ? '' : typeof r.value === 'string' ? r.value : JSON.stringify(r.value)
+      inputValue:
+        r.value === null || r.value === undefined ? '' : typeof r.value === 'string' ? r.value : JSON.stringify(r.value)
     }))
   } catch (e: any) {
     message.error(e?.message || '获取参数失败')
@@ -164,17 +170,29 @@ const columns = computed<DataTableColumns<ParamRow>>(() => [
     key: 'checked',
     title: '',
     width: 50,
-    render: r => (isWritable(r.read_write_flag) ? <input type="checkbox" checked={!!r.checked} onChange={(e: any) => (r.checked = e.target.checked)} /> : null)
+    render: r =>
+      isWritable(r.read_write_flag) ? (
+        <input type="checkbox" checked={!!r.checked} onChange={(e: any) => (r.checked = e.target.checked)} />
+      ) : null
   },
   { key: 'key', title: '参数标识', minWidth: 160 },
   { key: 'data_name', title: '参数名称', minWidth: 160, render: r => r.data_name || '--' },
-  { key: 'value', title: '当前值', minWidth: 160, render: r => (r.value === null || r.value === undefined ? '--' : String(r.value)) },
+  {
+    key: 'value',
+    title: '当前值',
+    minWidth: 160,
+    render: r => (r.value === null || r.value === undefined ? '--' : String(r.value))
+  },
   { key: 'unit', title: '单位', minWidth: 80, render: r => r.unit || '--' },
   {
     key: 'read_write_flag',
     title: '读写',
     minWidth: 90,
-    render: r => <NTag type={isWritable(r.read_write_flag) ? 'success' : 'default'}>{isWritable(r.read_write_flag) ? '可写' : '只读'}</NTag>
+    render: r => (
+      <NTag type={isWritable(r.read_write_flag) ? 'success' : 'default'}>
+        {isWritable(r.read_write_flag) ? '可写' : '只读'}
+      </NTag>
+    )
   },
   {
     key: 'input',
@@ -190,12 +208,22 @@ const columns = computed<DataTableColumns<ParamRow>>(() => [
 ])
 
 const logColumns = computed<DataTableColumns<any>>(() => [
-  { key: 'created_at', title: '下发时间', minWidth: 170, render: r => (r.created_at ? String(r.created_at).replace('T', ' ').replace('Z', '') : '--') },
+  {
+    key: 'created_at',
+    title: '下发时间',
+    minWidth: 170,
+    render: r => (r.created_at ? String(r.created_at).replace('T', ' ').replace('Z', '') : '--')
+  },
   { key: 'message_id', title: 'message_id', minWidth: 120 },
   { key: 'data', title: '发送内容', minWidth: 240, render: r => (r.data ? String(r.data) : '--') },
   { key: 'rsp_data', title: '回执内容', minWidth: 240, render: r => (r.rsp_data ? String(r.rsp_data) : '--') },
   { key: 'status', title: '状态', minWidth: 120, render: r => formatStatus(r.status) },
-  { key: 'error_message', title: '错误信息', minWidth: 200, render: r => (r.error_message ? String(r.error_message) : '--') }
+  {
+    key: 'error_message',
+    title: '错误信息',
+    minWidth: 200,
+    render: r => (r.error_message ? String(r.error_message) : '--')
+  }
 ])
 
 watch(
@@ -212,15 +240,22 @@ watch(
 </script>
 
 <template>
-  <NModal v-model:show="visible" preset="card" :title="`参数远程查看与修改：${deviceNumber || ''}`" style="width: 1100px">
+  <NModal
+    v-model:show="visible"
+    preset="card"
+    :title="`参数远程查看与修改：${deviceNumber || ''}`"
+    style="width: 1100px"
+  >
     <NTabs v-model:value="activeTab" type="line">
       <NTabPane name="params" tab="参数列表">
         <div class="mb-3 flex items-center justify-between">
-          <div style="color: #999; font-size: 12px">说明：勾选“可写”参数并填写新值后下发；值可输入 JSON（数字/布尔/对象/数组）</div>
+          <div style="color: #999; font-size: 12px">
+            说明：勾选“可写”参数并填写新值后下发；值可输入 JSON（数字/布尔/对象/数组）
+          </div>
           <NSpace>
             <NButton @click="requestFromDevice">请求设备上报</NButton>
-            <NButton @click="fetchParams" :loading="loading">刷新</NButton>
-            <NButton type="primary" @click="submit" :loading="loading">下发修改</NButton>
+            <NButton :loading="loading" @click="fetchParams">刷新</NButton>
+            <NButton type="primary" :loading="loading" @click="submit">下发修改</NButton>
           </NSpace>
         </div>
         <NDataTable :columns="columns" :data="rows" :loading="loading" :row-key="r => r.id" :scroll-x="1050" />
@@ -229,7 +264,7 @@ watch(
       <NTabPane name="logs" tab="下发记录/回执">
         <div class="mb-3 flex items-center justify-end">
           <NSpace>
-            <NButton @click="fetchLogs" :loading="logsLoading">刷新</NButton>
+            <NButton :loading="logsLoading" @click="fetchLogs">刷新</NButton>
           </NSpace>
         </div>
         <NDataTable :columns="logColumns" :data="logs" :loading="logsLoading" :row-key="r => r.id" :scroll-x="1100" />
@@ -253,4 +288,3 @@ watch(
     </NTabs>
   </NModal>
 </template>
-

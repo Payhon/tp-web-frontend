@@ -110,9 +110,7 @@ const updateDeviceStatusInTable = (deviceId: string, isOnline: boolean) => {
 
     // 更新表格中的设备状态
     if (tablePageRef.value?.dataList && Array.isArray(tablePageRef.value.dataList)) {
-      const deviceIndex = tablePageRef.value.dataList.findIndex(
-        device => device.id === deviceId
-      )
+      const deviceIndex = tablePageRef.value.dataList.findIndex(device => device.id === deviceId)
 
       if (deviceIndex !== -1) {
         tablePageRef.value.dataList[deviceIndex].is_online = isOnline ? 1 : 0
@@ -129,7 +127,7 @@ const updateDeviceStatusInTable = (deviceId: string, isOnline: boolean) => {
 const cleanupDeviceStatusCache = () => {
   const now = Date.now()
   const maxAge = 60 * 60 * 1000 // 1小时
-  
+
   for (const [deviceId, status] of deviceStatusCache.entries()) {
     if (now - status.lastUpdate > maxAge) {
       deviceStatusCache.delete(deviceId)
@@ -231,7 +229,6 @@ const createEventSourceConnection = () => {
         }
 
         updateDeviceStatusInTable(data.device_id, data.is_online)
-
       } catch (parseError) {
         logErrorThrottled('解析设备状态事件数据失败:', parseError)
       }
@@ -240,7 +237,7 @@ const createEventSourceConnection = () => {
     /**
      * 错误处理和智能重连机制
      */
-    eventSource.onerror = (error) => {
+    eventSource.onerror = error => {
       isConnecting = false
       logErrorThrottled('EventSource连接错误:', error)
 
@@ -254,7 +251,6 @@ const createEventSourceConnection = () => {
       if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
         reconnectAttempts += 1
         const delay = RECONNECT_DELAYS[Math.min(reconnectAttempts - 1, RECONNECT_DELAYS.length - 1)]
-        
 
         reconnectTimer = setTimeout(() => {
           if (checkNetworkStatus()) {
@@ -268,13 +264,15 @@ const createEventSourceConnection = () => {
         }, delay)
       } else {
         // 达到最大重连次数后，每5分钟尝试一次
-        reconnectTimer = setTimeout(() => {
-          reconnectAttempts = 0 // 重置计数器
-          createEventSourceConnection()
-        }, 5 * 60 * 1000)
+        reconnectTimer = setTimeout(
+          () => {
+            reconnectAttempts = 0 // 重置计数器
+            createEventSourceConnection()
+          },
+          5 * 60 * 1000
+        )
       }
     }
-
   } catch (error) {
     isConnecting = false
     console.error('创建设备管理页面EventSource连接失败:', error)
@@ -293,22 +291,22 @@ const cleanupEventSource = () => {
     eventSource.close()
     eventSource = null
   }
-  
+
   // 清理重连定时器
   if (reconnectTimer) {
     clearTimeout(reconnectTimer)
     reconnectTimer = null
   }
-  
+
   // 清理缓存清理定时器
   if (cacheCleanupTimer) {
     clearInterval(cacheCleanupTimer)
     cacheCleanupTimer = null
   }
-  
+
   // 清理设备状态缓存
   deviceStatusCache.clear()
-  
+
   // 重置状态
   isConnecting = false
   reconnectAttempts = 0
@@ -737,14 +735,14 @@ const handleVisibilityChange = () => {
  */
 onMounted(() => {
   createEventSourceConnection()
-  
+
   // 启动定期缓存清理（每30分钟清理一次）
   cacheCleanupTimer = setInterval(cleanupDeviceStatusCache, 30 * 60 * 1000)
-  
+
   // 监听网络状态变化
   window.addEventListener('online', handleNetworkChange)
   window.addEventListener('offline', handleNetworkChange)
-  
+
   // 监听页面可见性变化
   document.addEventListener('visibilitychange', handleVisibilityChange)
 })
@@ -754,7 +752,7 @@ onMounted(() => {
  */
 onUnmounted(() => {
   cleanupEventSource()
-  
+
   // 移除事件监听器
   window.removeEventListener('online', handleNetworkChange)
   window.removeEventListener('offline', handleNetworkChange)

@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 
-const router = useRouter();
+const router = useRouter()
 
 onMounted(() => {
-  router.replace({ path: '/bms/org', query: { org_type: 'DEALER' } });
-});
+  router.replace({ path: '/bms/org', query: { org_type: 'DEALER' } })
+})
 </script>
 
 <template>

@@ -38,6 +38,16 @@ function getIconComponent(iconString: string) {
   // 简化处理，直接返回图标字符串
   return iconString
 }
+
+const mobileTitle = computed(() => {
+  return 'FJIA Cloud'
+})
+
+const showBackButton = computed(() => {
+  // 首页不显示返回按钮
+  const noBackRoutes = ['home', 'root', 'login']
+  return !noBackRoutes.includes(route.name as string)
+})
 </script>
 
 <template>
@@ -46,7 +56,7 @@ function getIconComponent(iconString: string) {
     <header class="mobile-header">
       <div class="header-content">
         <GlobalLogo class="logo" />
-        <h1 class="title">ThingsPanel</h1>
+        <h1 class="title">{{ mobileTitle }}</h1>
         <UserAvatar class="avatar" />
       </div>
     </header>

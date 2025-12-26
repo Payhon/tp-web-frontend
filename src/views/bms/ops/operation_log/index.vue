@@ -145,13 +145,7 @@ getTableData()
         <NSelect v-model:value="queryParams.op_type" class="w-160px" :options="opTypeOptions" />
       </NFormItem>
       <NFormItem label="时间范围">
-        <NDatePicker
-          v-model:value="range"
-          type="datetimerange"
-          clearable
-          separator="-"
-          @update:value="pickerChange"
-        />
+        <NDatePicker v-model:value="range" type="datetimerange" clearable separator="-" @update:value="pickerChange" />
       </NFormItem>
       <NFormItem>
         <NButton type="primary" @click="handleQuery">查询</NButton>
@@ -170,4 +164,3 @@ getTableData()
     />
   </NCard>
 </template>
-

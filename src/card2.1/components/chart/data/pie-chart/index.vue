@@ -1,5 +1,5 @@
 <template>
-  <div class="pie-chart-container" ref="chartContainerRef">
+  <div ref="chartContainerRef" class="pie-chart-container">
     <div ref="chartRef" class="pie-chart"></div>
   </div>
 </template>

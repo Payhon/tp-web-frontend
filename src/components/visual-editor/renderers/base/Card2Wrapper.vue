@@ -12,8 +12,8 @@
   >
     <!-- 🔥 组件渲染 - 基于统一配置架构 -->
     <component
-      v-if="currentComponentDef?.component"
       :is="currentComponentDef.component"
+      v-if="currentComponentDef?.component"
       ref="currentComponentRef"
       :config="displayData"
       :data="componentDataFromWarehouse"
@@ -153,7 +153,7 @@ const initializeCard2CoreBinding = async () => {
     card2CoreDataBinding.value = bindingId
 
     // 订阅数据更新
-    dataBindingManager.subscribe(bindingId, (newData) => {
+    dataBindingManager.subscribe(bindingId, newData => {
       card2CoreData.value = newData
 
       // 🔥 更新绑定状态
@@ -274,7 +274,7 @@ function getInitialUnifiedConfig() {
 // 已移除：console语句
 
 // 配置变更回调
-setConfigChangeCallback((config) => {
+setConfigChangeCallback(config => {
   // 已移除：console语句
 })
 
@@ -299,27 +299,32 @@ const componentInteractionCapability = computed<ComponentInteractionCapability |
 const isBaseLayerField = (field: string): boolean => {
   // base层字段：设备绑定、UI基础配置
   const baseFields = [
-    'deviceId', 'metricsList', // 设备绑定字段
-    'title', 'showTitle', 'visible', 'opacity', // UI基础字段
-    'backgroundColor', 'borderWidth', 'borderColor', 'borderStyle', 'borderRadius',
-    'padding', 'margin'
+    'deviceId',
+    'metricsList', // 设备绑定字段
+    'title',
+    'showTitle',
+    'visible',
+    'opacity', // UI基础字段
+    'backgroundColor',
+    'borderWidth',
+    'borderColor',
+    'borderStyle',
+    'borderRadius',
+    'padding',
+    'margin'
   ]
   return baseFields.includes(field)
 }
 
 const isDataSourceLayerField = (field: string): boolean => {
   // dataSource层字段：数据绑定配置
-  const dataSourceFields = [
-    'dataSourceConfig', 'fieldMappings', 'refreshInterval', 'autoRefresh'
-  ]
+  const dataSourceFields = ['dataSourceConfig', 'fieldMappings', 'refreshInterval', 'autoRefresh']
   return dataSourceFields.includes(field)
 }
 
 const isInteractionLayerField = (field: string): boolean => {
   // interaction层字段：交互配置
-  const interactionFields = [
-    'interactions', 'clickActions', 'hoverActions', 'eventHandlers'
-  ]
+  const interactionFields = ['interactions', 'clickActions', 'hoverActions', 'eventHandlers']
   return interactionFields.includes(field)
 }
 
@@ -330,13 +335,17 @@ const executeBatchedInteractionResponses = async (responses: InteractionResponse
   // 按组件ID和动作类型分组响应
   const groupedResponses = {
     self: { modify: [] as InteractionResponse[], other: [] as InteractionResponse[] },
-    cross: new Map<string, InteractionResponse[]>(),  // componentId -> responses
-    nonModify: [] as InteractionResponse[]  // 跳转等非修改动作
+    cross: new Map<string, InteractionResponse[]>(), // componentId -> responses
+    nonModify: [] as InteractionResponse[] // 跳转等非修改动作
   }
 
   // 分类所有响应
   for (const response of responses) {
-    if (response.action === 'modify' || response.action === 'modifyProperty' || response.action === 'updateComponentData') {
+    if (
+      response.action === 'modify' ||
+      response.action === 'modifyProperty' ||
+      response.action === 'updateComponentData'
+    ) {
       if (response.modifyConfig) {
         const { targetComponentId } = response.modifyConfig
 
@@ -382,8 +391,8 @@ const executeBatchedInteractionResponses = async (responses: InteractionResponse
   for (const [targetComponentId, targetResponses] of groupedResponses.cross.entries()) {
     // 🔥 分层收集配置更新 - 根据字段特性分配到不同配置层
     const layeredUpdates = {
-      base: {},        // 设备绑定等基础配置
-      component: {},   // 组件特有属性
+      base: {}, // 设备绑定等基础配置
+      component: {}, // 组件特有属性
       dataSource: {}, // 数据源配置
       interaction: {} // 交互配置
     }
@@ -400,7 +409,7 @@ const executeBatchedInteractionResponses = async (responses: InteractionResponse
           const [layerPrefix, fieldName] = targetProperty.split('.')
           actualProperty = fieldName
           targetLayer = layerPrefix
-    // 已移除：console语句
+          // 已移除：console语句
         } else {
           // 🔥 字段层级映射：根据字段名确定应该更新哪个配置层
           if (isBaseLayerField(targetProperty)) {
@@ -414,7 +423,7 @@ const executeBatchedInteractionResponses = async (responses: InteractionResponse
 
         // 根据目标层级收集更新
         layeredUpdates[targetLayer][actualProperty] = updateValue
-    // 已移除：console语句
+        // 已移除：console语句
       }
     })
 
@@ -424,7 +433,7 @@ const executeBatchedInteractionResponses = async (responses: InteractionResponse
       // 🔥 分层批量更新：按配置层级分别更新
       for (const [layer, updates] of Object.entries(layeredUpdates)) {
         if (Object.keys(updates).length > 0) {
-    // 已移除：console语句
+          // 已移除：console语句
           configurationManager.updateConfigurationForInteraction(
             targetComponentId,
             layer as keyof UnifiedCard2Configuration,
@@ -433,9 +442,9 @@ const executeBatchedInteractionResponses = async (responses: InteractionResponse
           )
         }
       }
-    // 已移除：console语句
+      // 已移除：console语句
     } catch (error) {
-    // 已移除：console语句
+      // 已移除：console语句
     }
   }
 
@@ -450,26 +459,26 @@ const executeBatchedInteractionResponses = async (responses: InteractionResponse
 
 // 交互事件执行器（处理非属性修改动作）
 const executeInteractionResponse = async (response: InteractionResponse) => {
-    // 已移除：console语句
+  // 已移除：console语句
 
   try {
     switch (response.action) {
       case 'navigateToUrl':
       case 'jump':
-    // 已移除：console语句
+        // 已移除：console语句
         // 支持多种URL数据格式
         let url = response.jumpConfig?.url || response.value || response.url
         let target = response.jumpConfig?.target || response.target || '_self'
 
         if (url) {
-    // 已移除：console语句
+          // 已移除：console语句
           if (target === '_self') {
             window.location.href = url
           } else {
             window.open(url, target)
           }
         } else {
-    // 已移除：console语句
+          // 已移除：console语句
         }
         break
 
@@ -477,7 +486,7 @@ const executeInteractionResponse = async (response: InteractionResponse) => {
       case 'modifyProperty':
       case 'modify':
         // 🔥 修复说明：属性修改现在由 executeBatchedInteractionResponses 批量处理
-    // 已移除：console语句
+        // 已移除：console语句
         break
 
       case 'changeVisibility':
@@ -507,7 +516,7 @@ const executeInteractionResponse = async (response: InteractionResponse) => {
         break
 
       default:
-    // 已移除：console语句
+      // 已移除：console语句
     }
   } catch (error) {
     // 已移除：console语句
@@ -527,14 +536,14 @@ const handleInteractionEvent = async (eventType: InteractionEventType, event?: E
     return // 组件不支持此事件类型
   }
 
-    // 已移除：console语句
+  // 已移除：console语句
 
   // 执行匹配的交互配置
-  const matchingConfigs = interactionConfigs.value.filter(config =>
-    config.event === eventType && config.enabled !== false
+  const matchingConfigs = interactionConfigs.value.filter(
+    config => config.event === eventType && config.enabled !== false
   )
 
-    // 已移除：console语句
+  // 已移除：console语句
 
   // 🔥 关键修复：将所有匹配配置的responses合并，避免多个配置相互覆盖
   const allResponses: InteractionResponse[] = []
@@ -543,7 +552,7 @@ const handleInteractionEvent = async (eventType: InteractionEventType, event?: E
     allResponses.push(...config.responses)
   }
 
-    // 已移除：console语句
+  // 已移除：console语句
 
   // 一次性批量处理所有响应，避免配置间相互覆盖
   if (allResponses.length > 0) {
@@ -554,7 +563,7 @@ const handleInteractionEvent = async (eventType: InteractionEventType, event?: E
 // ================== 事件处理 ==================
 
 const handleWrapperClick = async (event: MouseEvent) => {
-    // 已移除：console语句
+  // 已移除：console语句
 
   // 执行交互响应（内部已有预览模式检查）
   await handleInteractionEvent('click', event)
@@ -564,28 +573,28 @@ const handleWrapperClick = async (event: MouseEvent) => {
 }
 
 const handleContextMenu = (event: MouseEvent) => {
-    // 已移除：console语句
+  // 已移除：console语句
   event.preventDefault() // 阻止默认右键菜单
 }
 
 // 新增交互事件处理函数
 const handleMouseEnter = async (event: MouseEvent) => {
-    // 已移除：console语句
+  // 已移除：console语句
   await handleInteractionEvent('hover', event)
 }
 
 const handleMouseLeave = (event: MouseEvent) => {
-    // 已移除：console语句
+  // 已移除：console语句
   // hover事件的离开可以触发一些重置操作
 }
 
 const handleFocus = async (event: FocusEvent) => {
-    // 已移除：console语句
+  // 已移除：console语句
   await handleInteractionEvent('focus', event)
 }
 
 const handleBlur = async (event: FocusEvent) => {
-    // 已移除：console语句
+  // 已移除：console语句
   await handleInteractionEvent('blur', event)
 }
 
@@ -596,7 +605,7 @@ const handleConfigUpdateEvent = (event: CustomEvent) => {
     // 已移除：console语句
 
     if (layer === 'interaction') {
-    // 已移除：console语句
+      // 已移除：console语句
 
       // 🔥 统一配置中心：通过updateConfig更新交互配置
       if (config?.configs) {
@@ -621,13 +630,15 @@ const handleConfigRequestEvent = (event: CustomEvent) => {
     const requestedConfig = layer ? fullConfig[layer] : fullConfig
 
     // 发送配置响应事件
-    window.dispatchEvent(new CustomEvent('card2-config-response', {
-      detail: {
-        componentId,
-        layer,
-        config: requestedConfig
-      }
-    }))
+    window.dispatchEvent(
+      new CustomEvent('card2-config-response', {
+        detail: {
+          componentId,
+          layer,
+          config: requestedConfig
+        }
+      })
+    )
   }
 }
 
@@ -635,14 +646,14 @@ const handleConfigRequestEvent = (event: CustomEvent) => {
 
 // 更新交互配置
 const updateInteractionConfigs = (configs: InteractionConfig[]) => {
-    // 已移除：console语句
+  // 已移除：console语句
 
-    // 已移除：console语句
+  // 已移除：console语句
 
   // 🔥 统一配置中心：直接通过updateConfig更新，计算属性会自动响应
   updateConfig('interaction', { configs })
 
-    // 已移除：console语句
+  // 已移除：console语句
 }
 
 // 获取交互配置
@@ -672,8 +683,8 @@ watch(
     // 已移除：console语句
 
     // 检查每个dataChange交互配置
-    const dataChangeConfigs = interactionConfigs.value.filter(config =>
-      config.event === 'dataChange' && config.enabled !== false
+    const dataChangeConfigs = interactionConfigs.value.filter(
+      config => config.event === 'dataChange' && config.enabled !== false
     )
 
     // 已移除：console语句
@@ -688,19 +699,19 @@ watch(
         const newValue = getNestedValue(newDisplayData, propertyPath)
         const oldValue = getNestedValue(oldDisplayData || {}, propertyPath)
 
-    // 已移除：console语句
+        // 已移除：console语句
 
         // 如果属性值发生了变化
         if (newValue !== oldValue) {
           // 检查执行条件（使用config.condition而不是response.executionCondition）
           if (checkDataChangeCondition(config.condition, newValue)) {
-    // 已移除：console语句
+            // 已移除：console语句
 
             // 🔥 关键修复：收集响应而不是立即执行
             triggeredResponses.push(...config.responses)
-    // 已移除：console语句
+            // 已移除：console语句
           } else {
-    // 已移除：console语句
+            // 已移除：console语句
           }
         }
       }
@@ -708,7 +719,7 @@ watch(
 
     // 🔥 关键修复：批量执行所有触发的响应，避免相互覆盖
     if (triggeredResponses.length > 0) {
-    // 已移除：console语句
+      // 已移除：console语句
 
       // 延迟执行避免与同步更新冲突
       setTimeout(async () => {
@@ -742,14 +753,14 @@ const getNestedValue = (obj: any, path: string): any => {
 const checkDataChangeCondition = (condition: any, currentValue: any): boolean => {
   if (!condition) return true // 无条件直接执行
 
-    // 已移除：console语句
+  // 已移除：console语句
 
   switch (condition.type) {
     case 'comparison':
       const operator = condition.operator || 'equals'
       const targetValue = condition.value
 
-    // 已移除：console语句
+      // 已移除：console语句
 
       return compareValues(currentValue, targetValue, operator)
 
@@ -760,7 +771,7 @@ const checkDataChangeCondition = (condition: any, currentValue: any): boolean =>
       return checkExpressionCondition(currentValue, condition.value)
 
     default:
-    // 已移除：console语句
+      // 已移除：console语句
       return true
   }
 }
@@ -770,7 +781,7 @@ const checkExecutionCondition = (response: any, currentValue: any): boolean => {
   const condition = response.executionCondition
   if (!condition) return true // 无条件直接执行
 
-    // 已移除：console语句
+  // 已移除：console语句
 
   switch (condition.type) {
     case 'equals':
@@ -778,7 +789,7 @@ const checkExecutionCondition = (response: any, currentValue: any): boolean => {
       const operator = condition.operator || '=='
       const targetValue = condition.value
 
-    // 已移除：console语句
+      // 已移除：console语句
 
       return compareValues(currentValue, targetValue, operator)
 
@@ -789,7 +800,7 @@ const checkExecutionCondition = (response: any, currentValue: any): boolean => {
       return checkExpressionCondition(currentValue, condition.value)
 
     default:
-    // 已移除：console语句
+      // 已移除：console语句
       return true
   }
 }
@@ -901,7 +912,7 @@ const executeComponentDataSource = async (): Promise<void> => {
     clearTimeout(executionDebounce)
   }
 
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     executionDebounce = setTimeout(async () => {
       // 🔥 再次检查序号，确保这是最新的执行请求
       if (currentSequence !== currentExecutionSequence) {
@@ -931,7 +942,7 @@ const executeComponentDataSource = async (): Promise<void> => {
 
         // 🎯 用户要求的打印这几个字 - 阶段0：Card2Wrapper组件执行器被调用
         if (process.env.NODE_ENV === 'development') {
-    // 已移除：console语句
+          // 已移除：console语句
         }
 
         // 🔥 使用 VisualEditorBridge 执行数据源
@@ -964,7 +975,7 @@ const executeComponentDataSource = async (): Promise<void> => {
         }
 
         if (process.env.NODE_ENV === 'development') {
-    // 已移除：console语句
+          // 已移除：console语句
         }
 
         // 🔥 数据源执行完成后，清除缓存强制重新获取最新数据
@@ -980,7 +991,7 @@ const executeComponentDataSource = async (): Promise<void> => {
 
         resolve()
       } catch (error) {
-    // 已移除：console语句
+        // 已移除：console语句
         resolve() // 即使失败也要resolve，避免阻塞
       } finally {
         executionInProgress = false
@@ -993,7 +1004,9 @@ const executeComponentDataSource = async (): Promise<void> => {
 }
 
 // 🔥 新增：捕获最新配置快照的工具函数
-const captureLatestConfigurationSnapshot = async (executionId: string): Promise<{ dataSource: any; base: any; timestamp: number } | null> => {
+const captureLatestConfigurationSnapshot = async (
+  executionId: string
+): Promise<{ dataSource: any; base: any; timestamp: number } | null> => {
   try {
     const latestConfig = configurationManager.getConfiguration(props.nodeId)
     if (!latestConfig) {
@@ -1024,7 +1037,7 @@ const calculateConfigurationHash = (config: any): string => {
     let hash = 0
     for (let i = 0; i < configString.length; i++) {
       const char = configString.charCodeAt(i)
-      hash = ((hash << 5) - hash) + char
+      hash = (hash << 5) - hash + char
       hash = hash & hash // 转换为32位整数
     }
     return Math.abs(hash).toString(36)
@@ -1048,7 +1061,7 @@ const initializeDataSourceConfiguration = async () => {
     const hasDataSourceConfig = currentConfig?.dataSource
 
     if (hasDataSourceConfig) {
-    // 已移除：console语句
+      // 已移除：console语句
 
       // 🔥 关键：通过"触碰"配置来触发执行，而不是直接执行
       // 这样能确保所有监听器都被正确触发
@@ -1059,7 +1072,7 @@ const initializeDataSourceConfiguration = async () => {
         props.componentType
       )
     } else {
-    // 已移除：console语句
+      // 已移除：console语句
     }
   } catch (error) {
     // 已移除：console语句
@@ -1083,7 +1096,7 @@ watch(
           metadata: updatedMetadata
         })
 
-    // 已移除：console语句
+        // 已移除：console语句
       }
     }
   },
@@ -1112,7 +1125,7 @@ const forceDataRefresh = () => {
 }
 
 onMounted(async () => {
-    // 已移除：console语句
+  // 已移除：console语句
 
   // 🚀 首先初始化Card2.1 Core响应式数据绑定系统
   checkCard2CoreSupport()
@@ -1127,7 +1140,6 @@ onMounted(async () => {
   try {
     // 强制访问计算属性，确保Vue响应式系统能追踪到依赖关系
     const initialData = componentDataFromWarehouse.value
-
   } catch (initError) {
     // 已移除：console语句
   }
@@ -1146,7 +1158,7 @@ onMounted(async () => {
         metadata: updatedMetadata
       })
 
-    // 已移除：console语句
+      // 已移除：console语句
     }
   }
 
@@ -1167,7 +1179,7 @@ onMounted(async () => {
           await initializeDataSourceConfiguration()
         }
       } catch (error) {
-         // 已移除：console语句
+        // 已移除：console语句
       }
     })
   }
@@ -1223,7 +1235,7 @@ onUnmounted(() => {
 
   // 🔥 清理交互配置路由器中的组件注册
   interactionConfigRouter.unregisterComponent(props.nodeId)
-    // 已移除：console语句
+  // 已移除：console语句
 
   window.removeEventListener('card2-config-update', handleConfigUpdateEvent as EventListener)
   window.removeEventListener('card2-config-request', handleConfigRequestEvent as EventListener)

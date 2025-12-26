@@ -1,7 +1,7 @@
 /**
  * Card2.1 统一类型导出
  * 提供完整、一致的类型系统，支持组件开发和编辑器集成
- * 
+ *
  * 使用方式：
  * import type { ComponentDefinition, Setting, DataSourceRequirement } from '@/card2.1/types'
  */
@@ -70,11 +70,7 @@ export type {
 export { SettingControlType } from '@/card2.1/types/setting-config'
 
 // 导出设置配置工具函数
-export {
-  createSetting,
-  createCustomConfig,
-  inferPropertyDataType
-} from './setting-config'
+export { createSetting, createCustomConfig, inferPropertyDataType } from './setting-config'
 
 // ============ 类型工具函数系统 ============
 
@@ -84,34 +80,34 @@ export {
   groupSettingsByGroup,
   inferTSTypeFromControlType,
   getDefaultValueForFieldType,
-  
+
   // 配置对象操作工具
   deepMergeConfig,
   extractFieldValue,
   setFieldValue,
-  
+
   // 组件定义操作工具
   createComponentSettingConfig,
   extractDataSourceRequirements,
   extractStaticParamRequirements,
   supportsDataSourceType,
-  
+
   // 数据源和字段映射工具
   createFieldMapping,
   mergeFieldMappings,
-  
+
   // 交互配置工具
   createClickJumpInteraction,
   createModifyInteraction,
-  
+
   // 分组和分类工具
   inferCategoryFromPath,
   createSettingGroup,
-  
+
   // 开发辅助工具
   generateTSInterfaceFromDefinition,
   validateComponentConfig,
-  
+
   // 工具函数集合
   TypeUtils
 } from './utils'
@@ -135,28 +131,22 @@ export type {
  * 提取组件定义的配置类型
  * 用于类型安全地访问组件的配置对象
  */
-export type ExtractConfigType<T extends ComponentDefinition> = T extends ComponentDefinition<infer Config> 
-  ? Config 
-  : Record<string, unknown>
+export type ExtractConfigType<T extends ComponentDefinition> =
+  T extends ComponentDefinition<infer Config> ? Config : Record<string, unknown>
 
 /**
  * 提取自定义配置的 customize 类型
  * 用于类型安全地访问组件的自定义配置
  */
-export type ExtractCustomizeType<T extends CustomConfig> = T extends CustomConfig<infer Customize>
-  ? Customize
-  : Record<string, unknown>
+export type ExtractCustomizeType<T extends CustomConfig> =
+  T extends CustomConfig<infer Customize> ? Customize : Record<string, unknown>
 
 /**
  * 组件设置配置的类型推导
  * 根据设置项配置推导出完整的组件配置类型
  */
 export type InferConfigFromSettings<T extends readonly Setting[]> = {
-  [K in T[number] as K['field']]: K['defaultValue'] extends infer V 
-    ? V extends undefined 
-      ? unknown 
-      : V
-    : unknown
+  [K in T[number] as K['field']]: K['defaultValue'] extends infer V ? (V extends undefined ? unknown : V) : unknown
 }
 
 // ============ 类型断言工具 ============
@@ -167,11 +157,7 @@ export type InferConfigFromSettings<T extends readonly Setting[]> = {
  * @returns 是否为组件定义
  */
 export function isComponentDefinition(obj: unknown): obj is ComponentDefinition {
-  return obj && 
-         typeof obj === 'object' &&
-         typeof obj.type === 'string' &&
-         typeof obj.name === 'string' &&
-         obj.component
+  return obj && typeof obj === 'object' && typeof obj.type === 'string' && typeof obj.name === 'string' && obj.component
 }
 
 /**
@@ -180,11 +166,13 @@ export function isComponentDefinition(obj: unknown): obj is ComponentDefinition 
  * @returns 是否为设置项配置
  */
 export function isSetting(obj: unknown): obj is Setting {
-  return obj &&
-         typeof obj === 'object' &&
-         typeof obj.type === 'string' &&
-         typeof obj.label === 'string' &&
-         typeof obj.field === 'string'
+  return (
+    obj &&
+    typeof obj === 'object' &&
+    typeof obj.type === 'string' &&
+    typeof obj.label === 'string' &&
+    typeof obj.field === 'string'
+  )
 }
 
 /**
@@ -193,19 +181,19 @@ export function isSetting(obj: unknown): obj is Setting {
  * @returns 是否为数据源需求
  */
 export function isDataSourceRequirement(obj: unknown): obj is DataSourceRequirement {
-  return obj &&
-         typeof obj === 'object' &&
-         typeof obj.key === 'string' &&
-         typeof obj.name === 'string' &&
-         typeof obj.description === 'string' &&
-         Array.isArray(obj.supportedTypes)
+  return (
+    obj &&
+    typeof obj === 'object' &&
+    typeof obj.key === 'string' &&
+    typeof obj.name === 'string' &&
+    typeof obj.description === 'string' &&
+    Array.isArray(obj.supportedTypes)
+  )
 }
 
 // ============ 类型验证系统 ============
 
-export type {
-  ValidationResult
-} from './validation'
+export type { ValidationResult } from './validation'
 
 export {
   // 基础类型验证

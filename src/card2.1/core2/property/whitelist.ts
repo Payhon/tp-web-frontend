@@ -74,7 +74,9 @@ export class WhitelistManager {
   /**
    * 按排序顺序获取属性列表
    */
-  static getSortedProperties(whitelist: ComponentPropertyWhitelist): Array<{ name: string; config: PropertyExposureConfig }> {
+  static getSortedProperties(
+    whitelist: ComponentPropertyWhitelist
+  ): Array<{ name: string; config: PropertyExposureConfig }> {
     return Object.entries(whitelist)
       .map(([name, config]) => ({ name, config }))
       .sort((a, b) => (a.config.order || 0) - (b.config.order || 0))

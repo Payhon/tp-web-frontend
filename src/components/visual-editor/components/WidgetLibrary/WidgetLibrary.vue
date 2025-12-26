@@ -130,9 +130,7 @@
 
           <!-- 空状态 -->
           <div v-else class="empty-device-state">
-            <n-empty
-              :description="selectedDeviceId ? '该设备模板无可用组件（v2格式）' : '请选择设备'"
-            />
+            <n-empty :description="selectedDeviceId ? '该设备模板无可用组件（v2格式）' : '请选择设备'" />
           </div>
         </div>
       </n-tab-pane>
@@ -186,7 +184,6 @@ const availableComponentTypes = ref<string[]>([])
 // 使用 componentTree 的初始化状态
 const isInitialized = computed(() => !componentTree.isLoading.value && componentTree.componentTree.value.totalCount > 0)
 const initializationError = computed(() => componentTree.error.value)
-
 
 const initializeWidgets = async () => {
   try {
@@ -254,14 +251,11 @@ const deviceTabWidgets = computed(() => {
   }
 
   // 过滤出模板中配置过的组件类型
-  const filtered = allWidgets.value.filter(widget =>
-    availableComponentTypes.value.includes(widget.type)
-  )
+  const filtered = allWidgets.value.filter(widget => availableComponentTypes.value.includes(widget.type))
 
   console.log('🔥 [设备Tab] 过滤后的组件:', filtered.length, '个')
   return filtered
 })
-
 
 // --- Widget Data ---
 const allWidgets = computed(() => {
@@ -276,12 +270,18 @@ const allWidgets = computed(() => {
 
   // 🔥 调试：打印接收到的组件数据
   console.log('🔥 [WidgetLibrary] 接收组件:', components.length, '个')
-  console.log('🔥 [WidgetLibrary] 分类统计:', components.reduce((acc, c) => {
-    const mainCat = c?.mainCategory || '未知'
-    acc[mainCat] = (acc[mainCat] || 0) + 1
-    return acc
-  }, {} as Record<string, number>))
-  
+  console.log(
+    '🔥 [WidgetLibrary] 分类统计:',
+    components.reduce(
+      (acc, c) => {
+        const mainCat = c?.mainCategory || '未知'
+        acc[mainCat] = (acc[mainCat] || 0) + 1
+        return acc
+      },
+      {} as Record<string, number>
+    )
+  )
+
   // 🔥 详细调试：打印数字指示器的分类信息
   const digitIndicator = components.find(c => c.type === 'digit-indicator')
   console.log('🔥 [WidgetLibrary] 数字指示器分类信息:', {
@@ -301,7 +301,7 @@ const allWidgets = computed(() => {
       source: 'card2' as const,
       definition: {
         mainCategory: component.mainCategory || 'categories.chart', // 默认翻译键
-        subCategory: component.subCategory     // 使用实际的子分类，不设置默认值
+        subCategory: component.subCategory // 使用实际的子分类，不设置默认值
       }
     }
 
@@ -310,7 +310,6 @@ const allWidgets = computed(() => {
 
   return widgets
 })
-
 
 // Dev 面板简要数据摘要（仅开发显示）
 const DEV = import.meta.env.DEV
@@ -338,7 +337,6 @@ const debugDump = computed(() => {
     2
   )
 })
-
 
 interface SubCategory {
   name: string
@@ -368,11 +366,9 @@ const simplifiedWidgetTree = computed(() => {
     map[main][sub].push(widget)
   })
 
-
   // 使用componentTree中已排序好的分类顺序
   const orderedCategories = componentTree.componentTree.value?.categories || []
   const categoryOrder = orderedCategories.map(cat => cat.name)
-
 
   // 按照componentTree中的分类顺序构建结果
   const result: TopCategory[] = []
@@ -402,14 +398,12 @@ const simplifiedWidgetTree = computed(() => {
     }
   })
 
-
   // 🔥 修复：保留空分类，便于调试和确保系统分类显示
   return result.map(top => ({
     name: top.name,
     subCategories: top.subCategories // 暂时移除空分类过滤
   }))
 })
-
 
 const filteredWidgetTree = computed(() => {
   let result = !searchTerm.value
@@ -431,7 +425,6 @@ const filteredWidgetTree = computed(() => {
             }
           })
 
-
           // 🔥 修复：总是包含分类，即使没有匹配的组件（便于显示空分类状态）
           filteredTopCategories.push({ name: topCategory.name, subCategories: filteredSubCategories })
         })
@@ -447,8 +440,6 @@ const filteredWidgetTree = computed(() => {
 
   return result
 })
-
-
 
 // --- Event Handlers ---
 const handleAddWidget = (widget: any) => {

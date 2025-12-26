@@ -327,7 +327,7 @@ const handleCancel = () => {
 }
 
 // 渲染目标主题标签（下拉选项中的显示）
-const renderTopicLabel: SelectRenderLabel = (option) => {
+const renderTopicLabel: SelectRenderLabel = option => {
   const topicOption = option as { label: string; value: string; description: string }
   return h(
     'div',
@@ -372,9 +372,7 @@ const renderTopicTag: SelectRenderTag = ({ option }) => {
         alignItems: 'center'
       }
     },
-    [
-      h('div', { style: { fontSize: '14px' } }, topicOption.label as string)
-    ]
+    [h('div', { style: { fontSize: '14px' } }, topicOption.label as string)]
   )
 }
 </script>
@@ -417,7 +415,8 @@ const renderTopicTag: SelectRenderTag = ({ option }) => {
             <NPopover trigger="click">
               <template #trigger>
                 <NButton text size="small" class="text-primary">
-                  {{ t('generate.topicMapping.viewGuide') }}</NButton>
+                  {{ t('generate.topicMapping.viewGuide') }}
+                </NButton>
               </template>
               <div class="detailed-tip">
                 <template v-if="formData.direction === 'up'">
@@ -508,38 +507,38 @@ const renderTopicTag: SelectRenderTag = ({ option }) => {
   min-width: 450px;
   width: 750px;
   padding: 8px 12px;
-  
+
   .tip-title {
     font-size: 16px;
     font-weight: 600;
     color: #333;
     margin-bottom: 8px;
   }
-  
+
   .tip-content {
     font-size: 14px;
     line-height: 1.6;
   }
-  
+
   .tip-section {
     margin-bottom: 12px;
-    
+
     &:last-child {
       margin-bottom: 0;
     }
   }
-  
+
   .tip-label {
     font-weight: 500;
     color: #333;
     margin-bottom: 4px;
   }
-  
+
   .tip-text {
     color: #666;
     margin-bottom: 6px;
     padding-left: 8px;
-    
+
     &:last-child {
       margin-bottom: 0;
     }
@@ -548,14 +547,14 @@ const renderTopicTag: SelectRenderTag = ({ option }) => {
 
 .topic-option {
   padding: 4px 0;
-  
+
   .topic-option-label {
     font-size: 14px;
     color: #333;
     line-height: 1.5;
     margin-bottom: 2px;
   }
-  
+
   .topic-option-desc {
     font-size: 12px;
     color: #999;
@@ -563,4 +562,3 @@ const renderTopicTag: SelectRenderTag = ({ option }) => {
   }
 }
 </style>
-

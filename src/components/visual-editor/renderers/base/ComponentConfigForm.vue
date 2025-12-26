@@ -1,6 +1,5 @@
 <template>
   <div class="component-config-form">
-
     <!-- Card2.1组件配置 -->
     <div v-if="isCard2Component && card2ConfigComponent">
       <component
@@ -60,7 +59,7 @@
           <div>类型: {{ widget?.type }}</div>
           <div>Card2.1: {{ isCard2Component ? '是' : '否' }}</div>
           <div>有配置: {{ !!card2ConfigComponent ? '是' : '否' }}</div>
-          <div style="margin-top: 8px;">
+          <div style="margin-top: 8px">
             <n-button size="tiny" @click="logToConsole">控制台输出</n-button>
           </div>
         </div>
@@ -77,11 +76,7 @@
  */
 
 import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
-import {
-  NTooltip,
-  NButton,
-  useMessage
-} from 'naive-ui'
+import { NTooltip, NButton, useMessage } from 'naive-ui'
 import { useComponentTree as useCard2Integration } from '@/card2.1/hooks/useComponentTree'
 
 interface Props {
@@ -126,9 +121,7 @@ const card2ConfigComponent = computed(() => {
     }
 
     // 通过Card2集成hook获取组件定义（从filteredComponents中查找）
-    const componentDefinition = card2Integration.filteredComponents.value.find(
-      comp => comp.type === props.widget.type
-    )
+    const componentDefinition = card2Integration.filteredComponents.value.find(comp => comp.type === props.widget.type)
 
     // 优先使用组件自定义的配置组件
     if (componentDefinition?.configComponent) {
@@ -137,8 +130,7 @@ const card2ConfigComponent = computed(() => {
 
     // 如果组件有配置属性但没有自定义配置组件，使用通用配置表单
     const hasProperties =
-      componentDefinition?.config?.properties &&
-      Object.keys(componentDefinition.config.properties).length > 0
+      componentDefinition?.config?.properties && Object.keys(componentDefinition.config.properties).length > 0
 
     if (hasProperties) {
       // 返回通用的Card2配置表单（使用FlexibleConfigForm）
@@ -196,7 +188,6 @@ const isUserEditing = ref(false)
  * 🔥 统一配置中心：配置更新处理 - 修复配置合并和重复更新问题
  */
 const handleConfigUpdate = (newConfig: any) => {
-
   // 🔥 标记用户正在编辑，防止外部更新覆盖
   isUserEditing.value = true
 
@@ -251,7 +242,7 @@ const handleCard2ConfigUpdate = (event: CustomEvent) => {
     // 🔥 修复：只有当不是用户正在编辑时才更新
     if (!isUserEditing.value) {
       // 🔥 关键修复：完全替换配置，而不是合并，确保配置面板完全同步
-      componentConfig.value = { ...config }  // 完全使用新配置
+      componentConfig.value = { ...config } // 完全使用新配置
     } else {
     }
   }
@@ -271,7 +262,7 @@ onUnmounted(() => {
  */
 watch(
   () => props.widget?.id,
-  (newId) => {
+  newId => {
     if (newId) {
       const newConfig = getComponentConfig()
       componentConfig.value = newConfig

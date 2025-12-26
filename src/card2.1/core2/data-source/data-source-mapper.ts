@@ -144,10 +144,7 @@ export class DataSourceMapper implements IDataSourceMapper {
   /**
    * 获取默认静态参数
    */
-  private static getDefaultStaticParams(
-    definition: any,
-    staticParamKeys: string[]
-  ): Record<string, any> {
+  private static getDefaultStaticParams(definition: any, staticParamKeys: string[]): Record<string, any> {
     const defaults: Record<string, any> = {}
 
     staticParamKeys.forEach(key => {

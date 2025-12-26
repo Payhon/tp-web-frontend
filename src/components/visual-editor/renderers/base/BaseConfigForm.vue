@@ -306,10 +306,14 @@ let searchTimer: number | null = null
 /**
  * 监听设备选择变化
  */
-watch(() => formData.deviceId, (newDeviceId) => {
-  // 设备ID变化时触发配置更新
-  handleUpdate()
-}, { deep: true })
+watch(
+  () => formData.deviceId,
+  newDeviceId => {
+    // 设备ID变化时触发配置更新
+    handleUpdate()
+  },
+  { deep: true }
+)
 
 // 当前选中的节点ID
 const selectedNodeId = computed(() => {
@@ -381,13 +385,15 @@ const updateCardLayerConfig = (baseConfig: BaseConfiguration) => {
     configurationManager.updateConfiguration(nodeId, 'base', baseConfig)
 
     // 🔥 方法2: 发送自定义事件通知卡片层（用于实时更新）
-    window.dispatchEvent(new CustomEvent('card2-config-update', {
-      detail: {
-        componentId: nodeId,
-        layer: 'base',
-        config: baseConfig
-      }
-    }))
+    window.dispatchEvent(
+      new CustomEvent('card2-config-update', {
+        detail: {
+          componentId: nodeId,
+          layer: 'base',
+          config: baseConfig
+        }
+      })
+    )
 
     return true
   } catch (error) {

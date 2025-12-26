@@ -1,58 +1,85 @@
 <script setup lang="tsx">
-import { computed, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
-import { NButton, NPopconfirm, NSpace, NTag, NTabs, NTabPane, useMessage } from 'naive-ui';
-import { getOrgList, deleteOrg, createOrg, updateOrg, OrgTypeLabels, OrgTypes } from '@/service/api/bms';
-import type { SearchConfig } from '@/components/data-table-page/index.vue';
-import OrgModal from './modules/org-modal.vue';
+import { computed, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import {
+  NButton,
+  NForm,
+  NFormItem,
+  NInput,
+  NModal,
+  NPopconfirm,
+  NSpace,
+  NTag,
+  NTabs,
+  NTabPane,
+  useMessage
+} from 'naive-ui'
+import {
+  getOrgList,
+  deleteOrg,
+  createOrg,
+  updateOrg,
+  OrgTypeLabels,
+  OrgTypes,
+  resetOrgAccountPassword
+} from '@/service/api/bms'
+import type { SearchConfig } from '@/components/data-table-page/index.vue'
+import OrgModal from './modules/org-modal.vue'
 
-const route = useRoute();
-const message = useMessage();
-const tablePageRef = ref();
-const modalVisible = ref(false);
-const modalType = ref<'add' | 'edit'>('add');
-const currentData = ref(null);
+const route = useRoute()
+const message = useMessage()
+const tablePageRef = ref()
+const modalVisible = ref(false)
+const modalType = ref<'add' | 'edit'>('add')
+const currentData = ref(null)
+const resetPwdVisible = ref(false)
+const resetPwdRow = ref<any>(null)
+const resetPwdFormRef = ref()
+const resetPwdForm = ref({
+  password: '',
+  confirmPassword: ''
+})
 
 // 从路由路径或查询参数获取固定的组织类型
 const fixedOrgType = computed(() => {
   // 先检查查询参数
-  const queryOrgType = route.query.org_type as string;
+  const queryOrgType = route.query.org_type as string
   if (queryOrgType && Object.keys(OrgTypes).includes(queryOrgType)) {
-    return queryOrgType;
+    return queryOrgType
   }
   // 再检查路由meta
-  const metaQuery = route.meta?.query as Record<string, string> | undefined;
+  const metaQuery = route.meta?.query as Record<string, string> | undefined
   if (metaQuery?.org_type && Object.keys(OrgTypes).includes(metaQuery.org_type)) {
-    return metaQuery.org_type;
+    return metaQuery.org_type
   }
   // 最后检查路由路径
-  const path = route.path;
-  if (path.includes('/pack-factory')) return 'PACK_FACTORY';
-  if (path.includes('/dealer')) return 'DEALER';
-  if (path.includes('/store')) return 'STORE';
-  return null;
-});
+  const path = route.path
+  if (path.includes('/pack-factory')) return 'PACK_FACTORY'
+  if (path.includes('/dealer')) return 'DEALER'
+  if (path.includes('/store')) return 'STORE'
+  return null
+})
 
 // 是否隐藏 Tab（通过快捷入口进入时隐藏）
-const hideTabs = computed(() => !!fixedOrgType.value);
+const hideTabs = computed(() => !!fixedOrgType.value)
 
 // 当前选中的 Tab
-const activeTab = ref<string>(fixedOrgType.value || 'PACK_FACTORY');
+const activeTab = ref<string>(fixedOrgType.value || 'PACK_FACTORY')
 
 // 页面标题
 const pageTitle = computed(() => {
   if (fixedOrgType.value) {
-    return `${OrgTypeLabels[fixedOrgType.value]}管理`;
+    return `${OrgTypeLabels[fixedOrgType.value]}管理`
   }
-  return '组织管理';
-});
+  return '组织管理'
+})
 
 // Tab 选项（不包含 BMS_FACTORY，因为它是顶级厂家）
 const tabOptions = [
   { key: 'PACK_FACTORY', label: 'PACK厂家' },
   { key: 'DEALER', label: '经销商' },
   { key: 'STORE', label: '门店' }
-];
+]
 
 // 搜索配置
 const searchConfigs = ref<SearchConfig[]>([
@@ -78,7 +105,7 @@ const searchConfigs = ref<SearchConfig[]>([
       { label: '禁用', value: 'F' }
     ]
   }
-]);
+])
 
 // 表格列配置
 const columns = ref([
@@ -92,7 +119,7 @@ const columns = ref([
     title: '类型',
     minWidth: 100,
     render: (row: any) => {
-      return <NTag type="info">{OrgTypeLabels[row.org_type] || row.org_type}</NTag>;
+      return <NTag type="info">{OrgTypeLabels[row.org_type] || row.org_type}</NTag>
     }
   },
   {
@@ -110,7 +137,7 @@ const columns = ref([
     title: '所在地区',
     minWidth: 150,
     render: (row: any) => {
-      return `${row.province || ''} ${row.city || ''} ${row.district || ''}`.trim() || '--';
+      return `${row.province || ''} ${row.city || ''} ${row.district || ''}`.trim() || '--'
     }
   },
   {
@@ -118,11 +145,7 @@ const columns = ref([
     title: '状态',
     minWidth: 80,
     render: (row: any) => {
-      return row.status === 'F' ? (
-        <NTag type="error">禁用</NTag>
-      ) : (
-        <NTag type="success">正常</NTag>
-      );
+      return row.status === 'F' ? <NTag type="error">禁用</NTag> : <NTag type="success">正常</NTag>
     }
   },
   {
@@ -133,13 +156,16 @@ const columns = ref([
   {
     key: 'actions',
     title: '操作',
-    width: 150,
+    width: 220,
     fixed: 'right',
     render: (row: any) => {
       return (
         <NSpace>
           <NButton size="small" type="primary" onClick={() => handleEdit(row)}>
             编辑
+          </NButton>
+          <NButton size="small" type="warning" onClick={() => handleResetPassword(row)}>
+            重置密码
           </NButton>
           <NPopconfirm onPositiveClick={() => handleDelete(row)}>
             {{
@@ -152,10 +178,10 @@ const columns = ref([
             }}
           </NPopconfirm>
         </NSpace>
-      );
+      )
     }
   }
-]);
+])
 
 // 映射为 DataTablePage 使用的 columnsToShow 配置
 const columnsToShow = computed(() =>
@@ -164,10 +190,10 @@ const columnsToShow = computed(() =>
     label: col.title,
     render: col.render
   }))
-);
+)
 
 // 当前类型标签
-const currentTypeLabel = computed(() => OrgTypeLabels[activeTab.value] || '组织');
+const currentTypeLabel = computed(() => OrgTypeLabels[activeTab.value] || '组织')
 
 // 顶部操作按钮
 const topActions = computed(() => [
@@ -178,42 +204,63 @@ const topActions = computed(() => [
       </NButton>
     )
   }
-]);
+])
 
 // 封装数据获取函数，自动附加 org_type 参数
 const fetchData = (params: any) => {
   return getOrgList({
     ...params,
     org_type: fixedOrgType.value || activeTab.value
-  });
-};
+  })
+}
 
 // 处理新增
 const handleAdd = () => {
-  modalType.value = 'add';
-  currentData.value = null;
-  modalVisible.value = true;
-};
+  modalType.value = 'add'
+  currentData.value = null
+  modalVisible.value = true
+}
 
 // 处理编辑
 const handleEdit = (row: any) => {
-  modalType.value = 'edit';
-  currentData.value = { ...row };
-  modalVisible.value = true;
-};
+  modalType.value = 'edit'
+  currentData.value = { ...row }
+  modalVisible.value = true
+}
 
 // 处理删除
 const handleDelete = async (row: any) => {
   try {
-    const { error } = await deleteOrg(row.id);
+    const { error } = await deleteOrg(row.id)
     if (!error) {
-      message.success('删除成功');
-      tablePageRef.value?.reload();
+      message.success('删除成功')
+      tablePageRef.value?.reload()
     }
   } catch (err: any) {
-    message.error(err?.message || '删除失败');
+    message.error(err?.message || '删除失败')
   }
-};
+}
+
+const handleResetPassword = (row: any) => {
+  resetPwdRow.value = row
+  resetPwdForm.value = { password: '', confirmPassword: '' }
+  resetPwdVisible.value = true
+}
+
+const submitResetPassword = async () => {
+  resetPwdFormRef.value?.validate(async (errors: any) => {
+    if (errors) return
+    try {
+      const { error } = await resetOrgAccountPassword(resetPwdRow.value.id, { password: resetPwdForm.value.password })
+      if (!error) {
+        message.success('重置成功')
+        resetPwdVisible.value = false
+      }
+    } catch (err: any) {
+      message.error(err?.message || '重置失败')
+    }
+  })
+}
 
 // 模态框提交
 const handleModalSubmit = async (formData: any) => {
@@ -222,40 +269,40 @@ const handleModalSubmit = async (formData: any) => {
       const { error } = await createOrg({
         ...formData,
         org_type: fixedOrgType.value || activeTab.value
-      });
+      })
       if (!error) {
-        message.success('创建成功');
-        modalVisible.value = false;
-        tablePageRef.value?.reload();
+        message.success('创建成功')
+        modalVisible.value = false
+        tablePageRef.value?.reload()
       }
     } else {
-      const { error } = await updateOrg(currentData.value.id, formData);
+      const { error } = await updateOrg(currentData.value.id, formData)
       if (!error) {
-        message.success('更新成功');
-        modalVisible.value = false;
-        tablePageRef.value?.reload();
+        message.success('更新成功')
+        modalVisible.value = false
+        tablePageRef.value?.reload()
       }
     }
   } catch (err: any) {
-    message.error(err?.message || '操作失败');
+    message.error(err?.message || '操作失败')
   }
-};
+}
 
 // Tab 切换时刷新列表
 watch(activeTab, () => {
-  tablePageRef.value?.reload();
-});
+  tablePageRef.value?.reload()
+})
 
 // 监听路由变化
 watch(
   () => [route.query.org_type, route.path],
   () => {
     if (fixedOrgType.value) {
-      activeTab.value = fixedOrgType.value;
+      activeTab.value = fixedOrgType.value
     }
   },
   { immediate: true }
-);
+)
 </script>
 
 <template>
@@ -278,6 +325,8 @@ watch(
         :columns-to-show="columnsToShow"
         :search-configs="searchConfigs"
         :top-actions="topActions"
+        :view-types="['list']"
+        initial-view-type="list"
       />
     </div>
 
@@ -289,5 +338,53 @@ watch(
       :fixed-org-type="fixedOrgType || activeTab"
       @submit="handleModalSubmit"
     />
+
+    <!-- 重置密码弹窗 -->
+    <NModal
+      :show="resetPwdVisible"
+      preset="card"
+      title="重置账号密码"
+      style="width: 460px"
+      @close="resetPwdVisible = false"
+    >
+      <NForm
+        ref="resetPwdFormRef"
+        :model="resetPwdForm"
+        label-placement="left"
+        label-width="90"
+        :rules="{
+          password: { required: true, message: '请输入新密码（至少6位）', trigger: 'blur' },
+          confirmPassword: {
+            required: true,
+            message: '请再次输入新密码',
+            trigger: 'blur',
+            validator: (_: any, value: string) => value === resetPwdForm.password
+          }
+        }"
+      >
+        <NFormItem label="新密码" path="password">
+          <NInput
+            v-model:value="resetPwdForm.password"
+            type="password"
+            show-password-on="click"
+            placeholder="请输入新密码"
+          />
+        </NFormItem>
+        <NFormItem label="确认密码" path="confirmPassword">
+          <NInput
+            v-model:value="resetPwdForm.confirmPassword"
+            type="password"
+            show-password-on="click"
+            placeholder="请再次输入新密码"
+          />
+        </NFormItem>
+      </NForm>
+      <template #footer>
+        <NSpace justify="end">
+          <NButton @click="resetPwdVisible = false">取消</NButton>
+          <NButton type="primary" @click="submitResetPassword">确定</NButton>
+        </NSpace>
+      </template>
+    </NModal>
   </div>
 </template>

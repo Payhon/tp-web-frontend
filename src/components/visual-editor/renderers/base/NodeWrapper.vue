@@ -139,7 +139,7 @@ const onMouseDown = (event: MouseEvent): void => {
     emit('node-mousedown', props.nodeId, event)
     return
   }
-  
+
   // Canvas模式：阻止冒泡，自行处理
   event.stopPropagation()
   emit('node-mousedown', props.nodeId, event)
@@ -154,7 +154,7 @@ const onClick = (event: MouseEvent): void => {
     }, 0)
     return
   }
-  
+
   // Canvas模式：立即处理
   event.stopPropagation()
   emit('node-click', props.nodeId, event)
@@ -296,13 +296,13 @@ const nodeInteractionPermissionsRef = ref<any>({
 const updateAllConfigs = useDebounceFn(() => {
   try {
     const widgetConfig = configurationManager.getConfiguration(props.nodeId)
-    
+
     // 更新组件配置
     nodeComponentConfigRef.value = widgetConfig?.component?.properties || undefined
-    
+
     // 更新交互配置
     nodeInteractionConfigsRef.value = widgetConfig?.interaction?.configs || []
-    
+
     // 更新交互权限
     nodeInteractionPermissionsRef.value = widgetConfig?.interaction?.permissions || {
       allowExternalControl: true,

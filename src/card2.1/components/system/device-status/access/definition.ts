@@ -1,5 +1,5 @@
-import type { ComponentDefinition } from '@/card2.1/core2';
-import component from './component.vue';
+import type { ComponentDefinition } from '@/card2.1/core2'
+import component from './component.vue'
 /**
  * @description 组件定义
  * @summary 设备总数卡片，用于展示系统中设备的总数量统计。
@@ -14,7 +14,7 @@ export default {
   dataDriven: false, // 这是一个纯展示性组件，数据由内部 API 调用获取，而非外部数据源驱动
   interactionCapabilities: {
     // 声明组件支持点击事件
-    supportedEvents: ['click'],
-  },
+    supportedEvents: ['click']
+  }
   // 由于此组件没有可供用户在编辑器中配置的属性，因此省略 `props` 定义
-} as ComponentDefinition;
+} as ComponentDefinition

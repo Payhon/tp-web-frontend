@@ -8,8 +8,8 @@ import type { SettingConfig } from '@/card2.1/types/setting-config'
  * 告警状态自定义配置接口 - 简化版
  */
 export interface AlertStatusCustomize {
-  title: string     // 标题
-  amount: number    // 金额
+  title: string // 标题
+  amount: number // 金额
   description: string // 简介
 }
 

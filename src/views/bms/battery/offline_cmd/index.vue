@@ -1,6 +1,20 @@
 <script setup lang="tsx">
 import { ref } from 'vue'
-import { NButton, NCard, NDataTable, NDescriptions, NDescriptionsItem, NForm, NFormItem, NInput, NModal, NSelect, NSpace, NTag, useMessage } from 'naive-ui'
+import {
+  NButton,
+  NCard,
+  NDataTable,
+  NDescriptions,
+  NDescriptionsItem,
+  NForm,
+  NFormItem,
+  NInput,
+  NModal,
+  NSelect,
+  NSpace,
+  NTag,
+  useMessage
+} from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import { useTable } from '@/hooks/common/table'
 import { cancelOfflineCommand, getOfflineCommandDetail, getOfflineCommandList } from '@/service/api/bms'
@@ -58,7 +72,12 @@ function createColumns(): DataTableColumns<OfflineCmdItem> {
   return [
     { key: 'device_number', title: '设备序列号', minWidth: 160 },
     { key: 'command_type', title: '指令类型', minWidth: 160, render: r => r.command_type || '--' },
-    { key: 'status', title: '执行状态', minWidth: 140, render: r => <NTag type={statusTagType(r.status)}>{statusLabel(r.status)}</NTag> },
+    {
+      key: 'status',
+      title: '执行状态',
+      minWidth: 140,
+      render: r => <NTag type={statusTagType(r.status)}>{statusLabel(r.status)}</NTag>
+    },
     { key: 'created_at', title: '下发时间', minWidth: 160 },
     { key: 'operator_name', title: '操作人', minWidth: 120, render: r => r.operator_name || '--' },
     { key: 'executed_at', title: '执行时间', minWidth: 160, render: r => r.executed_at || '--' },
@@ -82,7 +101,10 @@ function createColumns(): DataTableColumns<OfflineCmdItem> {
   ]
 }
 
-const { data, loading, pagination, columns, getData, updateSearchParams } = useTable<OfflineCmdItem, typeof getOfflineCommandList>({
+const { data, loading, pagination, columns, getData, updateSearchParams } = useTable<
+  OfflineCmdItem,
+  typeof getOfflineCommandList
+>({
   apiFn: getOfflineCommandList,
   apiParams: { page: 1, page_size: 10 },
   transformer: (res: any) => {
@@ -148,7 +170,13 @@ getData()
 <template>
   <div class="flex-vertical-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
     <NCard title="离线指令" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
-      <NForm inline :model="searchForm" label-placement="left" label-width="auto" class="mb-4 flex flex-wrap gap-4 items-end">
+      <NForm
+        inline
+        :model="searchForm"
+        label-placement="left"
+        label-width="auto"
+        class="mb-4 flex flex-wrap gap-4 items-end"
+      >
         <NFormItem label="设备序列号">
           <NInput v-model:value="searchForm.device_number" placeholder="支持模糊搜索" style="width: 220px" clearable />
         </NFormItem>
@@ -194,7 +222,9 @@ getData()
             <pre style="white-space: pre-wrap; word-break: break-all; margin: 0">{{ detail?.payload || '--' }}</pre>
           </NDescriptionsItem>
           <NDescriptionsItem label="设备响应" :span="2">
-            <pre style="white-space: pre-wrap; word-break: break-all; margin: 0">{{ detail?.command_log_rsp_data || '--' }}</pre>
+            <pre style="white-space: pre-wrap; word-break: break-all; margin: 0">{{
+              detail?.command_log_rsp_data || '--'
+            }}</pre>
           </NDescriptionsItem>
         </NDescriptions>
       </template>
@@ -207,4 +237,3 @@ getData()
   height: 100%;
 }
 </style>
-

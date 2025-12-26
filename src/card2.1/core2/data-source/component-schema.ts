@@ -151,7 +151,6 @@ export class ComponentSchemaManager {
    * @param schema 组件模式定义
    */
   registerSchema(componentType: string, schema: ComponentSchema): void {
-
     // 合并默认字段和自定义字段
     const mergedFields = {
       ...this.defaultFields,
@@ -166,7 +165,6 @@ export class ComponentSchemaManager {
     }
 
     this.schemas.set(componentType, finalSchema)
-
   }
 
   /**
@@ -358,14 +356,21 @@ export class ComponentSchemaManager {
    */
   private getDefaultValueForType(type: DataFieldType): any {
     switch (type) {
-      case 'string': return ''
-      case 'number': return 0
-      case 'boolean': return false
-      case 'array': return []
-      case 'object': return {}
-      case 'date': return new Date()
+      case 'string':
+        return ''
+      case 'number':
+        return 0
+      case 'boolean':
+        return false
+      case 'array':
+        return []
+      case 'object':
+        return {}
+      case 'date':
+        return new Date()
       case 'value':
-      default: return null
+      default:
+        return null
     }
   }
 

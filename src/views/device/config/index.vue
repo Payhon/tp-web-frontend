@@ -177,7 +177,7 @@ const demoUrl = getDemoServerUrl()
 // 设备类型图标映射 - 使用本地SVG图标名称
 const deviceTypeIcons = {
   1: 'direct', // 直连设备
-  2: 'gateway', // 网关设备  
+  2: 'gateway', // 网关设备
   3: 'subdevice', // 子设备
   default: 'defaultdevice' // 默认设备图标
 }

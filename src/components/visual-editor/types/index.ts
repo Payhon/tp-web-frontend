@@ -3,7 +3,13 @@
  */
 
 // 基础类型
-export type { GraphData, Position, Size, CanvasState, TransformOperation } from '@/components/visual-editor/types/base-types'
+export type {
+  GraphData,
+  Position,
+  Size,
+  CanvasState,
+  TransformOperation
+} from '@/components/visual-editor/types/base-types'
 
 // 编辑器类型
 export type { EditorConfig, KanbanConfig, DashboardConfig } from '@/components/visual-editor/types/editor'

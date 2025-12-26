@@ -9,12 +9,7 @@
 
       <!-- 配置标签页 -->
       <n-tabs v-model:value="activeTab" type="line" class="config-tabs">
-        <n-tab-pane
-          v-for="layer in visibleConfigLayers"
-          :key="layer.name"
-          :name="layer.name"
-          :tab="$t(layer.label)"
-        >
+        <n-tab-pane v-for="layer in visibleConfigLayers" :key="layer.name" :name="layer.name" :tab="$t(layer.label)">
           <div class="config-scrollbar">
             <component
               :is="layer.component"
@@ -73,25 +68,27 @@ const visibleConfigLayers = computed(() => {
   return getVisibleConfigLayers(props.selectedWidget.id, props.selectedWidget)
 })
 
-
 // 监听组件选择变化，重置到基础标签页
-watch(() => props.selectedWidget, async (newWidget) => {
-  if (newWidget) {
-    // 确保默认选择的标签页存在
-    const firstAvailableTab = visibleConfigLayers.value[0]?.name || 'base'
-    activeTab.value = firstAvailableTab
+watch(
+  () => props.selectedWidget,
+  async newWidget => {
+    if (newWidget) {
+      // 确保默认选择的标签页存在
+      const firstAvailableTab = visibleConfigLayers.value[0]?.name || 'base'
+      activeTab.value = firstAvailableTab
 
-    // 🔥 尝试刷新组件定义（如果缺失configComponent）
-    if (!newWidget.metadata?.card2Definition?.configComponent) {
-      try {
-        const { refreshComponentDefinitions } = await import('./component-registry')
-        await refreshComponentDefinitions(newWidget)
-      } catch (error) {
-        console.warn('⚠️ [ConfigurationPanel] 组件定义刷新失败:', error)
+      // 🔥 尝试刷新组件定义（如果缺失configComponent）
+      if (!newWidget.metadata?.card2Definition?.configComponent) {
+        try {
+          const { refreshComponentDefinitions } = await import('./component-registry')
+          await refreshComponentDefinitions(newWidget)
+        } catch (error) {
+          console.warn('⚠️ [ConfigurationPanel] 组件定义刷新失败:', error)
+        }
       }
     }
   }
-})
+)
 </script>
 
 <style scoped>
@@ -148,7 +145,6 @@ watch(() => props.selectedWidget, async (newWidget) => {
 
 .config-scrollbar {
   flex: 1;
-
 }
 
 .config-form {

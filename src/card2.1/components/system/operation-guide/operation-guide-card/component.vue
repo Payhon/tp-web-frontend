@@ -1,7 +1,11 @@
 <template>
-  <div class="h-full bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden">
+  <div
+    class="h-full bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden"
+  >
     <!-- 卡片标题栏 -->
-    <div class="flex items-center p-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-gray-700 dark:to-gray-800">
+    <div
+      class="flex items-center p-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-gray-700 dark:to-gray-800"
+    >
       <div class="flex items-center space-x-3">
         <div class="p-2 bg-indigo-100 dark:bg-indigo-900 rounded-lg">
           <Icon icon="mdi:compass-outline" class="text-lg text-indigo-600 dark:text-indigo-400" />
@@ -35,15 +39,13 @@
               <div class="flex-1 min-w-0">
                 <!-- 标题 -->
                 <div class="flex items-center justify-between mb-1">
-                  <h4
-                    class="font-medium text-sm truncate"
-                    :style="{ color: titleColor }"
-                    :title="$t(item.titleKey)"
-                  >
+                  <h4 class="font-medium text-sm truncate" :style="{ color: titleColor }" :title="$t(item.titleKey)">
                     {{ $t(item.titleKey) }}
                   </h4>
                   <div v-if="item.link" class="flex-shrink-0 ml-2">
-                    <div class="flex items-center text-blue-600 dark:text-blue-400 text-xs font-medium group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors">
+                    <div
+                      class="flex items-center text-blue-600 dark:text-blue-400 text-xs font-medium group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors"
+                    >
                       <span class="mr-1">{{ $t('card.view') }}</span>
                       <Icon icon="mdi:chevron-right" class="w-3 h-3" />
                     </div>

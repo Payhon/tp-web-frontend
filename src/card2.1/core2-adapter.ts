@@ -28,7 +28,6 @@ export async function initializeCore2System() {
 
   core2InitializationPromise = (async () => {
     try {
-
       // 扫描组件
       const allComponentModules = import.meta.glob('@/card2.1/components/**/index.ts', { eager: true })
 

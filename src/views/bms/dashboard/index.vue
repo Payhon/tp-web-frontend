@@ -25,7 +25,9 @@ const alarmOverview = ref<{
   trend: []
 })
 
-const onlineTrend = ref<{ points: Array<{ timestamp: string; device_total: number; device_online: number; device_offline: number }> }>({
+const onlineTrend = ref<{
+  points: Array<{ timestamp: string; device_total: number; device_online: number; device_offline: number }>
+}>({
   points: []
 })
 
@@ -176,4 +178,3 @@ onMounted(() => {
   height: 100%;
 }
 </style>
-

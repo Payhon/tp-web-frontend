@@ -1,5 +1,7 @@
 <template>
-  <div class="h-full flex flex-col justify-center items-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-800 dark:to-slate-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300">
+  <div
+    class="h-full flex flex-col justify-center items-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-800 dark:to-slate-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300"
+  >
     <!-- 标题栏 -->
     <div class="w-full flex items-center justify-between mb-6">
       <div class="flex items-center">
@@ -40,12 +42,7 @@
 
       <!-- 版本状态标签 -->
       <div class="mt-4">
-        <n-tag
-          type="info"
-          size="medium"
-          round
-          class="px-4 py-2 font-medium"
-        >
+        <n-tag type="info" size="medium" round class="px-4 py-2 font-medium">
           <template #icon>
             <Icon icon="mdi:tag-outline" class="text-base" />
           </template>
@@ -84,7 +81,8 @@ defineOptions({
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {

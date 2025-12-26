@@ -37,12 +37,7 @@
 
     <!-- 基于 Vue 组件的表单渲染 -->
     <div v-else-if="mode === 'vue-only' && vueConfig" class="vue-config-form">
-      <component
-        :is="vueConfig"
-        v-model="formData"
-        :readonly="readonly"
-        @change="handleFormChange"
-      />
+      <component :is="vueConfig" v-model="formData" :readonly="readonly" @change="handleFormChange" />
     </div>
 
     <!-- 混合模式 -->
@@ -50,12 +45,7 @@
       <n-space vertical>
         <!-- Vue 组件部分 -->
         <n-card v-if="vueConfig" title="高级配置" size="small">
-          <component
-            :is="vueConfig"
-            v-model="formData"
-            :readonly="readonly"
-            @change="handleFormChange"
-          />
+          <component :is="vueConfig" v-model="formData" :readonly="readonly" @change="handleFormChange" />
         </n-card>
 
         <!-- TS 配置部分 -->
@@ -133,11 +123,13 @@ const groupedFields = computed(() => {
 
   // 如果没有定义分组，创建默认分组
   if (groups.length === 0) {
-    return [{
-      name: 'default',
-      label: '',
-      fields: fields
-    }]
+    return [
+      {
+        name: 'default',
+        label: '',
+        fields: fields
+      }
+    ]
   }
 
   // 根据分组组织字段
@@ -145,9 +137,7 @@ const groupedFields = computed(() => {
 
   // 添加定义的分组
   groups.forEach(group => {
-    const groupFields = fields.filter(field =>
-      group.fields.includes(field.field)
-    )
+    const groupFields = fields.filter(field => group.fields.includes(field.field))
     if (groupFields.length > 0) {
       result.push({
         name: group.name,
@@ -159,9 +149,7 @@ const groupedFields = computed(() => {
 
   // 添加未分组的字段
   const groupedFieldNames = groups.flatMap(g => g.fields)
-  const ungroupedFields = fields.filter(field =>
-    !groupedFieldNames.includes(field.field)
-  )
+  const ungroupedFields = fields.filter(field => !groupedFieldNames.includes(field.field))
 
   if (ungroupedFields.length > 0) {
     result.push({
@@ -250,7 +238,7 @@ const validateForm = () => {
 // 监听外部值变化
 watch(
   () => props.modelValue,
-  (newValue) => {
+  newValue => {
     if (newValue) {
       formData.value = { ...newValue }
     }

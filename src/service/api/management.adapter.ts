@@ -50,15 +50,48 @@ function transformLayoutAndPageToComponent(layout: string, page: any) {
   return ''
 }
 
-function normalizeRoutePath(path: unknown): string {
-  const raw = String(path ?? '').trim()
+function parseRouteLocation(input: unknown): { path: string; query: Record<string, string> } {
+  const raw = String(input ?? '').trim()
 
-  if (!raw) return ''
+  if (!raw) return { path: '', query: {} }
 
-  const withLeadingSlash = raw.startsWith('/') ? raw : `/${raw}`
+  const hashIndex = raw.indexOf('#')
+  const withoutHash = hashIndex >= 0 ? raw.slice(0, hashIndex) : raw
+
+  const queryIndex = withoutHash.indexOf('?')
+  const rawPath = queryIndex >= 0 ? withoutHash.slice(0, queryIndex) : withoutHash
+  const queryString = queryIndex >= 0 ? withoutHash.slice(queryIndex + 1) : ''
+
+  const withLeadingSlash = rawPath.startsWith('/') ? rawPath : `/${rawPath}`
 
   // keep root '/', otherwise strip trailing slashes
-  return withLeadingSlash.length > 1 ? withLeadingSlash.replace(/\/+$/, '') : withLeadingSlash
+  const path = withLeadingSlash.length > 1 ? withLeadingSlash.replace(/\/+$/, '') : withLeadingSlash
+
+  const query: Record<string, string> = {}
+  if (queryString) {
+    const params = new URLSearchParams(queryString)
+    params.forEach((value, key) => {
+      if (!key || key in query) return
+      query[key] = value
+    })
+  }
+
+  return { path, query }
+}
+
+function normalizeLegacyMenuRouteLocation(elementCode: string, original: unknown): unknown {
+  const trimmedCode = String(elementCode ?? '').trim()
+
+  const legacyMap: Record<string, string> = {
+    // backend/sql/20.sql inserted these legacy element_code + param1 combos
+    // that don't match existing view keys/routes in the frontend
+    bms_org_management: '/bms/org',
+    bms_pack_factory: '/bms/org/pack-factory',
+    bms_dealer: '/bms/org/dealer',
+    bms_store: '/bms/org/store'
+  }
+
+  return legacyMap[trimmedCode] ?? original
 }
 
 /** 递归处理数据 */
@@ -76,7 +109,8 @@ function replaceKeys(data: ElegantConstRoute[]): ElegantRoute[] {
     // if (item.route_path === 'layout.base' && item.children.length === 0) {
     //   item.route_path += '$home';
     // }
-    const routePath = normalizeRoutePath(item.param1)
+    const normalizedLocation = normalizeLegacyMenuRouteLocation(item.element_code, item.param1)
+    const { path: routePath, query: routeQuery } = parseRouteLocation(normalizedLocation)
     const name = item.element_code.trim().replace(/\s/g, '_')
     const homeRoutePath = routePath ? getRouteName(routePath as any) : null
     let component = ''
@@ -122,7 +156,8 @@ function replaceKeys(data: ElegantConstRoute[]): ElegantRoute[] {
         icon: item.param2,
         order: item.orders,
         hideInMenu: item.param3 === '1',
-        remark: item.remark || ''
+        remark: item.remark || '',
+        ...(Object.keys(routeQuery).length ? { query: routeQuery } : {})
       },
       children: item.children?.length ? replaceKeys(item.children) : []
     }

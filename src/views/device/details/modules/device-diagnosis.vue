@@ -126,7 +126,7 @@ const columns: DataTableColumns<FailureRecord> = [
 // 获取诊断数据
 const fetchDiagnostics = async () => {
   try {
-    const response = await deviceDiagnostics(props.id) as DiagnosticsResponse
+    const response = (await deviceDiagnostics(props.id)) as DiagnosticsResponse
     const data = response?.data || (response as unknown as DiagnosticsData)
 
     if (data && data.stats) {
@@ -151,7 +151,7 @@ const fetchDiagnostics = async () => {
 
       // 更新失败记录
       if (Array.isArray(data.recent_failures)) {
-        failureRecords.value = data.recent_failures.map((failure) => ({
+        failureRecords.value = data.recent_failures.map(failure => ({
           timestamp: String(failure.timestamp ?? ''),
           direction: (failure.direction ?? 'uplink') as 'uplink' | 'downlink',
           stage: failure.stage ?? '',
@@ -161,8 +161,7 @@ const fetchDiagnostics = async () => {
         failureRecords.value = []
       }
     }
-  } catch (error) {
-  }
+  } catch (error) {}
 }
 
 // 刷新数据
@@ -249,4 +248,3 @@ onMounted(() => {
   font-size: 16px;
 }
 </style>
-

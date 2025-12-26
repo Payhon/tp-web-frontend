@@ -440,11 +440,7 @@ export interface TopicMappingPayload {
   enabled?: boolean
 }
 
-export const getTopicMappingList = async (params: {
-  device_config_id: string
-  page?: number
-  page_size?: number
-}) => {
+export const getTopicMappingList = async (params: { device_config_id: string; page?: number; page_size?: number }) => {
   return await request.get<any>(`/device/topic-mappings`, { params })
 }
 
@@ -452,10 +448,7 @@ export const createTopicMapping = async (data: TopicMappingPayload) => {
   return await request.post<any>(`/device/topic-mappings`, data)
 }
 
-export const updateTopicMapping = async (
-  id: string | number,
-  data: Partial<TopicMappingPayload>
-) => {
+export const updateTopicMapping = async (id: string | number, data: Partial<TopicMappingPayload>) => {
   return await request.put<any>(`/device/topic-mappings/${id}`, data)
 }
 

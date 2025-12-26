@@ -27,11 +27,11 @@ import type {
  */
 export function generateDefaultConfigFromSettings<T = Record<string, any>>(settings: Setting[]): T {
   const config = {} as T
-  
+
   settings.forEach(setting => {
     const keys = setting.field.split('.')
     let current = config as any
-    
+
     // 处理嵌套字段路径，如 'customize.title'
     for (let i = 0; i < keys.length - 1; i++) {
       const key = keys[i]
@@ -40,11 +40,11 @@ export function generateDefaultConfigFromSettings<T = Record<string, any>>(setti
       }
       current = current[key]
     }
-    
+
     const finalKey = keys[keys.length - 1]
     current[finalKey] = setting.defaultValue
   })
-  
+
   return config
 }
 
@@ -55,7 +55,7 @@ export function generateDefaultConfigFromSettings<T = Record<string, any>>(setti
  */
 export function groupSettingsByGroup(settings: Setting[]): Record<string, Setting[]> {
   const groups: Record<string, Setting[]> = {}
-  
+
   settings.forEach(setting => {
     const group = setting.group || '默认分组'
     if (!groups[group]) {
@@ -63,7 +63,7 @@ export function groupSettingsByGroup(settings: Setting[]): Record<string, Settin
     }
     groups[group].push(setting)
   })
-  
+
   return groups
 }
 
@@ -80,24 +80,24 @@ export function inferTSTypeFromControlType(controlType: SettingControlType | str
     case SettingControlType.RADIO_GROUP:
     case SettingControlType.COLOR_PICKER:
       return 'string'
-    
+
     case SettingControlType.INPUT_NUMBER:
     case SettingControlType.SLIDER:
       return 'number'
-    
+
     case SettingControlType.SWITCH:
     case SettingControlType.CHECKBOX:
       return 'boolean'
-    
+
     case SettingControlType.DATE_PICKER:
       return 'Date'
-    
+
     case SettingControlType.DYNAMIC_TAGS:
       return 'string[]'
-    
+
     case SettingControlType.VUE_COMPONENT:
       return 'any'
-    
+
     default:
       return 'any'
   }
@@ -139,21 +139,27 @@ export function getDefaultValueForFieldType(fieldType: DataFieldType): any {
  */
 export function deepMergeConfig<T extends Record<string, any>>(target: T, source: Partial<T>): T {
   const result = { ...target }
-  
+
   for (const key in source) {
     if (source.hasOwnProperty(key)) {
       const sourceValue = source[key]
       const targetValue = result[key]
-      
-      if (sourceValue && typeof sourceValue === 'object' && !Array.isArray(sourceValue) &&
-          targetValue && typeof targetValue === 'object' && !Array.isArray(targetValue)) {
+
+      if (
+        sourceValue &&
+        typeof sourceValue === 'object' &&
+        !Array.isArray(sourceValue) &&
+        targetValue &&
+        typeof targetValue === 'object' &&
+        !Array.isArray(targetValue)
+      ) {
         result[key] = deepMergeConfig(targetValue, sourceValue)
       } else {
         result[key] = sourceValue as T[Extract<keyof T, string>]
       }
     }
   }
-  
+
   return result
 }
 
@@ -166,7 +172,7 @@ export function deepMergeConfig<T extends Record<string, any>>(target: T, source
 export function extractFieldValue(config: any, fieldPath: string): any {
   const keys = fieldPath.split('.')
   let current = config
-  
+
   for (const key of keys) {
     if (current && typeof current === 'object' && key in current) {
       current = current[key]
@@ -174,7 +180,7 @@ export function extractFieldValue(config: any, fieldPath: string): any {
       return undefined
     }
   }
-  
+
   return current
 }
 
@@ -189,7 +195,7 @@ export function setFieldValue<T extends Record<string, any>>(config: T, fieldPat
   const keys = fieldPath.split('.')
   const result = { ...config }
   let current = result as any
-  
+
   for (let i = 0; i < keys.length - 1; i++) {
     const key = keys[i]
     if (!current[key] || typeof current[key] !== 'object') {
@@ -199,10 +205,10 @@ export function setFieldValue<T extends Record<string, any>>(config: T, fieldPat
     }
     current = current[key]
   }
-  
+
   const finalKey = keys[keys.length - 1]
   current[finalKey] = value
-  
+
   return result
 }
 
@@ -320,15 +326,17 @@ export function mergeFieldMappings(...mappings: Record<string, any>[]): Record<s
 export function createClickJumpInteraction(url: string, external: boolean = true) {
   return {
     event: 'click' as InteractionEventType,
-    responses: [{
-      action: 'jump' as InteractionActionType,
-      jumpConfig: {
-        jumpType: external ? 'external' : 'internal',
-        url: external ? url : undefined,
-        internalPath: !external ? url : undefined,
-        target: external ? '_blank' : '_self'
+    responses: [
+      {
+        action: 'jump' as InteractionActionType,
+        jumpConfig: {
+          jumpType: external ? 'external' : 'internal',
+          url: external ? url : undefined,
+          internalPath: !external ? url : undefined,
+          target: external ? '_blank' : '_self'
+        }
       }
-    }],
+    ],
     enabled: true
   }
 }
@@ -340,22 +348,20 @@ export function createClickJumpInteraction(url: string, external: boolean = true
  * @param updateValue 更新值
  * @returns 交互配置
  */
-export function createModifyInteraction(
-  targetComponentId: string,
-  targetProperty: string,
-  updateValue: any
-) {
+export function createModifyInteraction(targetComponentId: string, targetProperty: string, updateValue: any) {
   return {
     event: 'click' as InteractionEventType,
-    responses: [{
-      action: 'modify' as InteractionActionType,
-      modifyConfig: {
-        targetComponentId,
-        targetProperty,
-        updateValue,
-        updateMode: 'replace'
+    responses: [
+      {
+        action: 'modify' as InteractionActionType,
+        modifyConfig: {
+          targetComponentId,
+          targetProperty,
+          updateValue,
+          updateMode: 'replace'
+        }
       }
-    }],
+    ],
     enabled: true
   }
 }
@@ -373,7 +379,7 @@ export function inferCategoryFromPath(filePath: string): {
   category: string
 } {
   const pathParts = filePath.split('/').filter(part => part && part !== '.')
-  
+
   // 查找components目录后的路径部分
   const componentsIndex = pathParts.findIndex(part => part === 'components')
   if (componentsIndex === -1 || componentsIndex >= pathParts.length - 1) {
@@ -382,11 +388,11 @@ export function inferCategoryFromPath(filePath: string): {
       category: '其他'
     }
   }
-  
+
   const categoryParts = pathParts.slice(componentsIndex + 1)
   const mainCategory = categoryParts[0] || '其他'
   const subCategory = categoryParts.length > 2 ? categoryParts[1] : undefined
-  
+
   return {
     mainCategory,
     subCategory,
@@ -433,33 +439,38 @@ export function generateTSInterfaceFromDefinition(definition: ComponentDefinitio
   const interfaceName = `${pascalCase(definition.type)}Config`
   const staticParams = definition.staticParams || []
   const dataSources = definition.dataSources || []
-  
+
   let interfaceCode = `interface ${interfaceName} {\n`
-  
+
   // 生成静态参数字段
   staticParams.forEach(param => {
-    const tsType = param.type === 'array' ? 'any[]' : 
-                   param.type === 'object' ? 'Record<string, any>' : param.type
+    const tsType = param.type === 'array' ? 'any[]' : param.type === 'object' ? 'Record<string, any>' : param.type
     interfaceCode += `  /** ${param.description} */\n`
     interfaceCode += `  ${param.key}${param.required === false ? '?' : ''}: ${tsType}\n`
   })
-  
+
   // 生成数据源字段
   dataSources.forEach(ds => {
     if (ds.fieldMappings) {
       Object.entries(ds.fieldMappings).forEach(([_, mapping]) => {
-        const tsType = mapping.type === 'array' ? 'any[]' :
-                       mapping.type === 'object' ? 'Record<string, any>' : 
-                       mapping.type === 'number' ? 'number' :
-                       mapping.type === 'boolean' ? 'boolean' : 'string'
+        const tsType =
+          mapping.type === 'array'
+            ? 'any[]'
+            : mapping.type === 'object'
+              ? 'Record<string, any>'
+              : mapping.type === 'number'
+                ? 'number'
+                : mapping.type === 'boolean'
+                  ? 'boolean'
+                  : 'string'
         interfaceCode += `  /** ${ds.description} - ${mapping.targetField} */\n`
         interfaceCode += `  ${mapping.targetField}${!mapping.required ? '?' : ''}: ${tsType}\n`
       })
     }
   })
-  
+
   interfaceCode += '}'
-  
+
   return interfaceCode
 }
 
@@ -496,27 +507,27 @@ export function validateComponentConfig(
     invalidFields: [] as string[],
     warnings: [] as string[]
   }
-  
+
   // 检查静态参数
   const staticParams = definition.staticParams || []
   staticParams.forEach(param => {
     const value = extractFieldValue(config, param.key)
-    
+
     if (param.required && (value === undefined || value === null)) {
       result.missingFields.push(param.key)
     }
-    
+
     if (value !== undefined && value !== null) {
       // 简单类型检查
       const expectedType = param.type
       const actualType = Array.isArray(value) ? 'array' : typeof value
-      
+
       if (expectedType !== actualType && expectedType !== 'object') {
         result.invalidFields.push(`${param.key}: 期望 ${expectedType}, 实际 ${actualType}`)
       }
     }
   })
-  
+
   result.valid = result.missingFields.length === 0 && result.invalidFields.length === 0
   return result
 }
@@ -529,30 +540,30 @@ export const TypeUtils = {
   groupSettingsByGroup,
   inferTSTypeFromControlType,
   getDefaultValueForFieldType,
-  
+
   // 配置操作
   deepMergeConfig,
   extractFieldValue,
   setFieldValue,
-  
+
   // 组件定义
   createComponentSettingConfig,
   extractDataSourceRequirements,
   extractStaticParamRequirements,
   supportsDataSourceType,
-  
+
   // 字段映射
   createFieldMapping,
   mergeFieldMappings,
-  
+
   // 交互配置
   createClickJumpInteraction,
   createModifyInteraction,
-  
+
   // 分组分类
   inferCategoryFromPath,
   createSettingGroup,
-  
+
   // 开发工具
   generateTSInterfaceFromDefinition,
   validateComponentConfig

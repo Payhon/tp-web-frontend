@@ -1,7 +1,11 @@
 <template>
-  <div class="h-full bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden">
+  <div
+    class="h-full bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden"
+  >
     <!-- 卡片标题栏 -->
-    <div class="flex items-center p-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-orange-50 to-red-50 dark:from-gray-700 dark:to-gray-800">
+    <div
+      class="flex items-center p-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-orange-50 to-red-50 dark:from-gray-700 dark:to-gray-800"
+    >
       <div class="flex items-center space-x-3">
         <div class="p-2 bg-orange-100 dark:bg-orange-900 rounded-lg">
           <Icon icon="mdi:chart-line" class="text-lg text-orange-600 dark:text-orange-400" />
@@ -37,13 +41,7 @@
           </div>
 
           <!-- 图表 -->
-          <v-chart
-            v-else-if="!loading"
-            ref="chartRef"
-            class="w-full h-full"
-            :option="chartOption"
-            autoresize
-          />
+          <v-chart v-else-if="!loading" ref="chartRef" class="w-full h-full" :option="chartOption" autoresize />
         </div>
       </n-spin>
     </div>

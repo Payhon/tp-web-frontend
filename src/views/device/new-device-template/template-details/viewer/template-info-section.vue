@@ -58,9 +58,9 @@ const tags = computed(() => {
               </div>
               <div class="meta-item">
                 <span class="label">{{ $t('common.creationTime') }}:</span>
-                <span class="value">{{
-                  templateData.created_at ? new Date(templateData.created_at).toLocaleString() : '--'
-                }}</span>
+                <span class="value">
+                  {{ templateData.created_at ? new Date(templateData.created_at).toLocaleString() : '--' }}
+                </span>
               </div>
             </div>
 

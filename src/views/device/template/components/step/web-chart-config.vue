@@ -1,7 +1,7 @@
 <script setup lang="tsx">
 import { defineEmits, provide, ref } from 'vue'
-import { $t } from '@/locales';
-import { message } from '@/utils/common/discrete';
+import { $t } from '@/locales'
+import { message } from '@/utils/common/discrete'
 import { getTemplat, putTemplat } from '@/service/api'
 import type { ICardView } from '@/components/panel/card'
 import templatePanel from '../card-select/template-panel.vue'

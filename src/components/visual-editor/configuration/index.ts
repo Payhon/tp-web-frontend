@@ -35,7 +35,10 @@ export { default as ComponentConfigForm } from '@/components/visual-editor/rende
 // 注意：InteractionConfigForm 暂时移除，专注基础测试
 
 // Hooks
-export { useConfiguration, type UseConfigurationOptions } from '@/components/visual-editor/configuration/hooks/useConfiguration'
+export {
+  useConfiguration,
+  type UseConfigurationOptions
+} from '@/components/visual-editor/configuration/hooks/useConfiguration'
 
 // 工具函数
 // 🔄 工具函数 - 通过桥接系统导出，确保一致性

@@ -10,11 +10,7 @@
   >
     <!-- 图标区域 -->
     <div class="icon-section" :style="iconSectionStyle">
-      <n-icon
-        class="main-icon"
-        :size="config.iconSize"
-        :color="config.iconColor"
-      >
+      <n-icon class="main-icon" :size="config.iconSize" :color="config.iconColor">
         <component :is="iconComponent" />
       </n-icon>
     </div>
@@ -30,11 +26,7 @@
     </div>
 
     <!-- 标题区域 -->
-    <div
-      v-if="displayTitle"
-      class="title-section"
-      :style="titleSectionStyle"
-    >
+    <div v-if="displayTitle" class="title-section" :style="titleSectionStyle">
       <span class="title-text" :style="titleTextStyle">
         {{ displayTitle }}
       </span>
@@ -56,9 +48,9 @@ import type { DigitIndicatorCustomize } from './settingConfig'
 
 // Props 接口
 interface Props {
-  config: any                    // 配置数据
+  config: any // 配置数据
   data?: Record<string, unknown> // 数据源执行结果
-  componentId?: string           // 组件唯一ID
+  componentId?: string // 组件唯一ID
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -108,15 +100,15 @@ const config = computed((): DigitIndicatorCustomize => {
 // 业务数据获取 - 正确的默认值逻辑：数据源优先，无数据时显示默认值
 const displayValue = computed(() => {
   // 添加调试信息
-  return props.data?.main?.data?.value || '45'  // 数据源优先，无数据时显示默认值
+  return props.data?.main?.data?.value || '45' // 数据源优先，无数据时显示默认值
 })
 
 const displayUnit = computed(() => {
-  return props.data?.main?.data?.unit || '%'    // 数据源优先，无数据时显示默认值
+  return props.data?.main?.data?.unit || '%' // 数据源优先，无数据时显示默认值
 })
 
 const displayTitle = computed(() => {
-  return props.data?.main?.data?.metricsName || '湿度'  // 数据源优先，无数据时显示默认值
+  return props.data?.main?.data?.metricsName || '湿度' // 数据源优先，无数据时显示默认值
 })
 
 // 计算图标组件
@@ -220,7 +212,8 @@ const titleTextStyle = computed(() => {
 
 /* 专业渐变背景效果 */
 .digit-indicator-container.gradient-bg {
-  background: linear-gradient(145deg,
+  background: linear-gradient(
+    145deg,
     rgba(255, 255, 255, 0.9) 0%,
     rgba(255, 255, 255, 0.6) 50%,
     rgba(248, 250, 252, 0.8) 100%
@@ -238,7 +231,8 @@ const titleTextStyle = computed(() => {
 }
 
 .digit-indicator-container.hover-enabled.gradient-bg:hover {
-  background: linear-gradient(145deg,
+  background: linear-gradient(
+    145deg,
     rgba(255, 255, 255, 0.95) 0%,
     rgba(255, 255, 255, 0.7) 50%,
     rgba(248, 250, 252, 0.85) 100%
@@ -343,21 +337,18 @@ const titleTextStyle = computed(() => {
 }
 
 /* 暗主题适配 */
-[data-theme="dark"] .digit-indicator-container {
+[data-theme='dark'] .digit-indicator-container {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-[data-theme="dark"] .digit-indicator-container.gradient-bg {
-  background: linear-gradient(145deg,
-    rgba(30, 35, 42, 0.9) 0%,
-    rgba(45, 52, 62, 0.7) 50%,
-    rgba(25, 30, 36, 0.8) 100%
-  );
+[data-theme='dark'] .digit-indicator-container.gradient-bg {
+  background: linear-gradient(145deg, rgba(30, 35, 42, 0.9) 0%, rgba(45, 52, 62, 0.7) 50%, rgba(25, 30, 36, 0.8) 100%);
   border-color: rgba(255, 255, 255, 0.08);
 }
 
-[data-theme="dark"] .digit-indicator-container.hover-enabled.gradient-bg:hover {
-  background: linear-gradient(145deg,
+[data-theme='dark'] .digit-indicator-container.hover-enabled.gradient-bg:hover {
+  background: linear-gradient(
+    145deg,
     rgba(35, 40, 47, 0.95) 0%,
     rgba(50, 57, 67, 0.75) 50%,
     rgba(30, 35, 41, 0.85) 100%
@@ -368,15 +359,15 @@ const titleTextStyle = computed(() => {
     0 4px 15px rgba(0, 0, 0, 0.15);
 }
 
-[data-theme="dark"] .main-icon {
+[data-theme='dark'] .main-icon {
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
 }
 
-[data-theme="dark"] .hover-enabled:hover .main-icon {
+[data-theme='dark'] .hover-enabled:hover .main-icon {
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
 }
 
-[data-theme="dark"] .value-text {
+[data-theme='dark'] .value-text {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
@@ -416,7 +407,7 @@ const titleTextStyle = computed(() => {
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-[data-theme="dark"] .digit-indicator-container.glass-effect {
+[data-theme='dark'] .digit-indicator-container.glass-effect {
   background: rgba(0, 0, 0, 0.1);
   border-color: rgba(255, 255, 255, 0.1);
 }

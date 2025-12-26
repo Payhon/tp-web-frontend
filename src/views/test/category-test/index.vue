@@ -2,11 +2,11 @@
   <div class="category-test">
     <h1>分类系统测试</h1>
     <n-button @click="testComponentTree">测试 getComponentTree()</n-button>
-    
+
     <div v-if="componentTree">
       <h2>分类统计结果</h2>
       <n-data-table :columns="columns" :data="categoryStats" />
-      
+
       <h2>详细组件列表</h2>
       <n-data-table :columns="detailColumns" :data="componentDetails" />
     </div>
@@ -37,16 +37,16 @@ const detailColumns = [
 const testComponentTree = async () => {
   try {
     componentTree.value = getComponentTree()
-    
+
     // 统计分类
     const stats: Record<string, number> = {}
     const details: any[] = []
-    
+
     // 正确遍历 components 数组
     componentTree.value.components.forEach((component: any) => {
       const category = `${component.mainCategory}/${component.subCategory}`
       stats[category] = (stats[category] || 0) + 1
-      
+
       details.push({
         name: component.name,
         mainCategory: component.mainCategory,
@@ -54,14 +54,14 @@ const testComponentTree = async () => {
         type: component.type
       })
     })
-    
+
     categoryStats.value = Object.entries(stats).map(([category, count]) => ({
       category,
       count
     }))
-    
+
     componentDetails.value = details
-    
+
     console.log('分类系统测试结果:', componentTree.value)
   } catch (error) {
     console.error('测试失败:', error)

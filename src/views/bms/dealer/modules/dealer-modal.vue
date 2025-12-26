@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
-import { NModal, NForm, NFormItem, NInput, NButton, NSpace } from 'naive-ui';
+import { ref, watch, computed } from 'vue'
+import { NModal, NForm, NFormItem, NInput, NButton, NSpace } from 'naive-ui'
 
 interface Props {
-  visible: boolean;
-  type: 'add' | 'edit';
-  data?: any;
+  visible: boolean
+  type: 'add' | 'edit'
+  data?: any
 }
 
-const props = defineProps<Props>();
-const emit = defineEmits(['update:visible', 'submit']);
+const props = defineProps<Props>()
+const emit = defineEmits(['update:visible', 'submit'])
 
-const formRef = ref();
+const formRef = ref()
 const formData = ref({
   name: '',
   contact_person: '',
@@ -22,22 +22,22 @@ const formData = ref({
   district: '',
   address: '',
   remark: ''
-});
+})
 
 const rules = {
   name: { required: true, message: '请输入经销商名称', trigger: 'blur' },
   contact_person: { required: true, message: '请输入联系人', trigger: 'blur' },
   phone: { required: true, message: '请输入联系电话', trigger: 'blur' }
-};
+}
 
-const title = computed(() => (props.type === 'add' ? '新增经销商' : '编辑经销商'));
+const title = computed(() => (props.type === 'add' ? '新增经销商' : '编辑经销商'))
 
 watch(
   () => props.visible,
-  (val) => {
+  val => {
     if (val) {
       if (props.type === 'edit' && props.data) {
-        formData.value = { ...props.data };
+        formData.value = { ...props.data }
       } else {
         formData.value = {
           name: '',
@@ -49,33 +49,27 @@ watch(
           district: '',
           address: '',
           remark: ''
-        };
+        }
       }
     }
   }
-);
+)
 
 const handleClose = () => {
-  emit('update:visible', false);
-};
+  emit('update:visible', false)
+}
 
 const handleSubmit = () => {
   formRef.value?.validate((errors: any) => {
     if (!errors) {
-      emit('submit', formData.value);
+      emit('submit', formData.value)
     }
-  });
-};
+  })
+}
 </script>
 
 <template>
-  <NModal
-    :show="visible"
-    :title="title"
-    preset="card"
-    style="width: 600px"
-    @close="handleClose"
-  >
+  <NModal :show="visible" :title="title" preset="card" style="width: 600px" @close="handleClose">
     <NForm
       ref="formRef"
       :model="formData"
@@ -109,11 +103,7 @@ const handleSubmit = () => {
         <NInput v-model:value="formData.address" placeholder="请输入详细地址" />
       </NFormItem>
       <NFormItem label="备注" path="remark">
-        <NInput
-          v-model:value="formData.remark"
-          type="textarea"
-          placeholder="请输入备注"
-        />
+        <NInput v-model:value="formData.remark" type="textarea" placeholder="请输入备注" />
       </NFormItem>
     </NForm>
     <template #footer>

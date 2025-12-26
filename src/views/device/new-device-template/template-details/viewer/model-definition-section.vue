@@ -6,7 +6,18 @@
 
 import { inject, ref, onMounted, computed, h } from 'vue'
 import type { Ref } from 'vue'
-import { NCard, NTabs, NTabPane, NEmpty, NDataTable, NSpin, NTag, NDescriptions, NDescriptionsItem, NText } from 'naive-ui'
+import {
+  NCard,
+  NTabs,
+  NTabPane,
+  NEmpty,
+  NDataTable,
+  NSpin,
+  NTag,
+  NDescriptions,
+  NDescriptionsItem,
+  NText
+} from 'naive-ui'
 import { $t } from '@/locales'
 import {
   telemetryApi,
@@ -335,12 +346,7 @@ onMounted(() => {
               <!-- 标准遥测数据 -->
               <div v-if="telemetryList.length > 0" class="mb-6">
                 <h3 class="text-base font-semibold mb-3">{{ $t('device_template.telemetry') }}</h3>
-                <NDataTable
-                  :columns="telemetryColumns"
-                  :data="telemetryList"
-                  :bordered="false"
-                  :single-line="false"
-                />
+                <NDataTable :columns="telemetryColumns" :data="telemetryList" :bordered="false" :single-line="false" />
               </div>
 
               <!-- 自定义控制 -->
@@ -402,12 +408,7 @@ onMounted(() => {
               <!-- 标准命令 -->
               <div v-if="commandsList.length > 0" class="mb-6">
                 <h3 class="text-base font-semibold mb-3">{{ $t('device_template.commands') }}</h3>
-                <NDataTable
-                  :columns="commandsColumns"
-                  :data="commandsList"
-                  :bordered="false"
-                  :single-line="false"
-                />
+                <NDataTable :columns="commandsColumns" :data="commandsList" :bordered="false" :single-line="false" />
               </div>
 
               <!-- 自定义命令 -->

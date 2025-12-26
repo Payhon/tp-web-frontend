@@ -1,8 +1,5 @@
 <template>
-  <GenericCard
-    :start-color="cardData.colors[0]"
-    :end-color="cardData.colors[1]"
-  >
+  <GenericCard :start-color="cardData.colors[0]" :end-color="cardData.colors[1]">
     <template #title>
       {{ cardData.title }}
     </template>

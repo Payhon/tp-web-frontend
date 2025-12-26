@@ -231,8 +231,7 @@ const customRoutes: ElegantRoute[] = [
                 meta: {
                   title: '升级任务管理',
                   icon: 'mdi:clipboard-list-outline'
-                }
-                ,
+                },
                 children: [
                   {
                     name: 'bms_battery_ota_task_detail',

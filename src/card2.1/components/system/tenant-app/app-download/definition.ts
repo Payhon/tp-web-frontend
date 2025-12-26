@@ -16,7 +16,7 @@ export default {
   dataDriven: false, // 这是一个纯交互性组件，提供静态下载功能，不依赖外部数据源
   interactionCapabilities: {
     // 声明组件支持点击事件
-    supportedEvents: ['click'],
+    supportedEvents: ['click']
   },
   permission: '不限'
 } as ComponentDefinition

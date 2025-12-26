@@ -900,6 +900,15 @@ export const generatedRoutes: GeneratedRoute[] = [
         }
       },
       {
+        name: 'management_app-auth-config',
+        path: '/management/app-auth-config',
+        component: 'view.management_app-auth-config',
+        meta: {
+          title: 'management_app-auth-config',
+          i18nKey: 'route.management_app-auth-config'
+        }
+      },
+      {
         name: 'management_auth',
         path: '/management/auth',
         component: 'view.management_auth',
@@ -915,6 +924,15 @@ export const generatedRoutes: GeneratedRoute[] = [
         meta: {
           title: 'management_notification',
           i18nKey: 'route.management_notification'
+        }
+      },
+      {
+        name: 'management_permission',
+        path: '/management/permission',
+        component: 'view.management_permission',
+        meta: {
+          title: 'management_permission',
+          i18nKey: 'route.management_permission'
         }
       },
       {
