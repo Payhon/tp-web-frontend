@@ -170,5 +170,11 @@
   "route.bms_store": "门店管理",
   "route.bms_end": "终端用户",
   "route.bms_battery": "电池管理",
-  "route.bms_dealer_detail": "经销商详情"
+  "route.bms_dealer_detail": "经销商详情",
+  "route.app_manage": "APP管理",
+  "route.app": "APP管理",
+  "route.app_manage_content": "内容管理",
+  "route.app_manage_apps": "应用管理",
+  "route.app_manage_upgrade": "App升级中心",
+  "route.app_manage_users": "用户管理"
 }

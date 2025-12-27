@@ -76,7 +76,7 @@ async function loadTenants() {
         if (!tenantId) return null
         return { label: `${labelName} (${tenantId})`, value: tenantId }
       })
-      .filter(Boolean)
+      .filter((item): item is { label: string; value: string } => item !== null)
 
     if (!tenantIdInput.value && tenantOptions.value.length > 0) {
       tenantIdInput.value = tenantOptions.value[0].value
@@ -191,7 +191,7 @@ watch(
         <div class="flex-1 min-h-0">
           <NSpin :show="loading" class="h-full">
             <NTabs v-model:value="activeTab" type="line" animated class="h-full flex flex-col">
-              <NTabPane name="menu" tab="菜单权限" class="flex-1 min-h-0">
+              <NTabPane name="menu" tab="菜单权限" class="flex-1" style="height: 580px;">
                 <NScrollbar class="h-full">
                   <div class="pr-12px">
                     <NTree
@@ -206,7 +206,7 @@ watch(
                   </div>
                 </NScrollbar>
               </NTabPane>
-              <NTabPane name="device" tab="设备参数权限" class="flex-1 min-h-0">
+              <NTabPane name="device" tab="设备参数权限" class="flex-1" style="height: 580px;">
                 <NScrollbar class="h-full">
                   <div class="pr-12px">
                     <NTree

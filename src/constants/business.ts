@@ -54,7 +54,7 @@ export const routerTypeLabels: Record<CustomRoute.routerTypeKey, string> = {
   1: $t('card.menu'),
   // 2: '目录',
   3: $t('card.route'),
-  4: $t('card.button'),
+  4: $t('card.button')
   // 5: '隐藏'
 }
 export const routeTypeOptions = transformObjectToOption(routerTypeLabels)

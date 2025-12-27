@@ -136,5 +136,11 @@
   "route.device_new-device-template_template-list": "Model List (New)",
   "route.device_new-device-template_template-details": "Model Details (New)",
   "route.device_new-device-template_template-details_editor": "Edit Model (New)",
-  "route.device_new-device-template_template-details_viewer": "View Model (New)"
+  "route.device_new-device-template_template-details_viewer": "View Model (New)",
+  "route.app_manage": "APP Management",
+  "route.app": "APP Management",
+  "route.app_manage_content": "Content",
+  "route.app_manage_apps": "Applications",
+  "route.app_manage_upgrade": "App Upgrade Center",
+  "route.app_manage_users": "Users"
 }

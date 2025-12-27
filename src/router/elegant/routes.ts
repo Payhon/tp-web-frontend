@@ -86,6 +86,63 @@ export const generatedRoutes: GeneratedRoute[] = [
     ]
   },
   {
+    name: 'app',
+    path: '/app',
+    component: 'layout.base',
+    meta: {
+      title: 'app',
+      i18nKey: 'route.app'
+    },
+    children: [
+      {
+        name: 'app_manage',
+        path: '/app/manage',
+        meta: {
+          title: 'app_manage',
+          i18nKey: 'route.app_manage'
+        },
+        children: [
+          {
+            name: 'app_manage_apps',
+            path: '/app/manage/apps',
+            component: 'view.app_manage_apps',
+            meta: {
+              title: 'app_manage_apps',
+              i18nKey: 'route.app_manage_apps'
+            }
+          },
+          {
+            name: 'app_manage_content',
+            path: '/app/manage/content',
+            component: 'view.app_manage_content',
+            meta: {
+              title: 'app_manage_content',
+              i18nKey: 'route.app_manage_content'
+            }
+          },
+          {
+            name: 'app_manage_upgrade',
+            path: '/app/manage/upgrade',
+            component: 'view.app_manage_upgrade',
+            meta: {
+              title: 'app_manage_upgrade',
+              i18nKey: 'route.app_manage_upgrade'
+            }
+          },
+          {
+            name: 'app_manage_users',
+            path: '/app/manage/users',
+            component: 'view.app_manage_users',
+            meta: {
+              title: 'app_manage_users',
+              i18nKey: 'route.app_manage_users'
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
     name: 'apply',
     path: '/apply',
     component: 'layout.base',

@@ -29,6 +29,12 @@ declare module "@elegant-router/types" {
     "alarm_notification-group": "/alarm/notification-group";
     "alarm_notification-record": "/alarm/notification-record";
     "alarm_warning-message": "/alarm/warning-message";
+    "app": "/app";
+    "app_manage": "/app/manage";
+    "app_manage_apps": "/app/manage/apps";
+    "app_manage_content": "/app/manage/content";
+    "app_manage_upgrade": "/app/manage/upgrade";
+    "app_manage_users": "/app/manage/users";
     "apply": "/apply";
     "apply_plugin": "/apply/plugin";
     "apply_service": "/apply/service";
@@ -192,6 +198,7 @@ declare module "@elegant-router/types" {
     | "500"
     | "about"
     | "alarm"
+    | "app"
     | "apply"
     | "automation"
     | "bms"
@@ -238,6 +245,10 @@ declare module "@elegant-router/types" {
     | "alarm_notification-group"
     | "alarm_notification-record"
     | "alarm_warning-message"
+    | "app_manage_apps"
+    | "app_manage_content"
+    | "app_manage_upgrade"
+    | "app_manage_users"
     | "apply_plugin"
     | "apply_service"
     | "automation_linkage-edit"
