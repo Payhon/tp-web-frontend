@@ -191,7 +191,7 @@ watch(
         <div class="flex-1 min-h-0">
           <NSpin :show="loading" class="h-full">
             <NTabs v-model:value="activeTab" type="line" animated class="h-full flex flex-col">
-              <NTabPane name="menu" tab="菜单权限" class="flex-1" style="height: 580px;">
+              <NTabPane name="menu" tab="菜单权限" class="flex-1" style="height: 580px">
                 <NScrollbar class="h-full">
                   <div class="pr-12px">
                     <NTree
@@ -206,7 +206,7 @@ watch(
                   </div>
                 </NScrollbar>
               </NTabPane>
-              <NTabPane name="device" tab="设备参数权限" class="flex-1" style="height: 580px;">
+              <NTabPane name="device" tab="设备参数权限" class="flex-1" style="height: 580px">
                 <NScrollbar class="h-full">
                   <div class="pr-12px">
                     <NTree

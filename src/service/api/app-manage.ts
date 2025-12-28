@@ -140,7 +140,10 @@ export const fetchAdminContentPage = (contentKey: ContentKey, params: { app_id: 
   return request.get<AdminContentPageResp>(`/app_content/pages/${contentKey}`, { params })
 }
 
-export const upsertAdminContentPage = (contentKey: ContentKey, data: { app_id: string; lang: string; title: string; content_markdown: string }) => {
+export const upsertAdminContentPage = (
+  contentKey: ContentKey,
+  data: { app_id: string; lang: string; title: string; content_markdown: string }
+) => {
   return request.put(`/app_content/pages/${contentKey}`, data)
 }
 

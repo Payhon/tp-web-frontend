@@ -3,6 +3,7 @@ import { $t } from '@/locales'
 import ThemeSetting from './components/theme-setting.vue'
 import FunctionSetting from './components/function-setting.vue'
 import DataClearSetting from './components/data-clear-setting.vue'
+import StorageSetting from './components/storage-setting.vue'
 </script>
 
 <template>
@@ -18,6 +19,9 @@ import DataClearSetting from './components/data-clear-setting.vue'
           </NTabPane>
           <NTabPane name="3" :tab="$t('custom.management.configSetting')">
             <FunctionSetting></FunctionSetting>
+          </NTabPane>
+          <NTabPane name="4" :tab="$t('custom.management.storageSetting')">
+            <StorageSetting></StorageSetting>
           </NTabPane>
         </NTabs>
       </div>

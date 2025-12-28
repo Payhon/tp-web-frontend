@@ -375,6 +375,122 @@ declare namespace Api {
       total: number
     }
   }
+
+  namespace FileStorage {
+    type StorageType = 'local' | 'cloud'
+    type Provider = 'aliyun' | 'qiniu'
+
+    interface LocalConfig {
+      base_dir: string
+      public_path_prefix: string
+    }
+
+    interface AliyunConfig {
+      access_key_id: string
+      access_key_secret: string
+      access_key_secret_set?: boolean
+      endpoint: string
+      bucket: string
+      domain: string
+      dir_prefix: string
+      use_https?: boolean
+    }
+
+    interface QiniuConfig {
+      access_key: string
+      secret_key: string
+      secret_key_set?: boolean
+      bucket: string
+      domain: string
+      dir_prefix: string
+      region: string
+      use_https?: boolean
+      upload_base_url?: string
+    }
+
+    interface Config {
+      id: string
+      storage_type: StorageType
+      provider?: Provider | ''
+      local: LocalConfig
+      aliyun: AliyunConfig
+      qiniu: QiniuConfig
+      updated_at: number
+      remark?: string | null
+    }
+
+    interface UpsertReq {
+      storage_type: StorageType
+      provider?: Provider | ''
+      local: LocalConfig
+      aliyun: AliyunConfig
+      qiniu: QiniuConfig
+      remark?: string | null
+    }
+  }
+
+  namespace File {
+    type StorageLocation = 'local' | 'aliyun' | 'qiniu'
+
+    interface ListReq {
+      page: number
+      page_size: number
+      mine?: boolean
+      keyword?: string
+      biz_type?: string
+      storage_location?: StorageLocation
+      start_time?: string
+      end_time?: string
+    }
+
+    interface ListItem {
+      id: string
+      file_name: string
+      file_size: number
+      storage_location: StorageLocation
+      biz_type: string
+      mime_type?: string
+      file_ext?: string
+      uploaded_at: string
+      uploaded_by?: string
+      path: string
+      url: string
+    }
+
+    interface ListRsp {
+      total: number
+      list: ListItem[]
+    }
+
+    interface UploadRsp {
+      id: string
+      storage_location: StorageLocation
+      path: string
+      url: string
+    }
+
+    interface CreateCloudCredentialReq {
+      biz_type: string
+      file_name: string
+      mime_type?: string
+      file_size?: number
+    }
+
+    interface CloudCredentialRsp {
+      provider: 'aliyun' | 'qiniu'
+      object_key: string
+      access_url: string
+      upload: Record<string, any>
+    }
+
+    interface RegisterCloudReq {
+      biz_type: string
+      file_name: string
+      file_size: number
+      mime_type?: string
+      object_key: string
+    }
+  }
   namespace NotificationServices {
     interface Email {
       id: string

@@ -15,9 +15,10 @@ import {
 } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import { useTable } from '@/hooks/common/table'
-import { getOtaUpgradePackageList, uploadOtaUpgradePackageFile } from '@/service/api/bms'
+import { getOtaUpgradePackageList } from '@/service/api/bms'
 import { deviceConfig } from '@/service/api/device'
 import { request } from '@/service/request'
+import FilePicker from '@/components/business/file-picker/index.vue'
 
 interface OtaPackageItem {
   id: string
@@ -134,7 +135,6 @@ function handleReset() {
 const showModal = ref(false)
 const modalType = ref<'create' | 'edit'>('create')
 const saving = ref(false)
-const uploading = ref(false)
 const form = ref({
   id: '',
   name: '',
@@ -240,32 +240,6 @@ async function doDelete(row: OtaPackageItem) {
   }
 }
 
-async function handleUploadFirmware() {
-  const input = document.createElement('input')
-  input.type = 'file'
-  input.accept = '.bin,.tar,.gz,.zip,.gzip,.apk,.dav,.pack'
-  input.onchange = async (e: any) => {
-    const file = e.target.files?.[0] as File | undefined
-    if (!file) return
-    uploading.value = true
-    try {
-      const res: any = await uploadOtaUpgradePackageFile(file)
-      const path = res?.data?.path as string | undefined
-      if (!path) {
-        message.error('上传失败：未返回文件地址')
-        return
-      }
-      form.value.package_url = path
-      message.success('上传成功')
-    } catch (err: any) {
-      message.error(err?.message || '上传失败')
-    } finally {
-      uploading.value = false
-    }
-  }
-  input.click()
-}
-
 loadDeviceConfigs()
 getData()
 </script>
@@ -347,15 +321,13 @@ getData()
           />
         </NFormItem>
         <NFormItem label="升级包固件" required>
-          <NSpace align="center" style="width: 100%">
-            <NInput
-              v-model:value="form.package_url"
-              readonly
-              placeholder="请先上传固件，系统会自动生成 package_url"
-              style="flex: 1"
-            />
-            <NButton type="primary" :loading="uploading" @click="handleUploadFirmware">选择并上传</NButton>
-          </NSpace>
+          <FilePicker
+            v-model="form.package_url"
+            biz-type="upgradePackage"
+            :allowed-extensions="['bin', 'tar', 'gz', 'zip', 'gzip', 'apk', 'dav', 'pack']"
+            accept=".bin,.tar,.gz,.zip,.gzip,.apk,.dav,.pack"
+            value-mode="path"
+          />
           <div style="color: #999; font-size: 12px; margin-top: 6px">
             支持扩展名：.bin/.tar/.gz/.zip/.gzip/.apk/.dav/.pack
           </div>

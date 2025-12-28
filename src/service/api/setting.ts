@@ -38,3 +38,15 @@ export const getFunction = async () => {
 export const editFunction = async (param: { function_id: string }) => {
   return await request.put<Api.BaseApi.Data | any>(`/sys_function/${param.function_id}`)
 }
+
+/** 获取系统设置 - 文件存储配置 */
+export const fetchFileStorageConfig = async () => {
+  const data = await request.get<Api.FileStorage.Config | null>('/file/storage/config')
+  return data
+}
+
+/** 保存系统设置 - 文件存储配置 */
+export const upsertFileStorageConfig = async (params: Api.FileStorage.UpsertReq) => {
+  const data = await request.put<Api.BaseApi.Data>('/file/storage/config', params)
+  return data
+}
