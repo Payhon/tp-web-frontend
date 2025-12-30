@@ -210,15 +210,57 @@ watch(
   </div>
 
   <NModal v-model:show="show" preset="card" title="选择文件" style="width: 980px">
-    <div class="mb-12px flex items-center justify-between gap-12px">
-      <NInput v-model:value="keyword" clearable placeholder="搜索文件名" class="w-360px" @keyup.enter="refresh" />
-      <NSpace>
-        <NButton @click="refresh">刷新</NButton>
-        <NButtonGroup>
-          <NButton :type="viewMode === 'list' ? 'primary' : 'default'" @click="viewMode = 'list'">列表</NButton>
-          <NButton :type="viewMode === 'thumb' ? 'primary' : 'default'" @click="viewMode = 'thumb'">缩略图</NButton>
+    <div class="file-picker-toolbar mb-12px">
+      <NInput
+        v-model:value="keyword"
+        clearable
+        placeholder="搜索文件名"
+        class="file-picker-toolbar__search"
+        size="medium"
+        @keyup.enter="refresh"
+      >
+        <template #prefix>
+          <SvgIcon icon="mdi:magnify" class="text-16px opacity-70" />
+        </template>
+      </NInput>
+
+      <div class="file-picker-toolbar__actions">
+        <ButtonIcon
+          icon="material-symbols:refresh"
+          tooltip-content="刷新"
+          size="medium"
+          class="h-34px w-34px"
+          @click="refresh"
+        />
+        <NButtonGroup size="medium">
+          <NTooltip trigger="hover">
+            <template #trigger>
+              <NButton
+                :type="viewMode === 'list' ? 'primary' : 'default'"
+                secondary
+                class="w-44px"
+                @click="viewMode = 'list'"
+              >
+                <SvgIcon icon="mdi:format-list-bulleted" class="text-18px" />
+              </NButton>
+            </template>
+            列表
+          </NTooltip>
+          <NTooltip trigger="hover">
+            <template #trigger>
+              <NButton
+                :type="viewMode === 'thumb' ? 'primary' : 'default'"
+                secondary
+                class="w-44px"
+                @click="viewMode = 'thumb'"
+              >
+                <SvgIcon icon="mdi:view-grid-outline" class="text-18px" />
+              </NButton>
+            </template>
+            缩略图
+          </NTooltip>
         </NButtonGroup>
-      </NSpace>
+      </div>
     </div>
 
     <NAlert type="info" class="mb-12px" :show-icon="false">
@@ -315,6 +357,23 @@ watch(
 </template>
 
 <style scoped lang="scss">
+.file-picker-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.file-picker-toolbar__search {
+  flex: 1;
+  min-width: 360px;
+}
+
+.file-picker-toolbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .file-picker-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
