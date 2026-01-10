@@ -38,6 +38,9 @@ export const request = createFlatRequest<App.Service.DEVResponse>(
       return config
     },
     isBackendSuccess(response) {
+      const responseType = response.config?.responseType || 'json'
+      // For non-json (blob/arraybuffer/text), treat as success directly.
+      if (responseType !== 'json') return true
       // when the backend response code is "0000", it means the requestTs is success
       // you can change this logic by yourself
       return response.data.code === 200

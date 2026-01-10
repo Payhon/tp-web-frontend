@@ -149,6 +149,26 @@ export const importBatteryList = (file: File) => {
   })
 }
 
+// 导入任务状态
+export const getBatteryImportJobStatus = (jobId: string) => {
+  return request.get(`/battery/import/jobs/${jobId}`)
+}
+
+// 导入任务日志（增量）
+export const getBatteryImportJobLogs = (jobId: string, params?: { after_id?: number; limit?: number }) => {
+  return request.get(`/battery/import/jobs/${jobId}/logs`, { params })
+}
+
+// 添加单个电池
+export const createSingleBattery = (data: any) => {
+  return request.post('/battery/single', data)
+}
+
+// 运营管理：电池运营日志
+export const getBatteryOperationLogList = (params: any) => {
+  return request.get('/battery/operation_logs', { params })
+}
+
 // 批量分配经销商
 export const batchAssignDealer = (data: { device_ids: string[]; dealer_id: string }) => {
   return request.post('/battery/batch-assign-dealer', data)

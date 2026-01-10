@@ -9,6 +9,8 @@ import BatteryModelModal from '../modules/battery-model-modal.vue'
 interface BatteryModelItem {
   id: string
   name: string
+  device_config_id?: string | null
+  device_config_name?: string | null
   voltage_rated?: number | null
   capacity_rated?: number | null
   cell_count?: number | null
@@ -33,6 +35,12 @@ const currentData = ref<BatteryModelItem | null>(null)
 
 const createColumns = (): DataTableColumns<BatteryModelItem> => [
   { key: 'name', title: '型号名称', minWidth: 150 },
+  {
+    key: 'device_config_name',
+    title: '关联设备模板',
+    minWidth: 180,
+    render: row => row.device_config_name || row.device_config_id || '--'
+  },
   { key: 'voltage_rated', title: '额定电压(V)', minWidth: 120 },
   { key: 'capacity_rated', title: '额定容量(Ah)', minWidth: 120 },
   { key: 'cell_count', title: '电芯数量', minWidth: 100 },

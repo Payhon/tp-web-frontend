@@ -3,41 +3,27 @@ import { computed, reactive, ref } from 'vue'
 import { NButton, NCard, NDatePicker, NForm, NFormItem, NInput, NSelect, useMessage } from 'naive-ui'
 import type { DataTableColumns, PaginationProps } from 'naive-ui'
 import moment from 'moment'
-import { getOperationLogList } from '@/service/api/bms'
+import { getBatteryOperationLogList } from '@/service/api/bms'
 import { formatDateTime } from '@/utils/common/datetime'
 
 const message = useMessage()
 
-const moduleOptions = [
-  { label: '全部', value: '' },
-  { label: '电池管理', value: '/battery' },
-  { label: '经销商管理', value: '/dealer' },
-  { label: '维保管理', value: '/warranty' },
-  { label: '终端用户', value: '/end_user' },
-  { label: '设备转移', value: '/device_transfer' },
-  { label: '电池型号', value: '/battery_model' },
-  { label: '其它', value: '' }
-]
-
 const opTypeOptions = [
   { label: '全部', value: '' },
-  { label: '新增/下发', value: '新增/下发' },
-  { label: '编辑', value: '编辑' },
-  { label: '删除', value: '删除' },
-  { label: '导入', value: '导入' },
-  { label: '导出', value: '导出' },
-  { label: '批量操作', value: '批量操作' },
-  { label: '绑定', value: '绑定' },
-  { label: '解绑', value: '解绑' }
+  { label: '创建', value: 'CREATE' },
+  { label: '导入', value: 'IMPORT' },
+  { label: '转移/调拨', value: 'TRANSFER' },
+  { label: '维保提交', value: 'WARRANTY_SUBMIT' },
+  { label: '维保处理', value: 'WARRANTY_HANDLE' },
+  { label: '维保记录提交', value: 'MAINTENANCE_SUBMIT' },
+  { label: '维保记录处理', value: 'MAINTENANCE_HANDLE' }
 ]
 
 const range = ref<[number, number]>([moment().subtract(7, 'days').valueOf(), moment().valueOf()])
 
 const queryParams = reactive({
-  username: '',
-  ip: '',
-  module: '',
-  op_type: '' as string,
+  device_number: '',
+  operation_type: '' as string,
   start_time: '',
   end_time: ''
 })
@@ -75,33 +61,34 @@ function pickerChange(value: [number, number] | null) {
 
 const columns = computed<DataTableColumns<any>>(() => [
   {
-    key: 'created_at',
+    key: 'occurred_at',
     title: '时间',
     minWidth: 160,
-    render: row => formatDateTime(row.created_at)
+    render: row => formatDateTime(row.occurred_at)
   },
-  { key: 'username', title: '操作人', minWidth: 140, render: row => row.username || '-' },
-  { key: 'authority', title: '角色', minWidth: 140, render: row => row.authority || '-' },
-  { key: 'module', title: '模块', minWidth: 120, render: row => row.module || '-' },
-  { key: 'op_type', title: '类型', minWidth: 110, render: row => row.op_type || '-' },
-  { key: 'content', title: '内容', minWidth: 260, ellipsis: { tooltip: true }, render: row => row.content || '-' },
-  { key: 'ip', title: 'IP', minWidth: 140 },
-  { key: 'path', title: '路径', minWidth: 220, ellipsis: { tooltip: true }, render: row => row.path || '-' }
+  { key: 'device_number', title: '电池编号', minWidth: 160 },
+  { key: 'operation_type', title: '类型', minWidth: 140, render: row => row.operation_type || '-' },
+  { key: 'operator_name', title: '操作人', minWidth: 140, render: row => row.operator_name || '-' },
+  {
+    key: 'description',
+    title: '描述',
+    minWidth: 360,
+    ellipsis: { tooltip: true },
+    render: row => row.description || '-'
+  }
 ])
 
 async function getTableData() {
   const params: any = {
     page: pagination.page || 1,
     page_size: pagination.pageSize || 10,
-    username: queryParams.username || undefined,
-    ip: queryParams.ip || undefined,
-    module: queryParams.module || undefined,
-    op_type: queryParams.op_type || undefined,
+    device_number: queryParams.device_number || undefined,
+    operation_type: queryParams.operation_type || undefined,
     start_time: queryParams.start_time || undefined,
     end_time: queryParams.end_time || undefined
   }
   try {
-    const res: any = await getOperationLogList(params)
+    const res: any = await getBatteryOperationLogList(params)
     tableData.value = res?.data?.list || []
     total.value = res?.data?.total || 0
   } catch (e: any) {
@@ -115,10 +102,8 @@ function handleQuery() {
 }
 
 function handleReset() {
-  queryParams.username = ''
-  queryParams.ip = ''
-  queryParams.module = ''
-  queryParams.op_type = ''
+  queryParams.device_number = ''
+  queryParams.operation_type = ''
   queryParams.start_time = ''
   queryParams.end_time = ''
   range.value = [moment().subtract(7, 'days').valueOf(), moment().valueOf()]
@@ -130,19 +115,13 @@ getTableData()
 </script>
 
 <template>
-  <NCard title="操作记录">
+  <NCard title="运营日志">
     <NForm class="mb-12px" :inline="true" label-placement="left" :model="queryParams">
-      <NFormItem label="操作人">
-        <NInput v-model:value="queryParams.username" class="w-200px" placeholder="用户名" />
-      </NFormItem>
-      <NFormItem label="IP">
-        <NInput v-model:value="queryParams.ip" class="w-200px" placeholder="IP" />
-      </NFormItem>
-      <NFormItem label="模块">
-        <NSelect v-model:value="queryParams.module" class="w-180px" :options="moduleOptions" />
+      <NFormItem label="电池编号">
+        <NInput v-model:value="queryParams.device_number" class="w-220px" placeholder="支持模糊查询" />
       </NFormItem>
       <NFormItem label="类型">
-        <NSelect v-model:value="queryParams.op_type" class="w-160px" :options="opTypeOptions" />
+        <NSelect v-model:value="queryParams.operation_type" class="w-200px" :options="opTypeOptions" />
       </NFormItem>
       <NFormItem label="时间范围">
         <NDatePicker v-model:value="range" type="datetimerange" clearable separator="-" @update:value="pickerChange" />

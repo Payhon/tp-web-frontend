@@ -1,13 +1,15 @@
 <script setup lang="tsx">
-import { computed, onMounted, ref } from 'vue'
+import { computed, h, onMounted, ref } from 'vue'
 import {
   NButton,
   NCard,
   NDataTable,
   NDatePicker,
+  NDropdown,
   NForm,
   NFormItem,
   NInput,
+  NIcon,
   NModal,
   NSelect,
   NSpace,
@@ -20,13 +22,14 @@ import { useTable } from '@/hooks/common/table'
 import { useRouterPush } from '@/hooks/common/router'
 import { commandDataById } from '@/service/api/device'
 import ParamsModal from '@/views/bms/battery/modules/params-modal.vue'
+import BatteryImportModal from '@/views/bms/battery/modules/battery-import-modal.vue'
+import BatterySingleModal from '@/views/bms/battery/modules/battery-single-modal.vue'
 import {
   getBatteryList,
   getBatteryModelList,
   getDealerList,
   exportBatteryList,
-  getBatteryImportTemplate,
-  importBatteryList,
+  createSingleBattery,
   batchAssignDealer,
   assignBatteryTags,
   getBatteryTagList,
@@ -36,6 +39,15 @@ import {
   getOtaUpgradePackageList,
   getOtaTaskDetailByPage
 } from '@/service/api/bms'
+import {
+  ChevronDownOutline,
+  CloudUploadOutline,
+  EllipsisHorizontal,
+  EyeOutline,
+  FlashOutline,
+  ListOutline,
+  SettingsOutline
+} from '@vicons/ionicons5'
 
 interface BatteryItem {
   device_id: string
@@ -43,6 +55,10 @@ interface BatteryItem {
   device_name?: string | null
   battery_model_id?: string | null
   battery_model_name?: string | null
+  item_uuid?: string | null
+  batch_number?: string | null
+  ble_mac?: string | null
+  comm_chip_id?: string | null
   production_date?: string | null
   warranty_expire_date?: string | null
   dealer_id?: string | null
@@ -78,8 +94,11 @@ const showBatchAssignModal = ref(false)
 const batchAssignForm = ref({
   dealer_id: null as string | null
 })
-const importLoading = ref(false)
 const batchAssignLoading = ref(false)
+
+// 导入 / 添加单个电池
+const showImportModal = ref(false)
+const showSingleModal = ref(false)
 
 // 批量设置标签
 const showBatchTagModal = ref(false)
@@ -199,6 +218,80 @@ function activationLabel(status?: string | null) {
   return '--'
 }
 
+function renderIcon(icon: any) {
+  return () => h(NIcon, null, { default: () => h(icon) })
+}
+
+function filterMenuOptions(options: any[]): any[] {
+  return options
+    .filter(o => !o.permissionKey || true)
+    .map(o => {
+      if (o.children?.length) return { ...o, children: filterMenuOptions(o.children) }
+      return o
+    })
+}
+
+function getActionOptions(_row: BatteryItem) {
+  return filterMenuOptions([
+    {
+      label: '查看详情',
+      key: 'detail',
+      icon: renderIcon(EyeOutline),
+      permissionKey: 'battery.detail'
+    },
+    {
+      label: '参数',
+      key: 'params',
+      icon: renderIcon(SettingsOutline),
+      permissionKey: 'battery.params'
+    },
+    {
+      label: '离线指令',
+      key: 'offline',
+      icon: renderIcon(FlashOutline),
+      permissionKey: 'battery.offline_command'
+    },
+    {
+      type: 'divider',
+      key: 'divider-1'
+    },
+    {
+      label: '生命周期（预留）',
+      key: 'lifecycle',
+      icon: renderIcon(ListOutline),
+      children: [
+        {
+          label: '出厂',
+          key: 'lifecycle.factory',
+          disabled: true,
+          icon: renderIcon(CloudUploadOutline),
+          permissionKey: 'battery.lifecycle.factory'
+        },
+        {
+          label: '激活',
+          key: 'lifecycle.activate',
+          disabled: true,
+          icon: renderIcon(ChevronDownOutline),
+          permissionKey: 'battery.lifecycle.activate'
+        },
+        {
+          label: '调拨',
+          key: 'lifecycle.transfer',
+          disabled: true,
+          icon: renderIcon(CloudUploadOutline),
+          permissionKey: 'battery.lifecycle.transfer'
+        }
+      ]
+    }
+  ])
+}
+
+function handleActionSelect(key: string, row: BatteryItem) {
+  if (key === 'detail') goDeviceDetail(row)
+  if (key === 'params') openParams(row)
+  if (key === 'offline') openOfflineCmd(row)
+}
+
 const searchForm = ref<{
   device_number: string
   battery_model_id: string | null
@@ -223,7 +316,10 @@ const createColumns = (): DataTableColumns<BatteryItem> => [
     multiple: true
   },
   { key: 'device_number', title: '序列号', minWidth: 150 },
+  { key: 'batch_number', title: '批号', minWidth: 140, render: row => row.batch_number || '--' },
   { key: 'battery_model_name', title: '型号', minWidth: 140, render: row => row.battery_model_name || '--' },
+  { key: 'ble_mac', title: '蓝牙Mac', minWidth: 160, render: row => row.ble_mac || '--' },
+  { key: 'comm_chip_id', title: '4G卡ID', minWidth: 160, render: row => row.comm_chip_id || '--' },
   { key: 'production_date', title: '出厂日期', minWidth: 120, render: row => row.production_date || '--' },
   {
     key: 'dealer_name',
@@ -252,20 +348,25 @@ const createColumns = (): DataTableColumns<BatteryItem> => [
   {
     key: 'actions',
     title: '操作',
-    minWidth: 220,
+    minWidth: 140,
     fixed: 'right',
     render: row => (
-      <NSpace>
-        <NButton size="small" type="primary" onClick={() => goDeviceDetail(row)}>
-          查看详情
+      <NDropdown
+        options={getActionOptions(row) as any}
+        trigger="click"
+        onSelect={(key: string) => handleActionSelect(key, row)}
+      >
+        <NButton size="small" quaternary>
+          {{
+            default: () => '操作',
+            icon: () => (
+              <NIcon>
+                <EllipsisHorizontal />
+              </NIcon>
+            )
+          }}
         </NButton>
-        <NButton size="small" type="info" onClick={() => openParams(row)}>
-          参数
-        </NButton>
-        <NButton size="small" type="warning" onClick={() => openOfflineCmd(row)}>
-          离线指令
-        </NButton>
-      </NSpace>
+      </NDropdown>
     )
   }
 ]
@@ -322,57 +423,35 @@ async function handleExport() {
   }
 }
 
-// 下载模板
-async function handleDownloadTemplate() {
-  try {
-    const response = await getBatteryImportTemplate()
-    const blob = new Blob([response.data], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    })
-    const url = window.URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = '电池导入模板.xlsx'
-    link.click()
-    window.URL.revokeObjectURL(url)
-    message.success('模板下载成功')
-  } catch (error: any) {
-    message.error(error?.message || '下载失败')
-  }
+function openImportModal() {
+  showImportModal.value = true
 }
 
-// 导入
-function handleImport() {
-  const input = document.createElement('input')
-  input.type = 'file'
-  input.accept = '.xlsx,.xls'
-  input.onchange = async (e: any) => {
-    const file = e.target.files[0]
-    if (!file) return
+function openSingleModal() {
+  showSingleModal.value = true
+}
 
-    importLoading.value = true
-    try {
-      const res: any = await importBatteryList(file)
-      const result = res?.data
-      if (result) {
-        const msg = `导入完成：总计 ${result.total} 条，成功 ${result.success} 条，失败 ${result.failed} 条`
-        if (result.failed > 0 && result.failures?.length > 0) {
-          const failures = result.failures
-            .map((f: any) => `第${f.row}行：${f.device_number || '未知'} - ${f.message}`)
-            .join('\n')
-          message.warning(msg + '\n失败明细：\n' + failures, { duration: 10000 })
-        } else {
-          message.success(msg)
-        }
-        getData()
-      }
-    } catch (error: any) {
-      message.error(error?.message || '导入失败')
-    } finally {
-      importLoading.value = false
+async function handleSingleSubmit(form: any) {
+  try {
+    const payload = {
+      item_uuid: String(form.item_uuid || '').trim(),
+      batch_number: String(form.batch_number || '').trim(),
+      battery_model_id: form.battery_model_id || undefined,
+      ble_mac: String(form.ble_mac || '').trim() || undefined,
+      comm_chip_id: String(form.comm_chip_id || '').trim() || undefined,
+      production_date: form.production_date ? dayjs(form.production_date).format('YYYY-MM-DD') : undefined,
+      warranty_expire_date: form.warranty_expire_date
+        ? dayjs(form.warranty_expire_date).format('YYYY-MM-DD')
+        : undefined,
+      remark: String(form.remark || '').trim() || undefined
     }
+    await createSingleBattery(payload)
+    message.success('添加成功')
+    showSingleModal.value = false
+    getData()
+  } catch (e: any) {
+    message.error(e?.message || '添加失败')
   }
-  input.click()
 }
 
 // 批量分配经销商
@@ -709,7 +788,7 @@ async function initSelectOptions() {
   }
 }
 
-const scrollX = computed(() => 1400)
+const scrollX = computed(() => 1800)
 
 onMounted(() => {
   initSelectOptions()
@@ -795,8 +874,8 @@ onMounted(() => {
       <NSpace class="mb-4" justify="space-between">
         <NSpace>
           <NButton type="primary" @click="handleExport">导出</NButton>
-          <NButton @click="handleDownloadTemplate">下载模板</NButton>
-          <NButton :loading="importLoading" @click="handleImport">导入</NButton>
+          <NButton type="primary" @click="openSingleModal">+ 添加电池</NButton>
+          <NButton @click="openImportModal">导入</NButton>
           <NButton v-if="selectedRowKeys.length > 0" type="warning" @click="handleBatchAssign">
             批量分配经销商({{ selectedRowKeys.length }})
           </NButton>
@@ -1035,6 +1114,10 @@ onMounted(() => {
       :device-id="currentParamDeviceId"
       :device-number="currentParamDeviceNumber"
     />
+
+    <BatteryImportModal v-model:visible="showImportModal" @finished="getData" />
+
+    <BatterySingleModal v-model:visible="showSingleModal" :model-options="modelOptions" @submit="handleSingleSubmit" />
   </div>
 </template>
 
