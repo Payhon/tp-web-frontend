@@ -177,7 +177,7 @@ onBeforeUnmount(() => stopPolling())
         <NButton text type="primary" class="ml-8px" @click="downloadTemplate">下载导入 Excel 模板</NButton>
         <div class="mt-8px text-12px text-gray-500">
           必填：电池序列号ID（对应
-          devices.device_number）、批号；可选：电池型号（按名称匹配）、蓝牙Mac、4G通讯卡ID、出厂日期、质保到期。
+          devices.device_number）、批号、产品规格、订单编号；可选：电池型号（按名称匹配）、蓝牙Mac、4G通讯卡ID、出厂日期、质保到期。
         </div>
       </NCard>
 

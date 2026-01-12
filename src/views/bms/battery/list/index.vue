@@ -436,6 +436,8 @@ async function handleSingleSubmit(form: any) {
     const payload = {
       item_uuid: String(form.item_uuid || '').trim(),
       batch_number: String(form.batch_number || '').trim(),
+      product_spec: String(form.product_spec || '').trim(),
+      order_number: String(form.order_number || '').trim(),
       battery_model_id: form.battery_model_id || undefined,
       ble_mac: String(form.ble_mac || '').trim() || undefined,
       comm_chip_id: String(form.comm_chip_id || '').trim() || undefined,

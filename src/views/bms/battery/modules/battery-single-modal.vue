@@ -17,6 +17,8 @@ const formRef = ref()
 const formData = ref({
   item_uuid: '',
   batch_number: '',
+  product_spec: '',
+  order_number: '',
   battery_model_id: null as string | null,
   ble_mac: '',
   comm_chip_id: '',
@@ -27,7 +29,9 @@ const formData = ref({
 
 const rules = {
   item_uuid: { required: true, message: '请输入电池序列号ID（设备编号）', trigger: 'blur' },
-  batch_number: { required: true, message: '请输入批号', trigger: 'blur' }
+  batch_number: { required: true, message: '请输入批号', trigger: 'blur' },
+  product_spec: { required: true, message: '请输入产品规格', trigger: 'blur' },
+  order_number: { required: true, message: '请输入订单编号', trigger: 'blur' }
 }
 
 const title = computed(() => '添加单个电池')
@@ -39,6 +43,8 @@ watch(
       formData.value = {
         item_uuid: '',
         batch_number: '',
+        product_spec: '',
+        order_number: '',
         battery_model_id: null,
         ble_mac: '',
         comm_chip_id: '',
@@ -77,6 +83,12 @@ function handleSubmit() {
       </NFormItem>
       <NFormItem label="批号" path="batch_number">
         <NInput v-model:value="formData.batch_number" placeholder="请输入批号" />
+      </NFormItem>
+      <NFormItem label="产品规格" path="product_spec">
+        <NInput v-model:value="formData.product_spec" maxlength="32" show-count placeholder="必填（最多32个字符）" />
+      </NFormItem>
+      <NFormItem label="订单编号" path="order_number">
+        <NInput v-model:value="formData.order_number" maxlength="32" show-count placeholder="必填（最多32个字符）" />
       </NFormItem>
       <NFormItem label="电池型号" path="battery_model_id">
         <NSelect
