@@ -264,6 +264,7 @@ const routeMap: RouteMap = {
   "management_api": "/management/api",
   "management_app-auth-config": "/management/app-auth-config",
   "management_auth": "/management/auth",
+  "management_dict": "/management/dict",
   "management_notification": "/management/notification",
   "management_permission": "/management/permission",
   "management_role": "/management/role",

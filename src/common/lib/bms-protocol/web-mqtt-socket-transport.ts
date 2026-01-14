@@ -110,14 +110,12 @@ export class WebMqttSocketBmsTransport {
   private connectedFlag: boolean
   private collector: FrameCollector
   private queue: Promise<any>
-  private pending:
-    | null
-    | {
-        resolve: (frame: Uint8Array) => void
-        reject: (err: unknown) => void
-        expect: ReqExpect
-        timer: ReturnType<typeof setTimeout>
-      }
+  private pending: null | {
+    resolve: (frame: Uint8Array) => void
+    reject: (err: unknown) => void
+    expect: ReqExpect
+    timer: ReturnType<typeof setTimeout>
+  }
 
   private lastTxAt: number
 
@@ -224,12 +222,18 @@ export class WebMqttSocketBmsTransport {
     this.ws = null
   }
 
-  request(frameBytes: Uint8Array | ArrayLike<number>, { timeoutMs = this.requestTimeoutMs }: { timeoutMs?: number } = {}): Promise<Uint8Array> {
+  request(
+    frameBytes: Uint8Array | ArrayLike<number>,
+    { timeoutMs = this.requestTimeoutMs }: { timeoutMs?: number } = {}
+  ): Promise<Uint8Array> {
     this.queue = this.queue.then(() => this.requestSerial(frameBytes, { timeoutMs }))
     return this.queue
   }
 
-  private async requestSerial(frameBytes: Uint8Array | ArrayLike<number>, { timeoutMs }: { timeoutMs: number }): Promise<Uint8Array> {
+  private async requestSerial(
+    frameBytes: Uint8Array | ArrayLike<number>,
+    { timeoutMs }: { timeoutMs: number }
+  ): Promise<Uint8Array> {
     const ws = this.ws
     if (!this.connectedFlag || !ws) throw new BmsProtocolError('WebSocket is not connected')
     if (this.pending) throw new BmsProtocolError('Previous request still pending')
@@ -300,4 +304,3 @@ export class WebMqttSocketBmsTransport {
 export function createWebMqttSocketBmsTransport(options: WebMqttSocketBmsTransportOptions): WebMqttSocketBmsTransport {
   return new WebMqttSocketBmsTransport(options)
 }
-

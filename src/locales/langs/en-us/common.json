@@ -238,6 +238,7 @@
   "common.modifySuccess": "Modify Success",
   "common.modifyFail": "Modify Fail",
   "common.pleaseCheckValue": "Please check whether the value is valid",
+  "common.pleaseInput": "Please fill in required fields",
   "common.refresh": "Refresh",
   "common.reset": "Reset",
   "common.search": "Search",

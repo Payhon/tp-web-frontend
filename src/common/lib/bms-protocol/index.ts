@@ -7,4 +7,3 @@ export * from './status-parser'
 export * from './transport'
 export * from './client'
 export * from './web-mqtt-socket-transport'
-

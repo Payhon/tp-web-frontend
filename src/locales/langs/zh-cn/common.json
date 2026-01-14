@@ -238,6 +238,7 @@
   "common.modifySuccess": "修改成功",
   "common.modifyFail": "修改失败",
   "common.pleaseCheckValue": "请检查输入的值是否合法",
+  "common.pleaseInput": "请填写必填项",
   "common.refresh": "刷新",
   "common.reset": "重置",
   "common.search": "搜索",

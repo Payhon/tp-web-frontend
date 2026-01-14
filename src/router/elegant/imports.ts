@@ -92,6 +92,7 @@ export const views: Record<LastLevelRouteKey, RouteComponent | (() => Promise<Ro
   management_api: () => import("@/views/management/api/index.vue"),
   "management_app-auth-config": () => import("@/views/management/app-auth-config/index.vue"),
   management_auth: () => import("@/views/management/auth/index.vue"),
+  management_dict: () => import("@/views/management/dict/index.vue"),
   management_notification: () => import("@/views/management/notification/index.vue"),
   management_permission: () => import("@/views/management/permission/index.vue"),
   management_role: () => import("@/views/management/role/index.vue"),

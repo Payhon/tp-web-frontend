@@ -82,6 +82,36 @@ declare namespace DataService {
   type StatusKey = NonNullable<Data['status']>
 }
 
+/** 字典管理模块 */
+declare namespace DictManagement {
+  interface DictItem {
+    id: string
+    dict_code: string
+    dict_value: string
+    tenant_id: string
+    category: string
+    created_at: string
+    remark?: string | null
+  }
+
+  interface DictCategory {
+    category: string
+    count: number
+  }
+
+  interface DictLanguage {
+    id: string
+    dict_id: string
+    language_code: string
+    translation: string
+  }
+
+  interface DictEnumItem {
+    dict_value: string
+    translation: string
+  }
+}
+
 /** 常规设置 */
 declare namespace GeneralSetting {
   interface ThemeSetting extends Api.GeneralSetting.ThemeSetting {}

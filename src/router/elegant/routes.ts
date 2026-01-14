@@ -996,6 +996,16 @@ export const generatedRoutes: GeneratedRoute[] = [
         }
       },
       {
+        name: 'management_dict',
+        path: '/management/dict',
+        component: 'view.management_dict',
+        meta: {
+          title: 'management_dict',
+          i18nKey: 'route.management_dict',
+          roles: ['SYS_ADMIN', 'TENANT_ADMIN']
+        }
+      },
+      {
         name: 'management_notification',
         path: '/management/notification',
         component: 'view.management_notification',

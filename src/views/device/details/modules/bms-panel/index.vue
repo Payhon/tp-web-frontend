@@ -422,7 +422,9 @@ const paramColumns: DataTableColumns<ParamItem> = [
               <NGridItem :span="12">
                 <NCard size="small" title="单体保护" :bordered="false">
                   <NSpace justify="space-between" class="mb-10px">
-                    <NButton size="small" :disabled="connType === 'offline'" @click="loadKeys(SINGLE_KEYS)">刷新</NButton>
+                    <NButton size="small" :disabled="connType === 'offline'" @click="loadKeys(SINGLE_KEYS)">
+                      刷新
+                    </NButton>
                   </NSpace>
                   <NDataTable :columns="paramColumns" :data="singleItems" :bordered="false" :max-height="260" />
                 </NCard>
@@ -430,7 +432,9 @@ const paramColumns: DataTableColumns<ParamItem> = [
               <NGridItem :span="12">
                 <NCard size="small" title="电压保护" :bordered="false">
                   <NSpace justify="space-between" class="mb-10px">
-                    <NButton size="small" :disabled="connType === 'offline'" @click="loadKeys(VOLTAGE_KEYS)">刷新</NButton>
+                    <NButton size="small" :disabled="connType === 'offline'" @click="loadKeys(VOLTAGE_KEYS)">
+                      刷新
+                    </NButton>
                   </NSpace>
                   <NDataTable :columns="paramColumns" :data="voltageItems" :bordered="false" :max-height="260" />
                 </NCard>
@@ -438,7 +442,9 @@ const paramColumns: DataTableColumns<ParamItem> = [
               <NGridItem :span="12">
                 <NCard size="small" title="电流保护" :bordered="false">
                   <NSpace justify="space-between" class="mb-10px">
-                    <NButton size="small" :disabled="connType === 'offline'" @click="loadKeys(CURRENT_KEYS)">刷新</NButton>
+                    <NButton size="small" :disabled="connType === 'offline'" @click="loadKeys(CURRENT_KEYS)">
+                      刷新
+                    </NButton>
                   </NSpace>
                   <NDataTable :columns="paramColumns" :data="currentItems" :bordered="false" :max-height="260" />
                 </NCard>
