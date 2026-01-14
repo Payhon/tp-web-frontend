@@ -19,6 +19,7 @@ const formData = ref({
   batch_number: '',
   product_spec: '',
   order_number: '',
+  bms_comm_type: 1 as 1 | 2 | 3,
   battery_model_id: null as string | null,
   ble_mac: '',
   comm_chip_id: '',
@@ -27,11 +28,18 @@ const formData = ref({
   remark: ''
 })
 
+const commTypeOptions = [
+  { label: '蓝牙', value: 1 },
+  { label: '4G', value: 2 },
+  { label: '蓝牙+4G', value: 3 }
+]
+
 const rules = {
   item_uuid: { required: true, message: '请输入电池序列号ID（设备编号）', trigger: 'blur' },
   batch_number: { required: true, message: '请输入批号', trigger: 'blur' },
   product_spec: { required: true, message: '请输入产品规格', trigger: 'blur' },
-  order_number: { required: true, message: '请输入订单编号', trigger: 'blur' }
+  order_number: { required: true, message: '请输入订单编号', trigger: 'blur' },
+  bms_comm_type: { required: true, type: 'number', message: '请选择BMS通讯类型', trigger: 'change' }
 }
 
 const title = computed(() => '添加单个电池')
@@ -45,6 +53,7 @@ watch(
         batch_number: '',
         product_spec: '',
         order_number: '',
+        bms_comm_type: 1,
         battery_model_id: null,
         ble_mac: '',
         comm_chip_id: '',
@@ -89,6 +98,9 @@ function handleSubmit() {
       </NFormItem>
       <NFormItem label="订单编号" path="order_number">
         <NInput v-model:value="formData.order_number" maxlength="32" show-count placeholder="必填（最多32个字符）" />
+      </NFormItem>
+      <NFormItem label="BMS通讯类型" path="bms_comm_type">
+        <NSelect v-model:value="formData.bms_comm_type" :options="commTypeOptions" placeholder="请选择" />
       </NFormItem>
       <NFormItem label="电池型号" path="battery_model_id">
         <NSelect

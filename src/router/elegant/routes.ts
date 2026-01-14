@@ -655,7 +655,28 @@ export const generatedRoutes: GeneratedRoute[] = [
         meta: {
           title: 'device_details',
           i18nKey: 'route.device_details'
-        }
+        },
+        children: [
+          {
+            name: 'device_details_modules',
+            path: '/device/details/modules',
+            meta: {
+              title: 'device_details_modules',
+              i18nKey: 'route.device_details_modules'
+            },
+            children: [
+              {
+                name: 'device_details_modules_bms-panel',
+                path: '/device/details/modules/bms-panel',
+                component: 'view.device_details_modules_bms-panel',
+                meta: {
+                  title: 'device_details_modules_bms-panel',
+                  i18nKey: 'route.device_details_modules_bms-panel'
+                }
+              }
+            ]
+          }
+        ]
       },
       {
         name: 'device_details-child',

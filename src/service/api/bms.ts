@@ -218,6 +218,11 @@ export const cancelOfflineCommand = (id: string) => {
 }
 
 // 批量下发指令（在线设备）
+
+// APP-Battery：电池设备详情（含 comm_chip_id / ble_mac 等基础信息）
+export const getAppBatteryDetail = (deviceId: string) => {
+  return request.get(`/app/battery/detail/${deviceId}`)
+}
 export const batchSendBatteryCommand = (data: {
   device_ids: string[]
   command_type: string

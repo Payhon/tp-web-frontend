@@ -3,6 +3,7 @@ import { computed, getCurrentInstance, onBeforeMount, reactive, ref, watch } fro
 import { useRoute } from 'vue-router'
 import { useLoading } from '@sa/hooks'
 import { useWebSocket } from '@vueuse/core'
+import BmsPanel from '@/views/device/details/modules/bms-panel/index.vue'
 import Telemetry from '@/views/device/details/modules/telemetry/telemetry.vue'
 import TelemetryChart from '@/views/device/details/modules/telemetry-chart.vue'
 import Join from '@/views/device/details/modules/join.vue'
@@ -32,7 +33,16 @@ const { query } = useRoute()
 const appStore = useAppStore()
 let { d_id } = query
 const { loading, startLoading, endLoading } = useLoading()
-let components = [
+const enableBmsPanel = computed(() => String(route.query?.bms || '') === '1')
+
+const bmsPanelTab = {
+  key: 'bms-panel',
+  name: () => 'BMS面板',
+  component: BmsPanel,
+  refreshKey: 0
+}
+
+const baseComponents = [
   {
     key: 'telemetry',
     name: () => $t('custom.device_details.telemetry'),
@@ -113,7 +123,8 @@ let components = [
   }
 ]
 
-const tabValue = ref<any>('telemetry')
+const components = ref<any[]>([])
+const tabValue = ref<any>(enableBmsPanel.value ? 'bms-panel' : 'telemetry')
 const showDialog = ref(false)
 const showStatusHistoryDialog = ref(false)
 const labels = ref<string[]>([])
@@ -158,6 +169,41 @@ const changeTabs = v => {
     endLoading()
   }, 500)
 }
+
+function rebuildComponents(data: any) {
+  let list = baseComponents.slice()
+
+  const deviceConfig = data?.device_config
+  const deviceType = deviceConfig?.device_type
+  const hasDeviceConfigName = Boolean(data?.device_config_name)
+
+  if (deviceConfig) {
+    if (deviceType !== '2' || !hasDeviceConfigName) {
+      list = list.filter(item => item.key !== 'device-analysis')
+    }
+    if (deviceType === '3') {
+      list = list.filter(item => item.key !== 'join')
+    }
+    if (!deviceConfig?.device_template_id) {
+      list = list.filter(item => item.key !== 'chart')
+    }
+  } else if (!hasDeviceConfigName) {
+    list = list.filter(item => item.key !== 'device-analysis')
+    list = list.filter(item => item.key !== 'chart')
+  }
+
+  // BMS面板仅对“电池管理详情”展示，并插入到最前（遥测前面）
+  if (enableBmsPanel.value) {
+    list.unshift(bmsPanelTab)
+    if (!tabValue.value || tabValue.value === 'telemetry') {
+      tabValue.value = 'bms-panel'
+    }
+  } else if (tabValue.value === 'bms-panel') {
+    tabValue.value = 'telemetry'
+  }
+
+  components.value = list
+}
 const editConfig = () => {
   showDialog.value = true
 }
@@ -195,19 +241,9 @@ const getDeviceDetail = async () => {
 
     if (data?.device_config) {
       device_type.value = data.device_config.device_type
-      if (device_type.value !== '2' || !data?.device_config_name) {
-        components = components.filter(item => item.key !== 'device-analysis')
-      }
-      if (device_type.value === '3') {
-        components = components.filter(item => item.key !== 'join')
-      }
-      if (!data.device_config.device_template_id) {
-        components = components.filter(item => item.key !== 'chart')
-      }
-    } else if (!data?.device_config_name) {
-      components = components.filter(item => item.key !== 'device-analysis')
-      components = components.filter(item => item.key !== 'chart')
     }
+
+    rebuildComponents(data)
     send(
       JSON.stringify({
         device_id: d_id,
@@ -247,10 +283,17 @@ onBeforeMount(() => {
 })
 
 watch(
+  () => route.query.bms,
+  () => {
+    rebuildComponents(deviceData.value)
+  }
+)
+
+watch(
   () => route.query.d_id,
   async newVal => {
     d_id = newVal
-    const currentComponent = components.find(c => c.key === tabValue.value)
+    const currentComponent = components.value.find(c => c.key === tabValue.value)
     if (currentComponent) {
       currentComponent.refreshKey += 1
     }

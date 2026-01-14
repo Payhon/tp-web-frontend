@@ -232,6 +232,8 @@ const routeMap: RouteMap = {
   "device_config-detail": "/device/config-detail",
   "device_config-edit": "/device/config-edit",
   "device_details": "/device/details",
+  "device_details_modules": "/device/details/modules",
+  "device_details_modules_bms-panel": "/device/details/modules/bms-panel",
   "device_details-child": "/device/details-child",
   "device_grouping": "/device/grouping",
   "device_grouping-details": "/device/grouping-details",
