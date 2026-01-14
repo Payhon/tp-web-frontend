@@ -199,6 +199,7 @@
   "custom.dict.scopeGlobal": "Global",
   "custom.dict.scopeTenant": "Tenant",
   "custom.dict.filterTenantIdPlaceholder": "Filter tenant id (SYS_ADMIN only)",
+  "custom.dict.selectTenantPlaceholder": "Please select tenant",
   "custom.dict.globalReadonly": "Global dictionaries are read-only for non SYS_ADMIN",
   "custom.personalCenter.modifyBasicInfo": "Modify Basic Information",
   "custom.personalCenter.changePassword": "Change Password",

@@ -57,6 +57,10 @@ export const upsertDictLanguage = async (data: {
   return await request.put('/dict/language', data)
 }
 
+export const deleteDictLanguage = async (id: string): Promise<void> => {
+  return await request.delete(`/dict/language/${id}`)
+}
+
 export const fetchDictEnum = async (params: {
   dict_code: string
   language_code?: string

@@ -199,6 +199,7 @@
   "custom.dict.scopeGlobal": "系统",
   "custom.dict.scopeTenant": "租户",
   "custom.dict.filterTenantIdPlaceholder": "过滤租户ID（仅系统管理员）",
+  "custom.dict.selectTenantPlaceholder": "请选择租户",
   "custom.dict.globalReadonly": "系统全局字典仅系统管理员可操作",
   "custom.personalCenter.modifyBasicInfo": "修改基本信息",
   "custom.personalCenter.changePassword": "修改密码",
