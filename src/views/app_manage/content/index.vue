@@ -22,7 +22,7 @@ import {
 } from 'naive-ui'
 import { useTable } from '@/hooks/common/table'
 import { $t } from '@/locales'
-import { getDemoServerUrl } from '@/utils/common/tool'
+import { resolveFileUrl } from '@/utils/common/tool'
 import {
   batchDeleteAdminFaqs,
   createAdminFaq,
@@ -48,10 +48,20 @@ type AppOption = { label: string; value: string; appid?: string; name?: string }
 const message = useMessage()
 const dialog = useDialog()
 
-const uploadBaseUrl = ref(new URL(getDemoServerUrl()))
 function toPublicUrl(path: string) {
-  if (!path) return ''
-  return uploadBaseUrl.value.origin + path.slice(1)
+  return resolveFileUrl(path)
+}
+
+const markdownEditorRef = ref<InstanceType<typeof MarkdownEditor> | null>(null)
+const markdownFullscreen = ref(false)
+const contentEditorHeight = 420
+
+function handleMarkdownFullscreen(val: boolean) {
+  markdownFullscreen.value = val
+}
+
+function exitMarkdownFullscreen() {
+  markdownEditorRef.value?.exitFullscreen?.()
 }
 
 const currentAppId = ref<string | null>(null)
@@ -616,8 +626,12 @@ onMounted(async () => {
             <NFormItem :label="$t('page.appManage.content.pages.form.content')" class="items-start">
               <div class="w-full">
                 <MarkdownEditor
+                  ref="markdownEditorRef"
                   v-model="pageForm.content_markdown"
                   :placeholder="$t('page.appManage.content.pages.form.contentPlaceholder')"
+                  :height="contentEditorHeight"
+                  :min-height="contentEditorHeight"
+                  @fullscreen-change="handleMarkdownFullscreen"
                 />
               </div>
             </NFormItem>
@@ -702,6 +716,20 @@ onMounted(async () => {
         </NTabPane>
       </NTabs>
     </NCard>
+
+    <div v-if="markdownFullscreen && tabs === 'pages'" class="markdown-fullscreen-bar">
+      <NSpace align="center">
+        <NButton size="small" :loading="pageLoading" @click="saveContentPage">{{ $t('common.save') }}</NButton>
+        <NButton size="small" type="primary" :loading="pageLoading" @click="togglePublishContentPage">
+          {{
+            pagePublished
+              ? $t('page.appManage.content.pages.unpublish')
+              : $t('page.appManage.content.pages.publish')
+          }}
+        </NButton>
+        <NButton size="small" tertiary @click="exitMarkdownFullscreen">{{ $t('icon.fullscreenExit') }}</NButton>
+      </NSpace>
+    </div>
 
     <!-- FAQ modal -->
     <NModal
@@ -835,3 +863,18 @@ onMounted(async () => {
     </NModal>
   </div>
 </template>
+
+<style scoped>
+.markdown-fullscreen-bar {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  z-index: 2001;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--n-color, #fff);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
+}
+</style>

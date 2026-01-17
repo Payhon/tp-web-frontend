@@ -46,6 +46,23 @@ export const getDemoServerUrl = (): string => {
   return otherBaseURL.demo ? otherBaseURL.demo : `${window.location.origin}/api/v1`
 }
 
+export const resolveFileUrl = (path: string, baseUrl?: string): string => {
+  if (!path) return ''
+  if (/^https?:\/\//i.test(path)) return path
+  if (path.startsWith('//')) return `${window.location.protocol}${path}`
+
+  let origin = window.location.origin
+  try {
+    origin = new URL(baseUrl || getDemoServerUrl(), window.location.origin).origin
+  } catch {
+    origin = window.location.origin
+  }
+
+  if (path.startsWith('./')) return `${origin}${path.slice(1)}`
+  if (path.startsWith('/')) return `${origin}${path}`
+  return `${origin}/${path}`
+}
+
 /**
  * get web socket server url
  *

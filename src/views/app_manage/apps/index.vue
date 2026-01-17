@@ -1,7 +1,6 @@
 <script setup lang="tsx">
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import type { UploadFileInfo } from 'naive-ui'
 import {
   NButton,
   NCard,
@@ -13,15 +12,13 @@ import {
   NSelect,
   NSpace,
   NTag,
-  NUpload,
   useDialog,
   useMessage
 } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import { useTable } from '@/hooks/common/table'
 import { $t } from '@/locales'
-import { getDemoServerUrl } from '@/utils/common/tool'
-import { localStg } from '@/utils/storage'
+import ImageUpload from '@/components/business/image-upload/index.vue'
 import {
   batchDeleteApps,
   createApp,
@@ -230,47 +227,6 @@ const formModel = ref<AppFormModel>({
   h5: {}
 })
 
-const uploadBaseUrl = ref(new URL(getDemoServerUrl()))
-
-function toPublicUrl(path: string) {
-  if (!path) return ''
-  return uploadBaseUrl.value.origin + path.slice(1)
-}
-
-const iconFileList = ref<UploadFileInfo[]>([])
-const screenshotFileList = ref<UploadFileInfo[]>([])
-
-watch(
-  () => formModel.value.icon_url,
-  val => {
-    if (!val) {
-      iconFileList.value = []
-      return
-    }
-    iconFileList.value = [
-      {
-        id: val,
-        name: val.split('/').pop() || 'icon',
-        url: toPublicUrl(val),
-        status: 'finished'
-      }
-    ]
-  },
-  { immediate: true }
-)
-
-watch(
-  () => formModel.value.screenshot,
-  val => {
-    screenshotFileList.value = (val || []).map(p => ({
-      id: p,
-      name: p.split('/').pop() || 'screenshot',
-      url: toPublicUrl(p),
-      status: 'finished'
-    }))
-  },
-  { immediate: true, deep: true }
-)
 
 function openAdd() {
   operateType.value = 'add'
@@ -319,30 +275,6 @@ async function openEdit(id: string) {
   }
 }
 
-function handleIconFinish({ event }: { file: UploadFileInfo; event?: ProgressEvent }) {
-  const response = JSON.parse((event?.target as XMLHttpRequest).response)
-  formModel.value.icon_url = response?.data?.path || ''
-}
-
-function handleIconRemove() {
-  formModel.value.icon_url = ''
-  return true
-}
-
-function handleScreenshotFinish({ event }: { file: UploadFileInfo; event?: ProgressEvent }) {
-  const response = JSON.parse((event?.target as XMLHttpRequest).response)
-  const path = response?.data?.path
-  if (!path) return
-  if (!formModel.value.screenshot.includes(path)) {
-    formModel.value.screenshot.push(path)
-  }
-}
-
-function handleScreenshotRemove({ file }: { file: UploadFileInfo }) {
-  const id = String(file.id || '')
-  formModel.value.screenshot = formModel.value.screenshot.filter(p => p !== id)
-  return true
-}
 
 async function handleSubmit() {
   modalLoading.value = true
@@ -463,31 +395,11 @@ const appTypeOptions = computed(() => [
         </NFormItem>
 
         <NFormItem :label="$t('page.appManage.apps.form.icon')">
-          <NUpload
-            v-model:file-list="iconFileList"
-            :action="uploadBaseUrl + '/file/up'"
-            :headers="{ 'x-token': localStg.get('token') || '' }"
-            :data="{ type: 'image' }"
-            list-type="image-card"
-            :max="1"
-            accept="image/png, image/jpeg, image/jpg, image/gif, image/svg+xml"
-            @finish="handleIconFinish"
-            @remove="handleIconRemove"
-          />
+          <ImageUpload v-model="formModel.icon_url" :max="1" />
         </NFormItem>
 
         <NFormItem :label="$t('page.appManage.apps.form.screenshots')">
-          <NUpload
-            v-model:file-list="screenshotFileList"
-            :action="uploadBaseUrl + '/file/up'"
-            :headers="{ 'x-token': localStg.get('token') || '' }"
-            :data="{ type: 'image' }"
-            list-type="image-card"
-            accept="image/png, image/jpeg, image/jpg, image/gif, image/svg+xml"
-            :max="9"
-            @finish="handleScreenshotFinish"
-            @remove="handleScreenshotRemove"
-          />
+          <ImageUpload v-model="formModel.screenshot" :max="9" multiple />
         </NFormItem>
 
         <NFormItem :label="$t('page.appManage.apps.form.ios')">
