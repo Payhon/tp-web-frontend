@@ -37,7 +37,6 @@ import {
   factoryOutBattery,
   transferBattery,
   activateBattery,
-  getOrgList,
   getOrgScopeOptions,
   batchAssignDealer,
   assignBatteryTags,
@@ -577,8 +576,8 @@ async function ensureOrgOptions(type: 'PACK_FACTORY' | 'DEALER' | 'STORE') {
   const target = map[type]
   if (target.value.length > 0) return
   try {
-    const res: any = await getOrgList({ page: 1, page_size: 1000, org_type: type })
-    const list = (res?.data?.list || []) as Array<{ id: string; name: string }>
+    const res: any = await getOrgScopeOptions({ org_type: type })
+    const list = (res?.data || []) as Array<{ id: string; name: string }>
     target.value = list.map(i => ({ label: i.name, value: i.id }))
   } catch {
     target.value = []
