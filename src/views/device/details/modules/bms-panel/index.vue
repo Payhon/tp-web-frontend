@@ -23,7 +23,13 @@ import {
 import type { DataTableColumns } from 'naive-ui'
 import { localStg } from '@/utils/storage'
 import { getAppBatteryDetail } from '@/service/api/bms'
-import { BmsClient, PARAM_DEF_BY_KEY, WebMqttSocketBmsTransport } from '@/common/lib/bms-protocol'
+import { fetchCurrentDeviceParamPermissions } from '@/service/api/org-type-permissions'
+import {
+  BmsClient,
+  PARAM_DEF_BY_KEY,
+  WebMqttSocketBmsTransport,
+  getParamPermissionKey
+} from '@/common/lib/bms-protocol'
 import type { BmsStatus } from '@/common/lib/bms-protocol'
 
 const props = defineProps<{
@@ -51,6 +57,12 @@ const message = useMessage()
 
 const loading = ref(false)
 const battery = ref<AppBatteryDetail | null>(null)
+
+const deviceParamPerm = reactive({
+  allowAll: true,
+  keys: [] as string[]
+})
+const deviceParamPermSet = computed(() => new Set(deviceParamPerm.keys))
 
 const connType = ref<'mqtt' | 'offline'>('offline')
 const connecting = ref(false)
@@ -147,6 +159,18 @@ async function load() {
   }
 }
 
+async function loadDeviceParamPermissions() {
+  try {
+    const resp: any = await fetchCurrentDeviceParamPermissions()
+    const data = resp?.data ?? resp ?? {}
+    deviceParamPerm.allowAll = data?.allow_all ?? true
+    deviceParamPerm.keys = Array.isArray(data?.device_param_permissions) ? data.device_param_permissions : []
+  } catch {
+    deviceParamPerm.allowAll = true
+    deviceParamPerm.keys = []
+  }
+}
+
 watch(
   () => props.id,
   () => {
@@ -154,7 +178,10 @@ watch(
   }
 )
 
-onMounted(() => load())
+onMounted(() => {
+  loadDeviceParamPermissions()
+  load()
+})
 onBeforeUnmount(() => disconnect())
 
 const socPct = computed(() => {
@@ -226,6 +253,15 @@ function formatValue(v: unknown, unit: string) {
   return `${n}${unit}`
 }
 
+function canAccessParamKey(paramKey: string) {
+  if (deviceParamPerm.allowAll) return true
+  const permKey = getParamPermissionKey(paramKey)
+  if (!permKey) return true
+  return deviceParamPermSet.value.has(permKey)
+}
+
+const filterParamKeys = (keys: string[]) => keys.filter(key => canAccessParamKey(key))
+
 const SINGLE_KEYS = [
   'CELL_OV_ALARM_V',
   'CELL_OC_PROTECT_V',
@@ -264,7 +300,7 @@ const TEMP_KEYS = [
 ]
 
 const mkItems = (keys: string[]): ParamItem[] =>
-  keys.map(key => {
+  filterParamKeys(keys).map(key => {
     const unit = unitOf(key)
     const value = paramValues[key]
     return { key, label: labelOf(key), unit, value, valueText: formatValue(value, unit) }
@@ -277,7 +313,8 @@ const temperatureItems = computed(() => mkItems(TEMP_KEYS))
 
 async function loadKeys(keys: string[]) {
   if (!client || connType.value === 'offline') return
-  for (const k of keys) {
+  const allowedKeys = filterParamKeys(keys)
+  for (const k of allowedKeys) {
     try {
       // eslint-disable-next-line no-await-in-loop
       paramValues[k] = await client.readParam(k)
@@ -298,6 +335,10 @@ const editState = reactive({
 function openEdit(item: ParamItem) {
   if (!client || connType.value === 'offline') {
     message.warning('当前离线，无法设置参数')
+    return
+  }
+  if (!canAccessParamKey(item.key)) {
+    message.warning('当前账号无权限操作该参数')
     return
   }
   editState.key = item.key

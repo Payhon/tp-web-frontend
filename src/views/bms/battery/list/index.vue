@@ -11,6 +11,8 @@ import {
   NInput,
   NIcon,
   NModal,
+  NRadioButton,
+  NRadioGroup,
   NSelect,
   NSpace,
   NTag,
@@ -24,12 +26,17 @@ import { commandDataById } from '@/service/api/device'
 import ParamsModal from '@/views/bms/battery/modules/params-modal.vue'
 import BatteryImportModal from '@/views/bms/battery/modules/battery-import-modal.vue'
 import BatterySingleModal from '@/views/bms/battery/modules/battery-single-modal.vue'
+import EndUserSelect from '@/components/EndUserSelect.vue'
 import {
   getBatteryList,
   getBatteryModelList,
   getDealerList,
   exportBatteryList,
   createSingleBattery,
+  factoryOutBattery,
+  transferBattery,
+  activateBattery,
+  getOrgList,
   batchAssignDealer,
   assignBatteryTags,
   getBatteryTagList,
@@ -40,12 +47,13 @@ import {
   getOtaTaskDetailByPage
 } from '@/service/api/bms'
 import {
-  ChevronDownOutline,
-  CloudUploadOutline,
+  CheckmarkCircleOutline,
+  CubeOutline,
   EllipsisHorizontal,
   EyeOutline,
   FlashOutline,
   ListOutline,
+  SwapHorizontalOutline,
   SettingsOutline
 } from '@vicons/ionicons5'
 
@@ -61,6 +69,9 @@ interface BatteryItem {
   comm_chip_id?: string | null
   production_date?: string | null
   warranty_expire_date?: string | null
+  owner_org_id?: string | null
+  owner_org_name?: string | null
+  owner_org_type?: string | null
   dealer_id?: string | null
   dealer_name?: string | null
   user_id?: string | null
@@ -99,6 +110,47 @@ const batchAssignLoading = ref(false)
 // 导入 / 添加单个电池
 const showImportModal = ref(false)
 const showSingleModal = ref(false)
+
+// 生命周期操作：出厂/调拨/激活
+const showFactoryModal = ref(false)
+const showTransferModal = ref(false)
+const showActivateModal = ref(false)
+const factoryLoading = ref(false)
+const transferLoading = ref(false)
+const activateLoading = ref(false)
+
+const factoryForm = ref({
+  device_id: '',
+  device_number: '',
+  to_org_type: 'PACK_FACTORY' as 'PACK_FACTORY' | 'DEALER',
+  to_org_id: null as string | null,
+  remark: ''
+})
+const transferForm = ref({
+  device_id: '',
+  device_number: '',
+  from_org_name: '',
+  from_org_type: '',
+  to_org_type: 'DEALER' as 'PACK_FACTORY' | 'DEALER' | 'STORE',
+  to_org_id: null as string | null,
+  remark: ''
+})
+const activateForm = ref({
+  device_id: '',
+  device_number: '',
+  user_id: null as string | null,
+  remark: ''
+})
+const activateCurrent = ref({
+  status: '' as string,
+  user_phone: '' as string,
+  user_name: '' as string,
+  activation_date: '' as string
+})
+
+const packOrgOptions = ref<Array<{ label: string; value: string }>>([])
+const dealerOrgOptions = ref<Array<{ label: string; value: string }>>([])
+const storeOrgOptions = ref<Array<{ label: string; value: string }>>([])
 
 // 批量设置标签
 const showBatchTagModal = ref(false)
@@ -256,29 +308,26 @@ function getActionOptions(_row: BatteryItem) {
       key: 'divider-1'
     },
     {
-      label: '生命周期（预留）',
+      label: '生命周期',
       key: 'lifecycle',
       icon: renderIcon(ListOutline),
       children: [
         {
           label: '出厂',
           key: 'lifecycle.factory',
-          disabled: true,
-          icon: renderIcon(CloudUploadOutline),
+          icon: renderIcon(CubeOutline),
           permissionKey: 'battery.lifecycle.factory'
         },
         {
           label: '激活',
           key: 'lifecycle.activate',
-          disabled: true,
-          icon: renderIcon(ChevronDownOutline),
+          icon: renderIcon(CheckmarkCircleOutline),
           permissionKey: 'battery.lifecycle.activate'
         },
         {
           label: '调拨',
           key: 'lifecycle.transfer',
-          disabled: true,
-          icon: renderIcon(CloudUploadOutline),
+          icon: renderIcon(SwapHorizontalOutline),
           permissionKey: 'battery.lifecycle.transfer'
         }
       ]
@@ -290,6 +339,9 @@ function handleActionSelect(key: string, row: BatteryItem) {
   if (key === 'detail') goDeviceDetail(row)
   if (key === 'params') openParams(row)
   if (key === 'offline') openOfflineCmd(row)
+  if (key === 'lifecycle.factory') openFactoryModal(row)
+  if (key === 'lifecycle.transfer') openTransferModal(row)
+  if (key === 'lifecycle.activate') openActivateModal(row)
 }
 
 const searchForm = ref<{
@@ -454,6 +506,151 @@ async function handleSingleSubmit(form: any) {
     getData()
   } catch (e: any) {
     message.error(e?.message || '添加失败')
+  }
+}
+
+const factoryTargetOptions = computed(() =>
+  factoryForm.value.to_org_type === 'PACK_FACTORY' ? packOrgOptions.value : dealerOrgOptions.value
+)
+
+const transferTargetOptions = computed(() => {
+  if (transferForm.value.to_org_type === 'PACK_FACTORY') return packOrgOptions.value
+  if (transferForm.value.to_org_type === 'STORE') return storeOrgOptions.value
+  return dealerOrgOptions.value
+})
+
+async function ensureOrgOptions(type: 'PACK_FACTORY' | 'DEALER' | 'STORE') {
+  const map: Record<string, typeof packOrgOptions> = {
+    PACK_FACTORY: packOrgOptions,
+    DEALER: dealerOrgOptions,
+    STORE: storeOrgOptions
+  }
+  const target = map[type]
+  if (target.value.length > 0) return
+  try {
+    const res: any = await getOrgList({ page: 1, page_size: 1000, org_type: type })
+    const list = (res?.data?.list || []) as Array<{ id: string; name: string }>
+    target.value = list.map(i => ({ label: i.name, value: i.id }))
+  } catch {
+    target.value = []
+  }
+}
+
+async function handleFactoryOrgTypeChange(v: 'PACK_FACTORY' | 'DEALER') {
+  factoryForm.value.to_org_id = null
+  await ensureOrgOptions(v)
+}
+
+async function handleTransferOrgTypeChange(v: 'PACK_FACTORY' | 'DEALER' | 'STORE') {
+  transferForm.value.to_org_id = null
+  await ensureOrgOptions(v)
+}
+
+async function openFactoryModal(row: BatteryItem) {
+  factoryForm.value = {
+    device_id: row.device_id,
+    device_number: row.device_number,
+    to_org_type: 'PACK_FACTORY',
+    to_org_id: null,
+    remark: ''
+  }
+  showFactoryModal.value = true
+  await ensureOrgOptions('PACK_FACTORY')
+}
+
+async function openTransferModal(row: BatteryItem) {
+  transferForm.value = {
+    device_id: row.device_id,
+    device_number: row.device_number,
+    from_org_name: row.owner_org_name || row.dealer_name || '厂家',
+    from_org_type: row.owner_org_type || '',
+    to_org_type: 'DEALER',
+    to_org_id: null,
+    remark: ''
+  }
+  showTransferModal.value = true
+  await ensureOrgOptions('DEALER')
+}
+
+function openActivateModal(row: BatteryItem) {
+  activateForm.value = {
+    device_id: row.device_id,
+    device_number: row.device_number,
+    user_id: null,
+    remark: ''
+  }
+  activateCurrent.value = {
+    status: row.activation_status || '',
+    user_phone: row.user_phone || '',
+    user_name: row.user_name || '',
+    activation_date: row.activation_date || ''
+  }
+  showActivateModal.value = true
+}
+
+async function confirmFactoryOut() {
+  if (!factoryForm.value.to_org_id) {
+    message.warning('请选择出厂目标')
+    return
+  }
+  factoryLoading.value = true
+  try {
+    await factoryOutBattery({
+      device_id: factoryForm.value.device_id,
+      to_org_id: factoryForm.value.to_org_id,
+      remark: factoryForm.value.remark?.trim() ? factoryForm.value.remark.trim() : undefined
+    })
+    message.success('出厂成功')
+    showFactoryModal.value = false
+    getData()
+  } catch (e: any) {
+    message.error(e?.message || '出厂失败')
+  } finally {
+    factoryLoading.value = false
+  }
+}
+
+async function confirmTransfer() {
+  if (!transferForm.value.to_org_id) {
+    message.warning('请选择调拨目标')
+    return
+  }
+  transferLoading.value = true
+  try {
+    await transferBattery({
+      device_id: transferForm.value.device_id,
+      to_org_id: transferForm.value.to_org_id,
+      remark: transferForm.value.remark?.trim() ? transferForm.value.remark.trim() : undefined
+    })
+    message.success('调拨成功')
+    showTransferModal.value = false
+    getData()
+  } catch (e: any) {
+    message.error(e?.message || '调拨失败')
+  } finally {
+    transferLoading.value = false
+  }
+}
+
+async function confirmActivate() {
+  if (!activateForm.value.user_id) {
+    message.warning('请选择要绑定的APP用户')
+    return
+  }
+  activateLoading.value = true
+  try {
+    await activateBattery({
+      device_id: activateForm.value.device_id,
+      user_id: activateForm.value.user_id,
+      remark: activateForm.value.remark?.trim() ? activateForm.value.remark.trim() : undefined
+    })
+    message.success('激活成功')
+    showActivateModal.value = false
+    getData()
+  } catch (e: any) {
+    message.error(e?.message || '激活失败')
+  } finally {
+    activateLoading.value = false
   }
 }
 
@@ -965,6 +1162,110 @@ onMounted(() => {
         </NFormItem>
         <NFormItem>
           <div style="color: #999; font-size: 12px">已选择 {{ selectedRowKeys.length }} 个电池</div>
+        </NFormItem>
+      </NForm>
+    </NModal>
+
+    <NModal
+      v-model:show="showFactoryModal"
+      preset="dialog"
+      title="电池出厂"
+      positive-text="确认出厂"
+      negative-text="取消"
+      :loading="factoryLoading"
+      @positive-click="confirmFactoryOut"
+    >
+      <NForm :model="factoryForm" label-placement="left" label-width="100px">
+        <NFormItem label="电池编号">
+          <NInput v-model:value="factoryForm.device_number" disabled />
+        </NFormItem>
+        <NFormItem label="出厂到" path="to_org_type" required>
+          <NRadioGroup v-model:value="factoryForm.to_org_type" @update:value="handleFactoryOrgTypeChange">
+            <NRadioButton value="PACK_FACTORY">PACK厂</NRadioButton>
+            <NRadioButton value="DEALER">经销商</NRadioButton>
+          </NRadioGroup>
+        </NFormItem>
+        <NFormItem label="目标机构" path="to_org_id" required>
+          <NSelect
+            v-model:value="factoryForm.to_org_id"
+            :options="factoryTargetOptions"
+            placeholder="请选择目标机构"
+            clearable
+            style="width: 100%"
+          />
+        </NFormItem>
+        <NFormItem label="备注">
+          <NInput v-model:value="factoryForm.remark" placeholder="可选" />
+        </NFormItem>
+      </NForm>
+    </NModal>
+
+    <NModal
+      v-model:show="showTransferModal"
+      preset="dialog"
+      title="电池调拨"
+      positive-text="确认调拨"
+      negative-text="取消"
+      :loading="transferLoading"
+      @positive-click="confirmTransfer"
+    >
+      <NForm :model="transferForm" label-placement="left" label-width="100px">
+        <NFormItem label="电池编号">
+          <NInput v-model:value="transferForm.device_number" disabled />
+        </NFormItem>
+        <NFormItem label="当前机构">
+          <NInput v-model:value="transferForm.from_org_name" disabled />
+        </NFormItem>
+        <NFormItem label="调拨到" path="to_org_type" required>
+          <NRadioGroup v-model:value="transferForm.to_org_type" @update:value="handleTransferOrgTypeChange">
+            <NRadioButton value="PACK_FACTORY">PACK厂</NRadioButton>
+            <NRadioButton value="DEALER">经销商</NRadioButton>
+            <NRadioButton value="STORE">门店</NRadioButton>
+          </NRadioGroup>
+        </NFormItem>
+        <NFormItem label="目标机构" path="to_org_id" required>
+          <NSelect
+            v-model:value="transferForm.to_org_id"
+            :options="transferTargetOptions"
+            placeholder="请选择目标机构"
+            clearable
+            style="width: 100%"
+          />
+        </NFormItem>
+        <NFormItem label="备注">
+          <NInput v-model:value="transferForm.remark" placeholder="可选" />
+        </NFormItem>
+      </NForm>
+    </NModal>
+
+    <NModal
+      v-model:show="showActivateModal"
+      preset="dialog"
+      title="电池激活"
+      positive-text="确认激活"
+      negative-text="取消"
+      :loading="activateLoading"
+      @positive-click="confirmActivate"
+    >
+      <NForm :model="activateForm" label-placement="left" label-width="100px">
+        <NFormItem label="电池编号">
+          <NInput v-model:value="activateForm.device_number" disabled />
+        </NFormItem>
+        <NFormItem label="当前状态">
+          <div class="flex items-center gap-8px">
+            <NTag type="info">{{ activationLabel(activateCurrent.status) }}</NTag>
+            <span v-if="activateCurrent.status === 'ACTIVE'" style="color: #666; font-size: 12px">
+              {{ activateCurrent.user_phone }}
+              <span v-if="activateCurrent.user_name">（{{ activateCurrent.user_name }}）</span>
+              <span v-if="activateCurrent.activation_date">· {{ activateCurrent.activation_date }}</span>
+            </span>
+          </div>
+        </NFormItem>
+        <NFormItem label="绑定用户" path="user_id" required>
+          <EndUserSelect v-model="activateForm.user_id" />
+        </NFormItem>
+        <NFormItem label="备注">
+          <NInput v-model:value="activateForm.remark" placeholder="可选" />
         </NFormItem>
       </NForm>
     </NModal>

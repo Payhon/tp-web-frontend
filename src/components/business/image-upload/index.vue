@@ -81,8 +81,7 @@ function handleFinish({ event }: { file: UploadFileInfo; event?: ProgressEvent }
   try {
     const response = JSON.parse((event?.target as XMLHttpRequest).response)
     const uploaded = response?.data as Api.File.UploadRsp | undefined
-    const value =
-      props.valueMode === 'url' ? uploaded?.url || uploaded?.path : uploaded?.path || uploaded?.url
+    const value = props.valueMode === 'url' ? uploaded?.url || uploaded?.path : uploaded?.path || uploaded?.url
     if (!value) return
     const current = normalizeValue(props.modelValue)
     const next = isMultiple.value ? [...current, value] : [value]

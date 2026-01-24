@@ -12,6 +12,12 @@ export type DeviceParamNode = {
   children?: DeviceParamNode[]
 }
 
+export type DeviceParamPermissionResp = {
+  org_type: string
+  allow_all: boolean
+  device_param_permissions: string[]
+}
+
 export const fetchOrgTypePermissions = (params?: { tenant_id?: string }) => {
   return request.get<OrgTypePermissionItem[]>('/org_type_permissions', { params })
 }
@@ -26,4 +32,8 @@ export const upsertOrgTypePermission = (
 
 export const fetchDeviceParamPermissionOptions = () => {
   return request.get<DeviceParamNode[]>('/org_type_permissions/device_param_options')
+}
+
+export const fetchCurrentDeviceParamPermissions = () => {
+  return request.get<DeviceParamPermissionResp>('/org_type_permissions/device_param_permissions/me')
 }

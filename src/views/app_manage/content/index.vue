@@ -722,9 +722,7 @@ onMounted(async () => {
         <NButton size="small" :loading="pageLoading" @click="saveContentPage">{{ $t('common.save') }}</NButton>
         <NButton size="small" type="primary" :loading="pageLoading" @click="togglePublishContentPage">
           {{
-            pagePublished
-              ? $t('page.appManage.content.pages.unpublish')
-              : $t('page.appManage.content.pages.publish')
+            pagePublished ? $t('page.appManage.content.pages.unpublish') : $t('page.appManage.content.pages.publish')
           }}
         </NButton>
         <NButton size="small" tertiary @click="exitMarkdownFullscreen">{{ $t('icon.fullscreenExit') }}</NButton>

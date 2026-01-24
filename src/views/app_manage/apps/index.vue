@@ -227,7 +227,6 @@ const formModel = ref<AppFormModel>({
   h5: {}
 })
 
-
 function openAdd() {
   operateType.value = 'add'
   formModel.value = {
@@ -274,7 +273,6 @@ async function openEdit(id: string) {
     modalLoading.value = false
   }
 }
-
 
 async function handleSubmit() {
   modalLoading.value = true

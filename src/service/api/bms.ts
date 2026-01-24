@@ -169,6 +169,19 @@ export const getBatteryOperationLogList = (params: any) => {
   return request.get('/battery/operation_logs', { params })
 }
 
+// 电池生命周期操作
+export const factoryOutBattery = (data: { device_id: string; to_org_id: string; remark?: string }) => {
+  return request.post('/battery/factory_out', data)
+}
+
+export const transferBattery = (data: { device_id: string; to_org_id: string; remark?: string }) => {
+  return request.post('/battery/transfer', data)
+}
+
+export const activateBattery = (data: { device_id: string; user_id: string; remark?: string }) => {
+  return request.post('/battery/activate', data)
+}
+
 // 批量分配经销商
 export const batchAssignDealer = (data: { device_ids: string[]; dealer_id: string }) => {
   return request.post('/battery/batch-assign-dealer', data)

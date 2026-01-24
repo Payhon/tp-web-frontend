@@ -4,12 +4,11 @@ import { useMessage } from 'naive-ui'
 import { $t } from '@/locales'
 import { useAuthStore } from '@/store/modules/auth'
 import { fetchUIElementList } from '@/service/api/route'
+import { buildDeviceParamPermissionTree } from '@/common/lib/bms-protocol/param-registry'
 import { fetchUserList } from '@/service/api/auth'
 import {
-  fetchDeviceParamPermissionOptions,
   fetchOrgTypePermissions,
   upsertOrgTypePermission,
-  type DeviceParamNode,
   type OrgTypePermissionItem
 } from '@/service/api/org-type-permissions'
 
@@ -26,7 +25,8 @@ const effectiveTenantId = computed(() => {
 const orgTypes = [
   { key: 'PACK_FACTORY', label: 'PACK厂家' },
   { key: 'DEALER', label: '经销商' },
-  { key: 'STORE', label: '门店' }
+  { key: 'STORE', label: '门店' },
+  { key: 'APP_USER', label: 'APP 用户' }
 ] as const
 type OrgTypeKey = (typeof orgTypes)[number]['key']
 
@@ -38,13 +38,14 @@ const saving = ref(false)
 const tenantLoading = ref(false)
 
 const menuTreeData = ref<any[]>([])
-const deviceParamTreeData = ref<any[]>([])
+const deviceParamTreeData = ref<any[]>(buildDeviceParamPermissionTree())
 const tenantOptions = ref<{ label: string; value: string }[]>([])
 
 const state = reactive<Record<OrgTypeKey, { uiCodes: string[]; deviceParams: string[] }>>({
   PACK_FACTORY: { uiCodes: [], deviceParams: [] },
   DEALER: { uiCodes: [], deviceParams: [] },
-  STORE: { uiCodes: [], deviceParams: [] }
+  STORE: { uiCodes: [], deviceParams: [] },
+  APP_USER: { uiCodes: [], deviceParams: [] }
 })
 
 function toTreeData(nodes: any[]): any[] {
@@ -52,14 +53,6 @@ function toTreeData(nodes: any[]): any[] {
     key: n.element_code,
     label: n.description || n.element_code || n.id,
     children: n.children?.length ? toTreeData(n.children) : undefined
-  }))
-}
-
-function toDeviceParamTree(nodes: DeviceParamNode[]): any[] {
-  return (nodes || []).map(n => ({
-    key: n.value,
-    label: n.label || n.value,
-    children: n.children?.length ? toDeviceParamTree(n.children) : undefined
   }))
 }
 
@@ -96,10 +89,6 @@ async function loadAll() {
   try {
     const ui = await fetchUIElementList()
     menuTreeData.value = toTreeData(ui || [])
-
-    const optResp = await fetchDeviceParamPermissionOptions()
-    const rawTree: DeviceParamNode[] = (optResp as any)?.data || []
-    deviceParamTreeData.value = toDeviceParamTree(rawTree)
 
     const permResp = await fetchOrgTypePermissions(
       isSysAdmin.value ? { tenant_id: effectiveTenantId.value } : undefined
@@ -213,6 +202,7 @@ watch(
                       block-line
                       checkable
                       cascade
+                      check-strategy="child"
                       default-expand-all
                       :data="deviceParamTreeData"
                       :checked-keys="state[activeOrgType].deviceParams"
