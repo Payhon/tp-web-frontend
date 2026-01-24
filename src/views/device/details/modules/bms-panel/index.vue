@@ -426,7 +426,7 @@ const paramColumns: DataTableColumns<ParamItem> = [
               <NGridItem :span="8">
                 <NCard size="small" title="Pack电压" :bordered="false">
                   <div class="metric-big">{{ packVoltageText }}</div>
-                  <div class="metric-sub">电芯数量：{{ cellCount || '-' }}</div>
+                  <div class="metric-sub">电芯串数：{{ cellCount || '-' }}</div>
                 </NCard>
               </NGridItem>
 
@@ -449,7 +449,7 @@ const paramColumns: DataTableColumns<ParamItem> = [
             <NCard size="small" :bordered="false">
               <NSpace align="center" justify="space-between" class="mb-10px">
                 <NTag type="info">Pack：{{ packVoltageText }}</NTag>
-                <NTag type="default">电芯数量：{{ cellCount || '-' }}</NTag>
+                <NTag type="default">电芯串数：{{ cellCount || '-' }}</NTag>
               </NSpace>
               <NDataTable :columns="cellColumns" :data="cellVoltageRows" :bordered="false" :max-height="420" />
             </NCard>

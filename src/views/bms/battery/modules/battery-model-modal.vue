@@ -31,7 +31,7 @@ const rules = {
   device_config_id: { required: true, message: '请选择关联设备模板', trigger: ['blur', 'change'] },
   voltage_rated: { required: true, type: 'number', message: '请输入额定电压', trigger: 'blur' },
   capacity_rated: { required: true, type: 'number', message: '请输入额定容量', trigger: 'blur' },
-  cell_count: { required: true, type: 'number', message: '请输入电芯数量', trigger: 'blur' }
+  cell_count: { required: true, type: 'number', message: '请输入电芯串数', trigger: 'blur' }
 }
 
 const title = computed(() => (props.type === 'add' ? '新增电池型号' : '编辑电池型号'))
@@ -116,8 +116,8 @@ const handleSubmit = () => {
       <NFormItem label="额定容量(Ah)" path="capacity_rated">
         <NInputNumber v-model:value="formData.capacity_rated" placeholder="请输入额定容量" :precision="2" />
       </NFormItem>
-      <NFormItem label="电芯数量" path="cell_count">
-        <NInputNumber v-model:value="formData.cell_count" placeholder="请输入电芯数量" :precision="0" />
+      <NFormItem label="电芯串数" path="cell_count">
+        <NInputNumber v-model:value="formData.cell_count" placeholder="请输入电芯串数" :precision="0" />
       </NFormItem>
       <NFormItem label="标称功率(W)" path="nominal_power">
         <NInputNumber v-model:value="formData.nominal_power" placeholder="请输入标称功率" :precision="2" />

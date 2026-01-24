@@ -43,7 +43,7 @@ const createColumns = (): DataTableColumns<BatteryModelItem> => [
   },
   { key: 'voltage_rated', title: '额定电压(V)', minWidth: 120 },
   { key: 'capacity_rated', title: '额定容量(Ah)', minWidth: 120 },
-  { key: 'cell_count', title: '电芯数量', minWidth: 100 },
+  { key: 'cell_count', title: '电芯串数', minWidth: 100 },
   { key: 'nominal_power', title: '标称功率(W)', minWidth: 120 },
   { key: 'warranty_months', title: '质保期(月)', minWidth: 100 },
   {
