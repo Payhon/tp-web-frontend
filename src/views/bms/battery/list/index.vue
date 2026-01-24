@@ -22,6 +22,7 @@ import type { DataTableColumns } from 'naive-ui'
 import dayjs from 'dayjs'
 import { useTable } from '@/hooks/common/table'
 import { useRouterPush } from '@/hooks/common/router'
+import { useAuthStore } from '@/store/modules/auth'
 import { commandDataById } from '@/service/api/device'
 import ParamsModal from '@/views/bms/battery/modules/params-modal.vue'
 import BatteryImportModal from '@/views/bms/battery/modules/battery-import-modal.vue'
@@ -37,6 +38,7 @@ import {
   transferBattery,
   activateBattery,
   getOrgList,
+  getOrgScopeOptions,
   batchAssignDealer,
   assignBatteryTags,
   getBatteryTagList,
@@ -95,9 +97,11 @@ interface ListResp<T> {
 
 const { routerPushByKey } = useRouterPush()
 const message = useMessage()
+const authStore = useAuthStore()
 
 const dealerOptions = ref<Array<{ label: string; value: string }>>([])
 const modelOptions = ref<Array<{ label: string; value: string }>>([])
+const ownerOrgOptions = ref<Array<{ label: string; value: string }>>([])
 
 // 批量选择
 const selectedRowKeys = ref<string[]>([])
@@ -347,7 +351,8 @@ function handleActionSelect(key: string, row: BatteryItem) {
 const searchForm = ref<{
   device_number: string
   battery_model_id: string | null
-  dealer_id: string | null
+  owner_org_type: string | null
+  owner_org_id: string | null
   is_online: number | null
   activation_status: string | null
   production_range: [number, number] | null
@@ -355,12 +360,55 @@ const searchForm = ref<{
 }>({
   device_number: '',
   battery_model_id: null,
-  dealer_id: null,
+  owner_org_type: null,
+  owner_org_id: null,
   is_online: null,
   activation_status: null,
   production_range: null,
   warranty_status: null
 })
+
+const userOrgType = computed(() => String((authStore.userInfo as any)?.org_type || '').toUpperCase())
+const userAuthority = computed(() => String((authStore.userInfo as any)?.authority || '').toUpperCase())
+
+const ownerOrgTypeOptions = computed(() => {
+  const types: string[] = []
+  if (
+    userAuthority.value === 'TENANT_ADMIN' ||
+    userAuthority.value === 'SYS_ADMIN' ||
+    userOrgType.value === 'BMS_FACTORY' ||
+    !userOrgType.value
+  ) {
+    types.push('PACK_FACTORY', 'DEALER', 'STORE')
+  } else if (userOrgType.value === 'PACK_FACTORY') {
+    types.push('DEALER', 'STORE')
+  } else if (userOrgType.value === 'DEALER') {
+    types.push('STORE')
+  }
+  return types.map(type => ({
+    label: type === 'PACK_FACTORY' ? 'PACK厂' : type === 'DEALER' ? '经销商' : '门店',
+    value: type
+  }))
+})
+
+const canFilterByOrgType = computed(() => ownerOrgTypeOptions.value.length > 0)
+
+async function loadOwnerOrgOptions(type: string | null) {
+  ownerOrgOptions.value = []
+  if (!type) return
+  try {
+    const res: any = await getOrgScopeOptions({ org_type: type })
+    const list = (res?.data || []) as Array<{ id: string; name: string }>
+    ownerOrgOptions.value = list.map(i => ({ label: i.name, value: i.id }))
+  } catch {
+    ownerOrgOptions.value = []
+  }
+}
+
+async function handleOwnerOrgTypeChange(type: string | null) {
+  searchForm.value.owner_org_id = null
+  await loadOwnerOrgOptions(type)
+}
 
 const createColumns = (): DataTableColumns<BatteryItem> => [
   {
@@ -374,10 +422,10 @@ const createColumns = (): DataTableColumns<BatteryItem> => [
   { key: 'comm_chip_id', title: '4G卡ID', minWidth: 160, render: row => row.comm_chip_id || '--' },
   { key: 'production_date', title: '出厂日期', minWidth: 120, render: row => row.production_date || '--' },
   {
-    key: 'dealer_name',
-    title: '经销商',
-    minWidth: 140,
-    render: row => row.dealer_name || <NTag type="info">厂家</NTag>
+    key: 'owner_org_name',
+    title: '归属机构',
+    minWidth: 160,
+    render: row => row.owner_org_name || row.dealer_name || <NTag type="info">厂家库存</NTag>
   },
   { key: 'user_phone', title: '终端用户', minWidth: 140, render: row => row.user_phone || '--' },
   {
@@ -451,7 +499,8 @@ async function handleExport() {
     const params: any = {
       device_number: searchForm.value.device_number || undefined,
       battery_model_id: searchForm.value.battery_model_id || undefined,
-      dealer_id: searchForm.value.dealer_id || undefined,
+      owner_org_id: searchForm.value.owner_org_id || undefined,
+      owner_org_type: searchForm.value.owner_org_type || undefined,
       is_online: searchForm.value.is_online ?? undefined,
       activation_status: searchForm.value.activation_status || undefined,
       warranty_status: searchForm.value.warranty_status || undefined,
@@ -933,7 +982,8 @@ function handleSearch() {
     page_size: pagination.pageSize,
     device_number: searchForm.value.device_number || undefined,
     battery_model_id: searchForm.value.battery_model_id || undefined,
-    dealer_id: searchForm.value.dealer_id || undefined,
+    owner_org_id: searchForm.value.owner_org_id || undefined,
+    owner_org_type: searchForm.value.owner_org_type || undefined,
     is_online: searchForm.value.is_online ?? undefined,
     activation_status: searchForm.value.activation_status || undefined,
     warranty_status: searchForm.value.warranty_status || undefined,
@@ -947,12 +997,14 @@ function handleReset() {
   searchForm.value = {
     device_number: '',
     battery_model_id: null,
-    dealer_id: null,
+    owner_org_type: null,
+    owner_org_id: null,
     is_online: null,
     activation_status: null,
     production_range: null,
     warranty_status: null
   }
+  ownerOrgOptions.value = []
   handleSearch()
 }
 
@@ -1020,11 +1072,22 @@ onMounted(() => {
           />
         </NFormItem>
 
-        <NFormItem label="经销商" path="dealer_id">
+        <NFormItem v-if="canFilterByOrgType" label="机构类型" path="owner_org_type">
           <NSelect
-            v-model:value="searchForm.dealer_id"
-            :options="dealerOptions"
-            placeholder="请选择经销商"
+            v-model:value="searchForm.owner_org_type"
+            :options="ownerOrgTypeOptions"
+            placeholder="请选择类型"
+            clearable
+            style="width: 160px"
+            @update:value="handleOwnerOrgTypeChange"
+          />
+        </NFormItem>
+
+        <NFormItem v-if="canFilterByOrgType" label="归属机构" path="owner_org_id">
+          <NSelect
+            v-model:value="searchForm.owner_org_id"
+            :options="ownerOrgOptions"
+            placeholder="请选择机构"
             clearable
             style="width: 220px"
           />

@@ -368,6 +368,11 @@ export const getOrgList = (params: {
   return request.get('/org', { params })
 }
 
+// 组织选项（按当前账号权限范围）
+export const getOrgScopeOptions = (params: { org_type: string }) => {
+  return request.get('/app/org/options', { params })
+}
+
 // 组织详情
 export const getOrgDetail = (id: string) => {
   return request.get(`/org/${id}`)
