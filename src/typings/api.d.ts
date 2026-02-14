@@ -548,27 +548,65 @@ declare namespace Api {
       lastVisitTime: string | null
     }
     interface UserKey {
-      /** 用户id */
+      /** 主键ID */
       id: string
-      /** 用户名 */
+      /** 兼容旧字段（备注） */
       name: string | null
-      /** key */
+      /** AppId（兼容字段） */
       api_key: string | null
+      /** AppId */
+      app_id: string | null
+      /** SecretKey */
+      secret_key: string | null
+      /** 备注 */
+      remark: string | null
       /**
-       * 用户状态
+       * 密钥状态
        *
-       * - N: 正常
-       * - F: 冻结
+       * - 1: 启用
+       * - 0: 停用
        */
       status: 0 | 1 | null
+      /** 有效期 */
+      expired_at: string | null
+      /** 最近使用时间 */
+      last_used_at: string | null
       /** 创建时间 */
       created_at: string | null
       /** 更新時間 */
       updated_at: string | null
-      /** 是否明文显示 */
+      /** 创建人 */
+      created_id?: string | null
+      /** 创建人信息 */
+      user_name?: string | null
+      email?: string | null
+      /** 是否明文显示 secret */
       show: boolean | false
       /** 租户id */
       tenant_id: string | null
+    }
+
+    interface KeyQuery {
+      page: number
+      page_size: number
+      keyword?: string
+      status?: 0 | 1
+      tenant_id?: string
+    }
+
+    interface KeyCreateReq {
+      tenant_id?: string
+      remark: string
+      expired_at?: string
+      status?: 0 | 1
+    }
+
+    interface KeyUpdateReq {
+      id: string
+      remark?: string
+      expired_at?: string
+      status?: 0 | 1
+      rotate_secret?: boolean
     }
 
     interface Data {

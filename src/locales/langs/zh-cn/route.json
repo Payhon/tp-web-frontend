@@ -68,7 +68,7 @@
   "route.management_auth": "菜单管理",
   "route.management_role": "角色管理",
   "route.management_user": "租户管理",
-  "route.management_api": "API keys",
+  "route.management_api": "API密钥管理",
   "route.management_ordinary-user": "用户管理",
   "route.management_route": "路由管理",
   "route.management_setting": "系统设置",
