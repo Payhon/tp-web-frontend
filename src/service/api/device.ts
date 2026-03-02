@@ -263,6 +263,22 @@ export const telemetryDataCurrent = async (id: any) => {
  * @returns
  */
 export const telemetryDataCurrentKeys = async (params: any) => {
+  if (Array.isArray(params?.keys)) {
+    const query = new URLSearchParams()
+    Object.entries(params).forEach(([key, value]) => {
+      if (value == null) return
+      if (key === 'keys' && Array.isArray(value)) {
+        value.forEach(item => {
+          if (item != null && String(item).trim()) {
+            query.append('keys', String(item).trim())
+          }
+        })
+        return
+      }
+      query.append(key, String(value))
+    })
+    return await request.get<any>(`/telemetry/datas/current/keys?${query.toString()}`)
+  }
   return await request.get<any>('/telemetry/datas/current/keys', { params })
 }
 

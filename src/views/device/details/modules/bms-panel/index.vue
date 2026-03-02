@@ -1,5 +1,6 @@
 <script setup lang="tsx">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import type { EChartsCoreOption } from 'echarts/core'
 import {
   NAlert,
   NButton,
@@ -7,6 +8,7 @@ import {
   NDataTable,
   NDescriptions,
   NDescriptionsItem,
+  NEmpty,
   NGrid,
   NGridItem,
   NInputNumber,
@@ -21,8 +23,10 @@ import {
   useMessage
 } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
+import ChartComponent from '@/components/custom/ChartComponent.vue'
 import { localStg } from '@/utils/storage'
 import { getAppBatteryDetail } from '@/service/api/bms'
+import { telemetryDataCurrentKeys, telemetryDataHistoryList, telemetryHistoryData } from '@/service/api/device'
 import { fetchCurrentDeviceParamPermissions } from '@/service/api/org-type-permissions'
 import {
   BmsClient,
@@ -53,10 +57,57 @@ type AppBatteryDetail = {
   updated_at?: string | null
 }
 
+type SnapshotHistoryRow = {
+  ts: number
+  summary: string
+  raw: string
+}
+
+const CLOUD_KEYS = [
+  'soc',
+  'soh',
+  'vPackV',
+  'currentA',
+  'avgCellVoltageMv',
+  'highestCellVoltageMv',
+  'lowestCellVoltageMv',
+  'maxCellVoltageDiffMv',
+  'chargeMosC',
+  'dischargeMosC',
+  'ambientC',
+  'cycleCount',
+  'chargeRemainingMin',
+  'dischargeRemainingMin',
+  'chargeFetOn',
+  'dischargeFetOn',
+  'charging',
+  'discharging',
+  'balancingOn',
+  'protectOn',
+  'alarmCount',
+  'protectCount',
+  'faultCount',
+  'seriesCount',
+  'bms.snapshot'
+]
+
 const message = useMessage()
 
 const loading = ref(false)
 const battery = ref<AppBatteryDetail | null>(null)
+
+const cloudLoading = ref(false)
+const cloudCurrent = reactive<Record<string, unknown>>({})
+const cloudLastUpdateAt = ref<number | null>(null)
+const cloudWsState = ref<'closed' | 'connecting' | 'open' | 'error'>('closed')
+const historyLoading = ref(false)
+const historyChartData = reactive<Record<string, Array<[number, number]>>>({
+  soc: [],
+  soh: [],
+  vPackV: [],
+  currentA: []
+})
+const snapshotHistoryRows = ref<SnapshotHistoryRow[]>([])
 
 const deviceParamPerm = reactive({
   allowAll: true,
@@ -72,6 +123,9 @@ let pollTimer: number | null = null
 let transport: WebMqttSocketBmsTransport | null = null
 let client: BmsClient | null = null
 
+let cloudWs: WebSocket | null = null
+let cloudHeartbeatTimer: number | null = null
+
 const canUse4G = computed(() => {
   const v = String(battery.value?.comm_chip_id || '').trim()
   return v.length > 0
@@ -79,11 +133,41 @@ const canUse4G = computed(() => {
 
 const connText = computed(() => (connType.value === 'mqtt' ? 'MQTT透传' : '离线'))
 
-function buildWsUrl() {
+const cloudStatusText = computed(() => {
+  if (cloudWsState.value === 'open') return '云端实时已连接'
+  if (cloudWsState.value === 'connecting') return '云端实时连接中'
+  if (cloudWsState.value === 'error') return '云端实时连接失败'
+  return '云端实时未连接'
+})
+
+const cloudStatusType = computed(() => {
+  if (cloudWsState.value === 'open') return 'success'
+  if (cloudWsState.value === 'connecting') return 'info'
+  if (cloudWsState.value === 'error') return 'error'
+  return 'default'
+})
+
+const cloudUpdateText = computed(() => formatTime(cloudLastUpdateAt.value))
+
+const cloudSnapshot = computed<BmsStatus | null>(() => {
+  const raw = cloudCurrent['bms.snapshot']
+  if (!raw) return null
+  if (typeof raw === 'object') return raw as BmsStatus
+  if (typeof raw !== 'string') return null
+  try {
+    return JSON.parse(raw) as BmsStatus
+  } catch {
+    return null
+  }
+})
+
+const displayStatus = computed(() => cloudSnapshot.value || status.value)
+
+const buildWsUrl = (path: string) => {
   const origin = window.location.origin
-  if (origin.startsWith('https://')) return `wss://${origin.slice('https://'.length)}/api/v1/app/battery/socket/ws`
-  if (origin.startsWith('http://')) return `ws://${origin.slice('http://'.length)}/api/v1/app/battery/socket/ws`
-  return `${origin}/api/v1/app/battery/socket/ws`
+  if (origin.startsWith('https://')) return `wss://${origin.slice('https://'.length)}${path}`
+  if (origin.startsWith('http://')) return `ws://${origin.slice('http://'.length)}${path}`
+  return `${origin}${path}`
 }
 
 function stopPolling() {
@@ -92,6 +176,240 @@ function stopPolling() {
     pollTimer = null
   }
 }
+
+function closeCloudWs() {
+  if (cloudHeartbeatTimer != null) {
+    window.clearInterval(cloudHeartbeatTimer)
+    cloudHeartbeatTimer = null
+  }
+  if (cloudWs) {
+    cloudWs.close()
+    cloudWs = null
+  }
+  cloudWsState.value = 'closed'
+}
+
+function mergeCloudCurrent(patch: Record<string, unknown>, tsMs?: number | null) {
+  Object.entries(patch).forEach(([k, v]) => {
+    cloudCurrent[k] = v
+  })
+  if (Object.keys(patch).length > 0) {
+    cloudLastUpdateAt.value = tsMs ?? Date.now()
+  }
+}
+
+function parseTsToMs(ts: unknown): number | null {
+  if (typeof ts === 'number' && Number.isFinite(ts)) {
+    if (ts > 1e12) return ts
+    if (ts > 1e9) return ts * 1000
+    return null
+  }
+  if (typeof ts === 'string' && ts) {
+    const n = Date.parse(ts)
+    if (!Number.isNaN(n)) return n
+  }
+  return null
+}
+
+function formatTime(ms: number | null): string {
+  if (!ms) return '-'
+  const d = new Date(ms)
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(
+    d.getSeconds()
+  )}`
+}
+
+function summarizeSnapshot(raw: string): string {
+  try {
+    const s = JSON.parse(raw) as BmsStatus
+    const soc = s?.energy?.socPct
+    const soh = s?.energy?.sohPct
+    const vPack = s?.electrical?.vPackV
+    const current = s?.electrical?.currentA
+    return `SOC:${Number(soc ?? 0).toFixed(1)}%, SOH:${Number(soh ?? 0).toFixed(1)}%, V:${Number(vPack ?? 0).toFixed(
+      2
+    )}V, I:${Number(current ?? 0).toFixed(2)}A`
+  } catch {
+    return '快照解析失败'
+  }
+}
+
+async function loadCloudCurrent() {
+  if (!props.id) return
+  cloudLoading.value = true
+  try {
+    const res: any = await telemetryDataCurrentKeys({ device_id: props.id, keys: CLOUD_KEYS })
+    const rows = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : []
+    const patch: Record<string, unknown> = {}
+    let latestTs: number | null = null
+    rows.forEach((row: any) => {
+      const key = String(row?.key || '').trim()
+      if (!key) return
+      patch[key] = row?.value
+      const ts = parseTsToMs(row?.ts)
+      if (ts && (!latestTs || ts > latestTs)) latestTs = ts
+    })
+    mergeCloudCurrent(patch, latestTs)
+  } catch (e: any) {
+    message.warning(e?.message || '加载云端实时数据失败')
+  } finally {
+    cloudLoading.value = false
+  }
+}
+
+function openCloudWs() {
+  closeCloudWs()
+  if (!props.id) return
+  const token = String(localStg.get('token') || '').trim()
+  if (!token) return
+
+  cloudWsState.value = 'connecting'
+  const ws = new WebSocket(buildWsUrl('/api/v1/telemetry/datas/current/keys/ws'))
+  cloudWs = ws
+
+  ws.onopen = () => {
+    cloudWsState.value = 'open'
+    ws.send(
+      JSON.stringify({
+        device_id: props.id,
+        keys: CLOUD_KEYS,
+        token
+      })
+    )
+    cloudHeartbeatTimer = window.setInterval(() => {
+      if (ws.readyState === WebSocket.OPEN) ws.send('ping')
+    }, 15000)
+  }
+
+  ws.onmessage = (event) => {
+    if (!event.data || event.data === 'pong') return
+    try {
+      const payload = JSON.parse(String(event.data))
+      if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+        mergeCloudCurrent(payload as Record<string, unknown>)
+      }
+    } catch {
+      // ignore malformed realtime payload
+    }
+  }
+
+  ws.onerror = () => {
+    cloudWsState.value = 'error'
+  }
+
+  ws.onclose = () => {
+    if (cloudWs === ws) {
+      cloudWs = null
+      cloudWsState.value = cloudWsState.value === 'error' ? 'error' : 'closed'
+      if (cloudHeartbeatTimer != null) {
+        window.clearInterval(cloudHeartbeatTimer)
+        cloudHeartbeatTimer = null
+      }
+    }
+  }
+}
+
+async function loadHistory() {
+  if (!props.id) return
+  historyLoading.value = true
+  try {
+    const metricKeys = ['soc', 'soh', 'vPackV', 'currentA']
+    const chartResults = await Promise.all(
+      metricKeys.map(async (key) => {
+        const rsp: any = await telemetryDataHistoryList({
+          device_id: props.id,
+          key,
+          time_range: 'last_1h',
+          aggregate_window: '30s',
+          aggregate_function: 'avg'
+        })
+        const points = Array.isArray(rsp?.data) ? rsp.data : Array.isArray(rsp) ? rsp : []
+        return { key, points }
+      })
+    )
+    metricKeys.forEach((key) => {
+      historyChartData[key] = []
+    })
+    chartResults.forEach((item) => {
+      historyChartData[item.key] = item.points
+        .filter((p: any) => typeof p?.x === 'number' && typeof p?.y === 'number')
+        .map((p: any) => [p.x, p.y] as [number, number])
+        .sort((a: [number, number], b: [number, number]) => a[0] - b[0])
+    })
+
+    const endTime = Date.now()
+    const startTime = endTime - 24 * 60 * 60 * 1000
+    const snapshots: any = await telemetryHistoryData({
+      device_id: props.id,
+      key: 'bms.snapshot',
+      start_time: startTime,
+      end_time: endTime,
+      page: 1,
+      page_size: 20
+    })
+    const list = Array.isArray(snapshots?.data?.list)
+      ? snapshots.data.list
+      : Array.isArray(snapshots?.list)
+        ? snapshots.list
+        : []
+    snapshotHistoryRows.value = list
+      .map((row: any) => {
+        const ts = Number(row?.ts || 0)
+        const raw = typeof row?.value === 'string' ? row.value : JSON.stringify(row?.value || '')
+        return {
+          ts,
+          raw,
+          summary: summarizeSnapshot(raw)
+        } as SnapshotHistoryRow
+      })
+      .sort((a, b) => b.ts - a.ts)
+  } catch (e: any) {
+    message.warning(e?.message || '加载历史数据失败')
+  } finally {
+    historyLoading.value = false
+  }
+}
+
+const historyChartOption = computed<EChartsCoreOption>(() => {
+  return {
+    tooltip: { trigger: 'axis' },
+    legend: { data: ['SOC(%)', 'SOH(%)', 'Pack电压(V)', '电流(A)'] },
+    grid: { left: 48, right: 24, top: 36, bottom: 36 },
+    xAxis: { type: 'time' },
+    yAxis: [
+      { type: 'value', name: '%', position: 'left' },
+      { type: 'value', name: 'V/A', position: 'right' }
+    ],
+    series: [
+      { name: 'SOC(%)', type: 'line', smooth: true, showSymbol: false, yAxisIndex: 0, data: historyChartData.soc },
+      { name: 'SOH(%)', type: 'line', smooth: true, showSymbol: false, yAxisIndex: 0, data: historyChartData.soh },
+      {
+        name: 'Pack电压(V)',
+        type: 'line',
+        smooth: true,
+        showSymbol: false,
+        yAxisIndex: 1,
+        data: historyChartData.vPackV
+      },
+      { name: '电流(A)', type: 'line', smooth: true, showSymbol: false, yAxisIndex: 1, data: historyChartData.currentA }
+    ]
+  }
+})
+
+const snapshotColumns: DataTableColumns<SnapshotHistoryRow> = [
+  {
+    key: 'ts',
+    title: '时间',
+    width: 180,
+    render: (row) => formatTime(row.ts)
+  },
+  {
+    key: 'summary',
+    title: '快照摘要',
+    minWidth: 380
+  }
+]
 
 function startPolling() {
   stopPolling()
@@ -128,7 +446,11 @@ async function connectMqtt() {
     await disconnect()
     const token = String(localStg.get('token') || '').trim()
     if (!token) throw new Error('token missing')
-    transport = new WebMqttSocketBmsTransport({ wsUrl: buildWsUrl(), deviceId: props.id, token })
+    transport = new WebMqttSocketBmsTransport({
+      wsUrl: buildWsUrl('/api/v1/app/battery/socket/ws'),
+      deviceId: props.id,
+      token
+    })
     await transport.connect()
     client = new BmsClient({ transport })
     connType.value = 'mqtt'
@@ -157,6 +479,9 @@ async function load() {
   } finally {
     loading.value = false
   }
+
+  await Promise.all([loadCloudCurrent(), loadHistory()])
+  openCloudWs()
 }
 
 async function loadDeviceParamPermissions() {
@@ -174,6 +499,10 @@ async function loadDeviceParamPermissions() {
 watch(
   () => props.id,
   () => {
+    Object.keys(cloudCurrent).forEach((k) => {
+      delete cloudCurrent[k]
+    })
+    cloudLastUpdateAt.value = null
     load()
   }
 )
@@ -182,32 +511,35 @@ onMounted(() => {
   loadDeviceParamPermissions()
   load()
 })
-onBeforeUnmount(() => disconnect())
+onBeforeUnmount(() => {
+  disconnect()
+  closeCloudWs()
+})
 
 const socPct = computed(() => {
-  const v = status.value?.energy?.socPct ?? battery.value?.soc
+  const v = displayStatus.value?.energy?.socPct ?? cloudCurrent.soc ?? battery.value?.soc
   const n = Number(v ?? 0)
   if (!Number.isFinite(n)) return 0
   return Math.max(0, Math.min(100, Math.round(n)))
 })
 
 const sohPct = computed(() => {
-  const v = status.value?.energy?.sohPct ?? battery.value?.soh
+  const v = displayStatus.value?.energy?.sohPct ?? cloudCurrent.soh ?? battery.value?.soh
   const n = Number(v ?? 0)
   if (!Number.isFinite(n)) return 0
   return Math.max(0, Math.min(100, Math.round(n)))
 })
 
-const cellCount = computed(() => Number(status.value?.meta?.seriesCount || 0))
+const cellCount = computed(() => Number(displayStatus.value?.meta?.seriesCount || cloudCurrent.seriesCount || 0))
 const packVoltageText = computed(() => {
-  const v = status.value?.electrical?.vPackV
+  const v = displayStatus.value?.electrical?.vPackV ?? cloudCurrent.vPackV
   if (typeof v !== 'number' || !Number.isFinite(v)) return '-'
   return `${v.toFixed(1)}V`
 })
 
-const highestIdx = computed(() => Number(status.value?.electrical?.cellVoltageIndex?.highest || 0))
+const highestIdx = computed(() => Number(displayStatus.value?.electrical?.cellVoltageIndex?.highest || 0))
 const cellVoltageRows = computed(() => {
-  const list = status.value?.cell?.voltagesMv || []
+  const list = displayStatus.value?.cell?.voltagesMv || []
   return list.map((mv, i) => {
     const v = Number(mv || 0) / 1000
     return {
@@ -225,7 +557,7 @@ const cellColumns: DataTableColumns<any> = [
     key: 'voltageText',
     title: '电压',
     minWidth: 120,
-    render: row =>
+    render: (row) =>
       row.isHighest ? <span style="color:#d03050;font-weight:600">{row.voltageText}</span> : row.voltageText
   }
 ]
@@ -260,7 +592,7 @@ function canAccessParamKey(paramKey: string) {
   return deviceParamPermSet.value.has(permKey)
 }
 
-const filterParamKeys = (keys: string[]) => keys.filter(key => canAccessParamKey(key))
+const filterParamKeys = (keys: string[]) => keys.filter((key) => canAccessParamKey(key))
 
 const SINGLE_KEYS = [
   'CELL_OV_ALARM_V',
@@ -300,7 +632,7 @@ const TEMP_KEYS = [
 ]
 
 const mkItems = (keys: string[]): ParamItem[] =>
-  filterParamKeys(keys).map(key => {
+  filterParamKeys(keys).map((key) => {
     const unit = unitOf(key)
     const value = paramValues[key]
     return { key, label: labelOf(key), unit, value, valueText: formatValue(value, unit) }
@@ -375,7 +707,7 @@ const paramColumns: DataTableColumns<ParamItem> = [
     key: 'actions',
     title: '操作',
     width: 120,
-    render: row => (
+    render: (row) => (
       <NButton size="small" tertiary type="primary" onClick={() => openEdit(row)}>
         设置
       </NButton>
@@ -386,17 +718,20 @@ const paramColumns: DataTableColumns<ParamItem> = [
 
 <template>
   <div class="bms-panel">
-    <NSpin :show="loading">
+    <NSpin :show="loading || cloudLoading">
       <NCard size="small" :bordered="false">
         <NSpace align="center" justify="space-between">
           <NSpace align="center">
             <NText strong>连接：</NText>
             <NTag :type="connType === 'mqtt' ? 'success' : 'default'">{{ connText }}</NTag>
             <NTag v-if="battery?.comm_chip_id" type="info">4G卡ID：{{ battery.comm_chip_id }}</NTag>
+            <NTag :type="cloudStatusType">{{ cloudStatusText }}</NTag>
+            <NTag type="default">云端更新时间：{{ cloudUpdateText }}</NTag>
           </NSpace>
           <NSpace>
             <NButton size="small" :disabled="!canUse4G || connecting" @click="connectMqtt">连接</NButton>
             <NButton size="small" :disabled="connecting" @click="disconnect">断开</NButton>
+            <NButton size="small" @click="loadCloudCurrent">刷新云端</NButton>
           </NSpace>
         </NSpace>
       </NCard>
@@ -453,6 +788,30 @@ const paramColumns: DataTableColumns<ParamItem> = [
               </NSpace>
               <NDataTable :columns="cellColumns" :data="cellVoltageRows" :bordered="false" :max-height="420" />
             </NCard>
+          </NTabPane>
+
+          <NTabPane name="history" tab="历史记录">
+            <NSpin :show="historyLoading">
+              <NCard size="small" :bordered="false" title="近1小时核心指标曲线（云端）">
+                <div class="history-chart">
+                  <ChartComponent :initial-options="historyChartOption" />
+                </div>
+              </NCard>
+
+              <NCard size="small" :bordered="false" class="mt-12px" title="最近快照时间线（近24小时）">
+                <template #header-extra>
+                  <NButton size="small" @click="loadHistory">刷新</NButton>
+                </template>
+                <NDataTable
+                  v-if="snapshotHistoryRows.length > 0"
+                  :columns="snapshotColumns"
+                  :data="snapshotHistoryRows"
+                  :bordered="false"
+                  :max-height="320"
+                />
+                <NEmpty v-else description="暂无快照历史数据" />
+              </NCard>
+            </NSpin>
           </NTabPane>
 
           <NTabPane name="params" tab="参数设置">
@@ -549,10 +908,17 @@ const paramColumns: DataTableColumns<ParamItem> = [
   color: rgba(55, 65, 81, 0.7);
   font-size: 12px;
 }
+.history-chart {
+  width: 100%;
+  height: 320px;
+}
 .mb-10px {
   margin-bottom: 10px;
 }
 .mb-12px {
   margin-bottom: 12px;
+}
+.mt-12px {
+  margin-top: 12px;
 }
 </style>
