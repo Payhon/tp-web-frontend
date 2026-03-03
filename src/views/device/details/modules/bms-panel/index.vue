@@ -131,17 +131,19 @@ const canUse4G = computed(() => {
   return v.length > 0
 })
 
-const connText = computed(() => (connType.value === 'mqtt' ? 'MQTT透传' : '离线'))
+const connText = computed(() => (connType.value === 'mqtt' ? '直连透传已连接' : '直连透传未连接'))
 
 const cloudStatusText = computed(() => {
-  if (cloudWsState.value === 'open') return '云端实时已连接'
+  if (cloudWsState.value === 'open' && cloudLastUpdateAt.value) return '云端订阅已连接（有实时数据）'
+  if (cloudWsState.value === 'open') return '云端订阅已连接（暂无实时数据）'
   if (cloudWsState.value === 'connecting') return '云端实时连接中'
   if (cloudWsState.value === 'error') return '云端实时连接失败'
-  return '云端实时未连接'
+  return '云端订阅未连接'
 })
 
 const cloudStatusType = computed(() => {
-  if (cloudWsState.value === 'open') return 'success'
+  if (cloudWsState.value === 'open' && cloudLastUpdateAt.value) return 'success'
+  if (cloudWsState.value === 'open') return 'warning'
   if (cloudWsState.value === 'connecting') return 'info'
   if (cloudWsState.value === 'error') return 'error'
   return 'default'
@@ -425,7 +427,7 @@ function startPolling() {
   pollTimer = window.setInterval(run, 2000)
 }
 
-async function disconnect() {
+async function disconnectMqtt() {
   stopPolling()
   status.value = null
   connType.value = 'offline'
@@ -438,12 +440,25 @@ async function disconnect() {
   transport = null
 }
 
+async function disconnectAllConnections() {
+  await disconnectMqtt()
+  closeCloudWs()
+}
+
+async function connectRealtime() {
+  if (connecting.value) return
+  openCloudWs()
+  if (canUse4G.value) {
+    await connectMqtt()
+  }
+}
+
 async function connectMqtt() {
   if (!props.id || connecting.value) return
   if (!canUse4G.value) return
   connecting.value = true
   try {
-    await disconnect()
+    await disconnectMqtt()
     const token = String(localStg.get('token') || '').trim()
     if (!token) throw new Error('token missing')
     transport = new WebMqttSocketBmsTransport({
@@ -456,7 +471,7 @@ async function connectMqtt() {
     connType.value = 'mqtt'
     startPolling()
   } catch (e: any) {
-    await disconnect()
+    await disconnectMqtt()
     message.error(e?.message || '连接失败')
   } finally {
     connecting.value = false
@@ -512,8 +527,7 @@ onMounted(() => {
   load()
 })
 onBeforeUnmount(() => {
-  disconnect()
-  closeCloudWs()
+  disconnectAllConnections()
 })
 
 const socPct = computed(() => {
@@ -726,11 +740,17 @@ const paramColumns: DataTableColumns<ParamItem> = [
             <NTag :type="connType === 'mqtt' ? 'success' : 'default'">{{ connText }}</NTag>
             <NTag v-if="battery?.comm_chip_id" type="info">4G卡ID：{{ battery.comm_chip_id }}</NTag>
             <NTag :type="cloudStatusType">{{ cloudStatusText }}</NTag>
-            <NTag type="default">云端更新时间：{{ cloudUpdateText }}</NTag>
+            <NTag type="default">最近云端数据时间：{{ cloudUpdateText }}</NTag>
           </NSpace>
           <NSpace>
-            <NButton size="small" :disabled="!canUse4G || connecting" @click="connectMqtt">连接</NButton>
-            <NButton size="small" :disabled="connecting" @click="disconnect">断开</NButton>
+            <NButton size="small" :disabled="connecting" @click="connectRealtime">连接</NButton>
+            <NButton
+              size="small"
+              :disabled="connecting || (connType === 'offline' && cloudWsState === 'closed')"
+              @click="disconnectAllConnections"
+            >
+              断开
+            </NButton>
             <NButton size="small" @click="loadCloudCurrent">刷新云端</NButton>
           </NSpace>
         </NSpace>
