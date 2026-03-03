@@ -737,13 +737,9 @@ const paramColumns: DataTableColumns<ParamItem> = [
       </NCard>
 
       <div class="panel-body">
-        <div v-if="!canUse4G" class="disabled-mask">
-          <div class="disabled-mask__content">
-            <NAlert type="warning" :show-icon="false" title="BMS面板已禁用">
-              该设备未配置 4G 通讯卡ID（comm_chip_id），无法进行 MQTT 透传通讯。
-            </NAlert>
-          </div>
-        </div>
+        <NAlert v-if="!canUse4G" class="mb-12px" type="warning" :show-icon="false" title="当前设备未配置4G通讯卡ID">
+          已切换为云端数据展示模式；参数透传读写需设备具备 MQTT 通道能力。
+        </NAlert>
 
         <NTabs type="line" animated>
           <NTabPane name="dashboard" tab="仪表">
@@ -883,20 +879,6 @@ const paramColumns: DataTableColumns<ParamItem> = [
 .panel-body {
   position: relative;
   margin-top: 12px;
-}
-.disabled-mask {
-  position: absolute;
-  inset: 0;
-  z-index: 10;
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(1px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-}
-.disabled-mask__content {
-  width: min(720px, 100%);
 }
 .metric-big {
   font-size: 28px;
