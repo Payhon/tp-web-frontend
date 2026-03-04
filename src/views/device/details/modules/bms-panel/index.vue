@@ -11,6 +11,7 @@ import {
   NEmpty,
   NGrid,
   NGridItem,
+  NInput,
   NInputNumber,
   NModal,
   NProgress,
@@ -30,9 +31,11 @@ import { telemetryDataCurrentKeys, telemetryDataHistoryList, telemetryHistoryDat
 import { fetchCurrentDeviceParamPermissions } from '@/service/api/org-type-permissions'
 import {
   BmsClient,
+  PARAM_CATEGORIES,
   PARAM_DEF_BY_KEY,
   WebMqttSocketBmsTransport,
-  getParamPermissionKey
+  getParamPermissionKey,
+  listParamsByCategory
 } from '@/common/lib/bms-protocol'
 import type { BmsStatus } from '@/common/lib/bms-protocol'
 
@@ -576,12 +579,49 @@ const cellColumns: DataTableColumns<any> = [
   }
 ]
 
-// 参数设置（从移动端移植：分组 + 读写）
-type ParamItem = { key: string; label: string; unit: string; valueText: string; value: unknown }
-const paramValues = reactive<Record<string, unknown>>({})
+// 参数设置（与移动端对齐）
+type ParamEntry = string | { displayKey: string; actualKey: string }
+type ParamItem = {
+  key: string
+  actualKey: string
+  label: string
+  unit: string
+  valueText: string
+  value: unknown
+  valueType: string
+}
+type FactoryAction = { key: string; raw: number; confirm: boolean; label: string }
 
-function labelOf(key: string) {
-  return PARAM_DEF_BY_KEY[key]?.label || key
+const paramValues = reactive<Record<string, unknown>>({})
+const TEMP_DISPLAY_LABELS: Record<string, string> = {
+  CELL_OVER_TEMP_PROTECT_C: '单体过温保护温度',
+  CELL_OVER_TEMP_RELEASE_C: '单体过温保护恢复温度',
+  CELL_UNDER_TEMP_PROTECT_C: '单体低温保护温度',
+  CELL_UNDER_TEMP_RELEASE_C: '单体低温保护恢复温度'
+}
+const FACTORY_ACTION_LABELS: Record<string, string> = {
+  enterTestMode: '进入测试模式',
+  exitTestMode: '退出测试模式',
+  balanceAllOn: '开启全均衡',
+  balanceAllOff: '关闭全均衡',
+  sleep: '进入休眠',
+  powerOff: '关机',
+  restoreDefaults: '恢复出厂参数',
+  clearHistory: '清除历史数据',
+  clearCycles: '清除循环计数',
+  clearProtection: '清除保护状态'
+}
+
+function resolveParamEntry(entry: ParamEntry) {
+  if (typeof entry === 'string') return { key: entry, actualKey: entry }
+  return { key: entry.displayKey, actualKey: entry.actualKey }
+}
+
+function labelOf(key: string, actualKey?: string) {
+  if (TEMP_DISPLAY_LABELS[key]) return TEMP_DISPLAY_LABELS[key]
+  if (PARAM_DEF_BY_KEY[key]?.label) return PARAM_DEF_BY_KEY[key]?.label || key
+  if (actualKey && PARAM_DEF_BY_KEY[actualKey]?.label) return PARAM_DEF_BY_KEY[actualKey]?.label || key
+  return key
 }
 function unitOf(key: string) {
   return String(PARAM_DEF_BY_KEY[key]?.unit || '')
@@ -606,7 +646,8 @@ function canAccessParamKey(paramKey: string) {
   return deviceParamPermSet.value.has(permKey)
 }
 
-const filterParamKeys = (keys: string[]) => keys.filter((key) => canAccessParamKey(key))
+const filterParamEntries = (entries: ParamEntry[]) =>
+  entries.filter((entry) => canAccessParamKey(resolveParamEntry(entry).actualKey))
 
 const SINGLE_KEYS = [
   'CELL_OV_ALARM_V',
@@ -639,33 +680,64 @@ const CURRENT_KEYS = [
   'DISCHARGE_OC_PROTECT_LARGE_A'
 ]
 const TEMP_KEYS = [
-  'CELL_OVER_TEMP_PROTECT_C',
-  'CELL_OVER_TEMP_RELEASE_C',
-  'CELL_UNDER_TEMP_PROTECT_C',
-  'CELL_UNDER_TEMP_RELEASE_C'
+  { displayKey: 'CELL_OVER_TEMP_PROTECT_C', actualKey: 'MOS_OT_PROTECT_C' },
+  { displayKey: 'CELL_OVER_TEMP_RELEASE_C', actualKey: 'MOS_OT_PROTECT_RELEASE_C' },
+  { displayKey: 'CELL_UNDER_TEMP_PROTECT_C', actualKey: 'CHARGE_UT_PROTECT_C' },
+  { displayKey: 'CELL_UNDER_TEMP_RELEASE_C', actualKey: 'CHARGE_UT_PROTECT_RELEASE_C' }
 ]
+const OTHER_KEYS = listParamsByCategory(PARAM_CATEGORIES.OTHER)
+const NUMBERING_KEYS = listParamsByCategory(PARAM_CATEGORIES.STRING)
+const SYSTEM_KEYS = listParamsByCategory(PARAM_CATEGORIES.SYSTEM)
+const FACTORY_ACTIONS: Array<Omit<FactoryAction, 'label'>> = [
+  { key: 'enterTestMode', raw: 0x00000400, confirm: true },
+  { key: 'exitTestMode', raw: 0x00000800, confirm: true },
+  { key: 'balanceAllOn', raw: 0x00001000, confirm: true },
+  { key: 'balanceAllOff', raw: 0x00002000, confirm: true },
+  { key: 'sleep', raw: 0x00000004, confirm: true },
+  { key: 'powerOff', raw: 0x00000001, confirm: true },
+  { key: 'restoreDefaults', raw: 0x00010000, confirm: true },
+  { key: 'clearHistory', raw: 0x00020000, confirm: true },
+  { key: 'clearCycles', raw: 0x00040000, confirm: true },
+  { key: 'clearProtection', raw: 0x00080000, confirm: true }
+]
+const factoryItems = computed<FactoryAction[]>(() =>
+  FACTORY_ACTIONS.map((item) => ({ ...item, label: FACTORY_ACTION_LABELS[item.key] || item.key }))
+)
 
-const mkItems = (keys: string[]): ParamItem[] =>
-  filterParamKeys(keys).map((key) => {
-    const unit = unitOf(key)
-    const value = paramValues[key]
-    return { key, label: labelOf(key), unit, value, valueText: formatValue(value, unit) }
+const mkItems = (entries: ParamEntry[]): ParamItem[] =>
+  filterParamEntries(entries).map((entry) => {
+    const { key, actualKey } = resolveParamEntry(entry)
+    const unit = unitOf(actualKey)
+    const value = paramValues[actualKey]
+    return {
+      key,
+      actualKey,
+      label: labelOf(key, actualKey),
+      unit,
+      value,
+      valueType: PARAM_DEF_BY_KEY[actualKey]?.valueType || 'u16',
+      valueText: formatValue(value, unit)
+    }
   })
 
 const singleItems = computed(() => mkItems(SINGLE_KEYS))
 const voltageItems = computed(() => mkItems(VOLTAGE_KEYS))
 const currentItems = computed(() => mkItems(CURRENT_KEYS))
 const temperatureItems = computed(() => mkItems(TEMP_KEYS))
+const otherItems = computed(() => mkItems(OTHER_KEYS))
+const numberingItems = computed(() => mkItems(NUMBERING_KEYS))
+const systemItems = computed(() => mkItems(SYSTEM_KEYS))
 
-async function loadKeys(keys: string[]) {
+async function loadKeys(entries: ParamEntry[]) {
   if (!client || connType.value === 'offline') return
-  const allowedKeys = filterParamKeys(keys)
-  for (const k of allowedKeys) {
+  const allowedEntries = filterParamEntries(entries)
+  for (const entry of allowedEntries) {
+    const { actualKey } = resolveParamEntry(entry)
     try {
       // eslint-disable-next-line no-await-in-loop
-      paramValues[k] = await client.readParam(k)
+      paramValues[actualKey] = await client.readParam(actualKey)
     } catch {
-      paramValues[k] = null
+      paramValues[actualKey] = null
     }
   }
 }
@@ -675,7 +747,13 @@ const editState = reactive({
   key: '',
   title: '',
   unit: '',
-  input: null as number | null
+  valueType: 'u16',
+  inputNumber: null as number | null,
+  inputText: ''
+})
+const advancedState = reactive({
+  show: false,
+  loading: false
 })
 
 function openEdit(item: ParamItem) {
@@ -683,33 +761,77 @@ function openEdit(item: ParamItem) {
     message.warning('当前离线，无法设置参数')
     return
   }
-  if (!canAccessParamKey(item.key)) {
+  if (!canAccessParamKey(item.actualKey)) {
     message.warning('当前账号无权限操作该参数')
     return
   }
-  editState.key = item.key
+  editState.key = item.actualKey
   editState.title = item.label
   editState.unit = item.unit
+  editState.valueType = item.valueType || 'u16'
   const n = typeof item.value === 'number' ? item.value : Number(item.value)
-  editState.input = Number.isFinite(n) ? n : null
+  if (editState.valueType === 'str') {
+    editState.inputText = item.value == null ? '' : String(item.value)
+    editState.inputNumber = null
+  } else {
+    editState.inputNumber = Number.isFinite(n) ? n : null
+    editState.inputText = ''
+  }
   editState.show = true
 }
 
 async function confirmEdit() {
   if (!client) return
-  const v = editState.input
-  if (v == null || !Number.isFinite(Number(v))) {
-    message.warning('请输入有效数值')
-    return
-  }
   try {
-    await client.writeParam(editState.key, Number(v))
+    if (editState.valueType === 'str') {
+      await client.writeParam(editState.key, editState.inputText)
+    } else {
+      const v = editState.inputNumber
+      if (v == null || !Number.isFinite(Number(v))) {
+        message.warning('请输入有效数值')
+        return
+      }
+      await client.writeParam(editState.key, Number(v))
+    }
     paramValues[editState.key] = await client.readParam(editState.key)
     editState.show = false
     message.success('已保存')
   } catch (e: any) {
     editState.show = false
     message.error(e?.message || '保存失败')
+  }
+}
+
+async function openAdvancedSettings() {
+  if (!client || connType.value === 'offline') {
+    message.warning('当前离线，无法读取高级参数')
+    return
+  }
+  advancedState.show = true
+  advancedState.loading = true
+  try {
+    await Promise.all([loadKeys(OTHER_KEYS), loadKeys(NUMBERING_KEYS), loadKeys(SYSTEM_KEYS)])
+  } finally {
+    advancedState.loading = false
+  }
+}
+
+async function runFactoryAction(item: FactoryAction) {
+  if (!client || connType.value === 'offline') {
+    message.warning('当前离线，无法执行工厂命令')
+    return
+  }
+  if (item.confirm) {
+    const ok = window.confirm('执行工厂命令可能影响设备运行，是否继续？')
+    if (!ok) return
+  }
+  try {
+    const hi = (item.raw >>> 16) & 0xffff
+    const lo = item.raw & 0xffff
+    await client.writeRegisters(0x57a, new Uint16Array([hi, lo]))
+    message.success('工厂命令已发送')
+  } catch (e: any) {
+    message.error(e?.message || '工厂命令执行失败')
   }
 }
 
@@ -724,6 +846,25 @@ const paramColumns: DataTableColumns<ParamItem> = [
     render: (row) => (
       <NButton size="small" tertiary type="primary" onClick={() => openEdit(row)}>
         设置
+      </NButton>
+    )
+  }
+]
+const factoryColumns: DataTableColumns<FactoryAction> = [
+  { key: 'label', title: '工厂命令', minWidth: 260 },
+  {
+    key: 'raw',
+    title: '命令字',
+    width: 140,
+    render: (row) => `0x${row.raw.toString(16).toUpperCase().padStart(8, '0')}`
+  },
+  {
+    key: 'actions',
+    title: '操作',
+    width: 120,
+    render: (row) => (
+      <NButton size="small" tertiary type="warning" onClick={() => runFactoryAction(row)}>
+        执行
       </NButton>
     )
   }
@@ -834,6 +975,9 @@ const paramColumns: DataTableColumns<ParamItem> = [
             <NAlert class="mb-12px" type="info" :show-icon="false">
               仅在“MQTT透传”连接成功后可读写参数；写入参数请谨慎操作。
             </NAlert>
+            <NSpace class="mb-12px" justify="end">
+              <NButton size="small" :disabled="connType === 'offline'" @click="openAdvancedSettings">高级设置</NButton>
+            </NSpace>
             <NGrid :cols="24" :x-gap="12" :y-gap="12">
               <NGridItem :span="12">
                 <NCard size="small" title="单体保护" :bordered="false">
@@ -882,12 +1026,37 @@ const paramColumns: DataTableColumns<ParamItem> = [
     <NModal v-model:show="editState.show" preset="card" style="width: 520px" :title="`设置：${editState.title}`">
       <NSpace vertical size="large">
         <NText depth="3">单位：{{ editState.unit || '-' }}</NText>
-        <NInputNumber v-model:value="editState.input" placeholder="请输入数值" :show-button="false" />
+        <NInput v-if="editState.valueType === 'str'" v-model:value="editState.inputText" placeholder="请输入文本值" />
+        <NInputNumber v-else v-model:value="editState.inputNumber" placeholder="请输入数值" :show-button="false" />
         <NSpace justify="end">
           <NButton @click="editState.show = false">取消</NButton>
           <NButton type="primary" @click="confirmEdit">保存</NButton>
         </NSpace>
       </NSpace>
+    </NModal>
+
+    <NModal v-model:show="advancedState.show" preset="card" style="width: min(1100px, 95vw)" title="高级设置">
+      <NSpin :show="advancedState.loading">
+        <NTabs type="line" animated>
+          <NTabPane name="advanced-config" tab="高级配置">
+            <NDataTable :columns="paramColumns" :data="otherItems" :bordered="false" :max-height="420" />
+          </NTabPane>
+          <NTabPane name="numbering-config" tab="编号配置">
+            <NDataTable :columns="paramColumns" :data="numberingItems" :bordered="false" :max-height="420" />
+          </NTabPane>
+          <NTabPane name="system-config" tab="系统配置">
+            <NDataTable :columns="paramColumns" :data="systemItems" :bordered="false" :max-height="420" />
+          </NTabPane>
+          <NTabPane name="factory-config" tab="工厂配置">
+            <NDataTable :columns="factoryColumns" :data="factoryItems" :bordered="false" :max-height="420" />
+          </NTabPane>
+        </NTabs>
+      </NSpin>
+      <template #footer>
+        <NSpace justify="end">
+          <NButton @click="advancedState.show = false">关闭</NButton>
+        </NSpace>
+      </template>
     </NModal>
   </div>
 </template>
