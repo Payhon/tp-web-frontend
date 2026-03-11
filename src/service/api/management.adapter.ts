@@ -79,24 +79,109 @@ function parseRouteLocation(input: unknown): { path: string; query: Record<strin
   return { path, query }
 }
 
-function normalizeLegacyMenuRouteLocation(elementCode: string, original: unknown): unknown {
-  const trimmedCode = String(elementCode ?? '').trim()
+interface ResolvedMenuRouteLocation {
+  canonicalRouteName: string | null
+  path: string
+  query: Record<string, string>
+}
 
-  const legacyMap: Record<string, string> = {
-    // backend/sql/20.sql inserted these legacy element_code + param1 combos
-    // that don't match existing view keys/routes in the frontend
-    bms_org_management: '/bms/org',
-    bms_pack_factory: '/bms/org/pack-factory',
-    bms_dealer: '/bms/org/dealer',
-    bms_store: '/bms/org/store'
+const LEGACY_MENU_ROUTE_MAP: Record<string, { routeName: string; routePath: string }> = {
+  // 历史「场景管理」菜单 key，对应现有自动化场景管理页面
+  'automation_space-management': { routeName: 'automation_scene-manage', routePath: '/automation/scene-manage' },
+  // 历史「看板预览」菜单 key，兼容到当前可视化看板列表页
+  'visualization_panel-preview': { routeName: 'visualization_kanban', routePath: '/visualization/kanban' }
+}
+
+function getOrgTypeFromQuery(query: Record<string, string>): string {
+  for (const [key, value] of Object.entries(query)) {
+    if (key.trim().toLowerCase() === 'org_type') {
+      return String(value ?? '')
+        .trim()
+        .toUpperCase()
+    }
+  }
+  return ''
+}
+
+function resolveMenuRouteLocation(elementCode: unknown, original: unknown): ResolvedMenuRouteLocation {
+  const trimmedCode = String(elementCode ?? '').trim()
+  const parsedOriginal = parseRouteLocation(original)
+
+  let path = parsedOriginal.path
+  let query = { ...parsedOriginal.query }
+  let canonicalRouteName: string | null = null
+  const orgType = getOrgTypeFromQuery(query)
+
+  const orgShortcutMap: Record<string, { routeName: string; routePath: string }> = {
+    PACK_FACTORY: { routeName: 'bms_org_pack-factory', routePath: '/bms/org/pack-factory' },
+    DEALER: { routeName: 'bms_org_dealer', routePath: '/bms/org/dealer' },
+    STORE: { routeName: 'bms_org_store', routePath: '/bms/org/store' }
   }
 
-  return legacyMap[trimmedCode] ?? original
+  const quickCodeMap: Record<string, { routeName: string; routePath: string }> = {
+    bms_org_management: { routeName: 'bms_org', routePath: '/bms/org' },
+    bms_pack_factory: { routeName: 'bms_org_pack-factory', routePath: '/bms/org/pack-factory' },
+    bms_store: { routeName: 'bms_org_store', routePath: '/bms/org/store' }
+  }
+
+  // 历史菜单 key/路径 与当前路由不一致时，先做强制归一化，避免 transform 时报 view 不存在
+  if (LEGACY_MENU_ROUTE_MAP[trimmedCode]) {
+    path = LEGACY_MENU_ROUTE_MAP[trimmedCode].routePath
+    query = {}
+    canonicalRouteName = LEGACY_MENU_ROUTE_MAP[trimmedCode].routeName
+  }
+
+  if (!canonicalRouteName) {
+    const legacyByPath = Object.values(LEGACY_MENU_ROUTE_MAP).find(item => item.routePath === path)
+    if (legacyByPath) {
+      path = legacyByPath.routePath
+      query = {}
+      canonicalRouteName = legacyByPath.routeName
+    }
+  }
+
+  // 兼容历史快捷菜单：/bms/org/management?org_type=XXX 或 /bms/org?ORG_TYPE=XXX
+  if (path === '/bms/org/management' || path === '/bms/org') {
+    if (orgShortcutMap[orgType]) {
+      path = orgShortcutMap[orgType].routePath
+      query = {}
+      canonicalRouteName = orgShortcutMap[orgType].routeName
+    } else if (path === '/bms/org/management') {
+      path = '/bms/org'
+      query = {}
+      canonicalRouteName = 'bms_org'
+    }
+  }
+
+  // 按 legacy element_code 兜底映射，避免快捷菜单 code 与真实路由 key 不一致导致 404
+  if (!canonicalRouteName && quickCodeMap[trimmedCode]) {
+    path = quickCodeMap[trimmedCode].routePath
+    query = {}
+    canonicalRouteName = quickCodeMap[trimmedCode].routeName
+  }
+
+  // bms_dealer 兼容两种语义：
+  // - /bms/dealer: 旧页面
+  // - 组织管理快捷入口: /bms/org(*/management)?org_type=DEALER
+  if (!canonicalRouteName && trimmedCode === 'bms_dealer' && (orgType === 'DEALER' || path.startsWith('/bms/org'))) {
+    path = '/bms/org/dealer'
+    query = {}
+    canonicalRouteName = 'bms_org_dealer'
+  }
+
+  if (!canonicalRouteName && path) {
+    canonicalRouteName = getRouteName(path as any) || null
+  }
+
+  return { path, query, canonicalRouteName }
 }
 
 /** 递归处理数据 */
 function replaceKeys(data: ElegantConstRoute[]): ElegantRoute[] {
-  return data.map((item: any): ElegantRoute => {
+  // element_type=4 为按钮/元素权限，不应参与前端动态路由构建
+  const routeCandidates = data.filter((item: any) => Number(item?.element_type) !== 4)
+
+  return routeCandidates.map((item: any): ElegantRoute => {
     // if (!item.parent_id) {
     //   if (!item.route_path.includes('$')) {
     //     if (item.route_path === 'layout.base') {
@@ -109,14 +194,17 @@ function replaceKeys(data: ElegantConstRoute[]): ElegantRoute[] {
     // if (item.route_path === 'layout.base' && item.children.length === 0) {
     //   item.route_path += '$home';
     // }
-    const normalizedLocation = normalizeLegacyMenuRouteLocation(item.element_code, item.param1)
-    const { path: routePath, query: routeQuery } = parseRouteLocation(normalizedLocation)
+    const {
+      path: routePath,
+      query: routeQuery,
+      canonicalRouteName
+    } = resolveMenuRouteLocation(item.element_code, item.param1)
     const name = item.element_code.trim().replace(/\s/g, '_')
-    const homeRoutePath = routePath ? getRouteName(routePath as any) : null
     let component = ''
 
-    // Prefer routeMap mapping; fall back to element_code when backend route path is not normalized.
-    const pageKey = homeRoutePath || name
+    // 优先使用规范化后的 route key，避免 legacy 菜单 code 导致动态路由名称/组件不一致。
+    const routeName = canonicalRouteName || name
+    const pageKey = canonicalRouteName || name
 
     if (item.parent_id === '0') {
       // 根级路由：使用 base 布局，只有 element_type=3 (页面) 时才有页面组件
@@ -131,6 +219,9 @@ function replaceKeys(data: ElegantConstRoute[]): ElegantRoute[] {
       } else if (item.element_type === 2) {
         // 文件夹类型：不需要组件（由子路由提供内容）
         component = ''
+      } else if (!item.children?.length && canonicalRouteName) {
+        // 历史数据兼容：部分“菜单”节点实际是页面入口（如电池列表），若无子路由则按页面渲染
+        component = transformLayoutAndPageToComponent('', pageKey)
       } else {
         // 其他类型（如 element_type=1）：使用布局
         component = transformLayoutAndPageToComponent('base', '')
@@ -139,7 +230,7 @@ function replaceKeys(data: ElegantConstRoute[]): ElegantRoute[] {
     const route: Partial<ElegantRoute> = {
       // id: item.id,
       // parentId: item.parent_id,
-      name,
+      name: routeName,
       // elementType: item.element_type,
       path: routePath || '/',
       // component: item.route_path.trim().replace(/\s/g, '_'),

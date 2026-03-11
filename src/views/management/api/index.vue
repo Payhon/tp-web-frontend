@@ -6,6 +6,7 @@ import { NButton, NPopconfirm, NSpace, NSwitch, NTag } from 'naive-ui'
 import type { DataTableColumns, PaginationProps } from 'naive-ui'
 import { useBoolean, useLoading } from '@sa/hooks'
 import { apiKeyDel, fetchKeyList, updateKey } from '@/service/api'
+import { fetchUserList } from '@/service/api/auth'
 import { useAuthStore } from '@/store/modules/auth'
 import { $t } from '@/locales'
 import { formatDateTime } from '@/utils/common/datetime'
@@ -17,6 +18,8 @@ const isSysAdmin = computed(() => authStore.userInfo.authority === 'SYS_ADMIN')
 
 const { loading, startLoading, endLoading } = useLoading(false)
 const { bool: visible, setTrue: openModal } = useBoolean()
+const tenantLoading = ref(false)
+const tenantOptions = ref<{ label: string; value: string }[]>([])
 
 type QueryFormModel = {
   keyword: string | null
@@ -73,6 +76,36 @@ async function getTableData() {
     setTableData(list)
   }
   endLoading()
+}
+
+async function loadTenants() {
+  if (!isSysAdmin.value) {
+    return
+  }
+  tenantLoading.value = true
+  try {
+    const resp: any = await fetchUserList({ page: 1, page_size: 1000 })
+    const list = resp?.data?.list || []
+    const seen = new Set<string>()
+
+    tenantOptions.value = (list as any[])
+      .map(u => {
+        const tenantId = (u?.tenant_id as string) || (u?.tenantId as string) || ''
+        if (!tenantId || seen.has(tenantId)) {
+          return null
+        }
+        seen.add(tenantId)
+        const labelName = (u?.name as string) || (u?.email as string) || tenantId
+        return { label: `${labelName} (${tenantId})`, value: tenantId }
+      })
+      .filter((item): item is { label: string; value: string } => item !== null)
+
+    if (!queryParams.tenant_id && tenantOptions.value.length > 0) {
+      queryParams.tenant_id = tenantOptions.value[0].value
+    }
+  } finally {
+    tenantLoading.value = false
+  }
 }
 
 function isExpired(row: UserManagement.UserKey): boolean {
@@ -403,7 +436,13 @@ const getPlatform = computed(() => {
   return proxy.getPlatform()
 })
 
-getTableData()
+if (isSysAdmin.value) {
+  loadTenants().finally(() => {
+    getTableData()
+  })
+} else {
+  getTableData()
+}
 </script>
 
 <template>
@@ -424,11 +463,14 @@ getTableData()
             :options="statusOptions"
             :placeholder="$t('page.manage.api.apiStatus')"
           />
-          <n-input
+          <n-select
             v-if="isSysAdmin"
             v-model:value="queryParams.tenant_id"
+            filterable
             clearable
             style="width: 180px"
+            :loading="tenantLoading"
+            :options="tenantOptions"
             :placeholder="$t('page.manage.api.tenantPlaceholder')"
           />
           <NButton type="primary" @click="handleSearch">{{ $t('common.search') }}</NButton>
@@ -457,6 +499,8 @@ getTableData()
           :edit-data="editData"
           :is-sys-admin="isSysAdmin"
           :default-tenant-id="(authStore.userInfo.tenant_id as string) || ''"
+          :tenant-options="tenantOptions"
+          :tenant-loading="tenantLoading"
           @success="getTableData"
         />
       </div>

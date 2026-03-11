@@ -84,6 +84,44 @@ export const deleteBatteryModel = (id: string) => {
   return request.delete(`/battery/model/${id}`)
 }
 
+// BMS型号相关接口（battery_bms_models）
+export const getBatteryBmsModelList = (params: any) => {
+  return request.get('/battery/bms-model', { params })
+}
+
+export const getBatteryBmsModelDetail = (id: string) => {
+  return request.get(`/battery/bms-model/${id}`)
+}
+
+export const createBatteryBmsModel = (data: any) => {
+  return request.post('/battery/bms-model', data)
+}
+
+export const updateBatteryBmsModel = (id: string, data: any) => {
+  return request.put(`/battery/bms-model/${id}`, data)
+}
+
+export const deleteBatteryBmsModel = (id: string) => {
+  return request.delete(`/battery/bms-model/${id}`)
+}
+
+// 电芯品牌相关接口
+export const getCellBrandList = (params?: { name?: string }) => {
+  return request.get('/battery/cell-brand', { params })
+}
+
+export const createCellBrand = (data: { seq_no: number; name: string }) => {
+  return request.post('/battery/cell-brand', data)
+}
+
+export const updateCellBrand = (id: string, data: { seq_no?: number; name?: string }) => {
+  return request.put(`/battery/cell-brand/${id}`, data)
+}
+
+export const deleteCellBrand = (id: string) => {
+  return request.delete(`/battery/cell-brand/${id}`)
+}
+
 // 设备转移相关接口
 export const transferDevices = (data: any) => {
   return request.post('/device/transfer', data)
@@ -126,6 +164,79 @@ export const getBatteryMaintenanceDetail = (id: string) => {
 // 电池列表（设备电池）相关接口
 export const getBatteryList = (params: any) => {
   return request.get('/battery', { params })
+}
+
+export type BmsHistoryDeviceParams = {
+  page: number
+  page_size: number
+  keyword?: string
+}
+
+export type BmsHistoryQueryParams = {
+  device_id: string
+  view_mode: 'long' | 'wide'
+  start_time: number
+  end_time: number
+  page: number
+  page_size: number
+}
+
+export type BmsHistoryExportParams = {
+  device_id: string
+  view_mode: 'long' | 'wide'
+  start_time: number
+  end_time: number
+}
+
+export type BmsHistoryWideColumn = {
+  key: string
+  data_type: string
+  identifier: string
+  data_name: string
+}
+
+export type BmsHistoryPendingJob = {
+  task_id: string
+  device_id: string
+  device_number: string
+  view_mode: 'long' | 'wide' | string
+  start_time: number
+  end_time: number
+  file_name: string
+  download_url: string
+  finished_at: string
+}
+
+export type BmsHistoryExportWSMessage = {
+  type: string
+  task_id: string
+  device_id: string
+  file_name: string
+  download_url: string
+  finished_at: number
+}
+
+export const getBmsHistoryDeviceList = (params: BmsHistoryDeviceParams) => {
+  return request.get('/battery/history/devices', { params })
+}
+
+export const getBmsHistoryData = (params: BmsHistoryQueryParams) => {
+  return request.get('/battery/history', { params })
+}
+
+export const createBmsHistoryExportJob = (data: BmsHistoryExportParams) => {
+  return request.post('/battery/history/export', data)
+}
+
+export const getBmsHistoryPendingExportJobs = (params?: { limit?: number }) => {
+  return request.get('/battery/history/export/jobs/pending', { params })
+}
+
+export const downloadBmsHistoryExport = (taskId: string) => {
+  return request.get('/battery/history/export/download', {
+    params: { task_id: taskId },
+    responseType: 'blob'
+  })
 }
 
 // 导出电池列表
@@ -236,6 +347,53 @@ export const cancelOfflineCommand = (id: string) => {
 export const getAppBatteryDetail = (deviceId: string) => {
   return request.get(`/app/battery/detail/${deviceId}`)
 }
+
+export type BatteryRelayStatus = {
+  device_id: string
+  owner_online: boolean
+  session_id?: string | null
+  platform?: string | null
+  conn_type?: string | null
+  last_seen_ts?: number | null
+  expires_at_ts?: number | null
+  owner_user_id?: string | null
+  owner_tenant_id?: string | null
+}
+
+export type BatteryRelayCommandReq = {
+  device_id: string
+  command_type: 'read_param' | 'write_param' | 'write_registers'
+  param_key?: string
+  value?: unknown
+  start_address?: number
+  register_values?: number[]
+  wait_ms?: number
+}
+
+export type BatteryRelayCommandResp = {
+  command_id: string
+  device_id: string
+  command_type: string
+  status: 'PENDING' | 'SENT' | 'SUCCESS' | 'FAILED' | 'TIMEOUT' | string
+  error_message?: string | null
+  result?: unknown
+  created_at_ts: number
+  updated_at_ts: number
+  finished_at_ts?: number | null
+}
+
+export const getBatteryRelayStatus = (deviceId: string) => {
+  return request.get(`/battery/relay/status/${deviceId}`)
+}
+
+export const sendBatteryRelayCommand = (payload: BatteryRelayCommandReq) => {
+  return request.post('/battery/relay/command', payload)
+}
+
+export const getBatteryRelayCommand = (commandId: string) => {
+  return request.get(`/battery/relay/command/${commandId}`)
+}
+
 export const batchSendBatteryCommand = (data: {
   device_ids: string[]
   command_type: string
@@ -322,6 +480,36 @@ export const getBmsDashboardAlarmOverview = (params?: { days?: number }) => {
 
 export const getBmsDashboardOnlineTrend = () => {
   return request.get('/dashboard/trend/online')
+}
+
+export type BmsActivationTrendPoint = {
+  date: string
+  count: number
+}
+
+export type BmsHomeSummaryResp = {
+  user_kind: 'ORG_USER' | 'END_USER' | string
+  org_type: string
+  institution?: {
+    battery_total: number
+    online_count: number
+    offline_count: number
+    activated_count: number
+    inactive_count: number
+    activation_trend_week: BmsActivationTrendPoint[]
+    activation_trend_month: BmsActivationTrendPoint[]
+  }
+  end_user?: {
+    battery_total: number
+  }
+}
+
+export type BmsHomeSummaryQuery = {
+  view_as?: 'TENANT' | 'PACK_FACTORY' | 'DEALER' | 'STORE' | 'APP_USER'
+}
+
+export const getBmsHomeSummary = (params?: BmsHomeSummaryQuery) => {
+  return request.get<BmsHomeSummaryResp>('/dashboard/home/summary', { params })
 }
 
 // 终端用户（BMS穿透）

@@ -187,6 +187,7 @@ type FormModel = Pick<UserManagement.User, 'email' | 'name' | 'phone_number' | '
 }
 
 const formModel = reactive<FormModel>(createDefaultFormModel())
+const editingUserId = ref('')
 
 const rules = ref({})
 // 手机号数字校验规则
@@ -299,6 +300,7 @@ function handleUpdateFormModelByModalType() {
   const handlers: Record<ModalType, () => void> = {
     add: () => {
       const defaultFormModel = createDefaultFormModel()
+      editingUserId.value = ''
 
       handleUpdateFormModel(defaultFormModel)
     },
@@ -318,7 +320,12 @@ function handleUpdateFormModelByModalType() {
 
         // 编辑模式下不需要构建级联选择器的值，因为我们使用的是独立的省市区字段
         const editFormData = {
-          ...editDataAny,
+          name: editDataAny.name || '',
+          gender: editDataAny.gender || null,
+          phone_number: editDataAny.phone_number || '',
+          email: editDataAny.email || '',
+          remark: editDataAny.remark || '',
+          status: editDataAny.status || 'N',
           password: '',
           confirmPwd: '',
           organization: editDataAny.organization || '',
@@ -330,6 +337,7 @@ function handleUpdateFormModelByModalType() {
             ...addressData
           }
         }
+        editingUserId.value = editDataAny.id || ''
         handleUpdateFormModel(editFormData)
 
         // 编辑模式下地址数据已经直接设置到表单模型中
@@ -350,6 +358,12 @@ async function handleSubmit() {
 
   // 移除不需要提交的字段
   delete (submitData as any).confirmPwd
+  // 兼容历史接口返回字段，编辑租户时不允许携带 dealer_id。
+  delete (submitData as any).dealer_id
+  if (props.type === 'edit') {
+    const editId = editingUserId.value
+    Object.assign(submitData as any, { id: editId })
+  }
 
   let data: any
   if (props.type === 'add') {

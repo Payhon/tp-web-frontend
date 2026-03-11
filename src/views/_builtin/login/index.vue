@@ -49,6 +49,21 @@ const activeModule = computed(() => {
   return findItem || modules[0]
 })
 
+const loginQrcodeItems = computed(() => {
+  return [
+    {
+      key: 'wxmp',
+      label: $t('page.login.pwdLogin.wxmpQrcode'),
+      src: sysSetting.wxmp_qrcode
+    },
+    {
+      key: 'app',
+      label: $t('page.login.pwdLogin.appDownloadQrcode'),
+      src: sysSetting.app_download_qrcode
+    }
+  ].filter(item => Boolean(item.src))
+})
+
 // 计算当前模块的标题
 const moduleTitle = computed(() => {
   switch (props.module) {
@@ -92,19 +107,25 @@ watch(moduleTitle, newTitle => {
     class="relative size-full flex-center overflow-hidden min-h-screen"
     :style="{
       fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, Microsoft YaHei, sans-serif',
-      background: sysSetting.home_background
-        ? 'none'
-        : themeStore.darkMode
-          ? 'linear-gradient(135deg, #1f2937 0%, #374151 50%, #111827 100%)'
-          : 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #06b6d4 100%)'
+      background: sysSetting.home_background ? 'none' : themeStore.darkMode ? '#081121' : '#edf4ff'
     }"
   >
     <!-- 使用 LoginBg 组件显示后端配置的背景图片 -->
     <LoginBg v-if="sysSetting.home_background" :themeColor="themeStore.themeColor" :sysSetting="sysSetting" />
 
-    <!-- 默认背景动画效果 -->
-    <div v-else class="bg-animation">
-      <div class="bg-animation-inner" :class="{ 'dark-theme': themeStore.darkMode }"></div>
+    <!-- 电路板电流粒子背景 -->
+    <div v-else class="circuit-bg" :class="{ 'dark-theme': themeStore.darkMode }">
+      <div class="circuit-grid"></div>
+      <span class="circuit-trace trace-h-1"></span>
+      <span class="circuit-trace trace-h-2"></span>
+      <span class="circuit-trace trace-h-3"></span>
+      <span class="circuit-trace trace-v-1"></span>
+      <span class="circuit-trace trace-v-2"></span>
+      <span class="circuit-trace trace-v-3"></span>
+      <span class="circuit-particle particle-1"></span>
+      <span class="circuit-particle particle-2"></span>
+      <span class="circuit-particle particle-3"></span>
+      <span class="circuit-particle particle-4"></span>
     </div>
 
     <!-- 登录卡片 -->
@@ -195,48 +216,244 @@ watch(moduleTitle, newTitle => {
             <component :is="activeModule.component" />
           </Transition>
         </div>
+
+        <div v-if="loginQrcodeItems.length" class="login-qrcode-panel">
+          <div class="login-qrcode-grid" :class="{ 'single-item': loginQrcodeItems.length === 1 }">
+            <div v-for="item in loginQrcodeItems" :key="item.key" class="login-qrcode-item">
+              <img :src="item.src" :alt="item.label" class="login-qrcode-image" />
+              <p class="login-qrcode-label" :style="{ color: themeStore.darkMode ? '#d1d5db' : '#4b5563' }">
+                {{ item.label }}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-/* 背景动画效果 */
-.bg-animation {
+/* 电路板电流粒子背景 */
+.circuit-bg {
   position: absolute;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   overflow: hidden;
-  opacity: 0.6;
+  opacity: 0.92;
 }
 
-.bg-animation-inner::before {
+.circuit-bg::before {
   content: '';
   position: absolute;
-  width: 100%;
-  height: 100%;
-  background:
-    radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 40% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
-  animation: bgFloat 10s ease-in-out infinite;
+  inset: 0;
+  background: radial-gradient(circle at 20% 25%, rgba(99, 102, 241, 0.15), transparent 45%);
 }
 
-.bg-animation-inner.dark-theme::before {
+.circuit-bg.dark-theme::before {
   background:
-    radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 80% 70%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 40% 80%, rgba(99, 102, 241, 0.1) 0%, transparent 50%);
+    radial-gradient(circle at 20% 25%, rgba(59, 130, 246, 0.22), transparent 50%),
+    radial-gradient(circle at 78% 72%, rgba(14, 165, 233, 0.2), transparent 48%);
 }
 
-@keyframes bgFloat {
-  0%,
-  100% {
-    transform: translateY(0px) rotate(0deg);
+.circuit-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(37, 99, 235, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(37, 99, 235, 0.08) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+.circuit-bg.dark-theme .circuit-grid {
+  background-image:
+    linear-gradient(rgba(59, 130, 246, 0.14) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59, 130, 246, 0.14) 1px, transparent 1px);
+}
+
+.circuit-trace {
+  position: absolute;
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.trace-h-1,
+.trace-h-2,
+.trace-h-3 {
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(59, 130, 246, 0.2) 25%,
+    rgba(59, 130, 246, 0.8) 50%,
+    transparent 100%
+  );
+  animation: current-flow-x 7s linear infinite;
+}
+
+.trace-h-1 {
+  width: 72%;
+  top: 24%;
+  left: 8%;
+}
+
+.trace-h-2 {
+  width: 64%;
+  top: 56%;
+  left: 20%;
+  animation-delay: -2s;
+}
+
+.trace-h-3 {
+  width: 58%;
+  top: 76%;
+  left: 14%;
+  animation-delay: -4s;
+}
+
+.trace-v-1,
+.trace-v-2,
+.trace-v-3 {
+  width: 2px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(14, 165, 233, 0.2) 25%,
+    rgba(14, 165, 233, 0.85) 50%,
+    transparent 100%
+  );
+  animation: current-flow-y 8s linear infinite;
+}
+
+.trace-v-1 {
+  height: 48%;
+  left: 24%;
+  top: 18%;
+}
+
+.trace-v-2 {
+  height: 56%;
+  left: 64%;
+  top: 10%;
+  animation-delay: -3s;
+}
+
+.trace-v-3 {
+  height: 42%;
+  left: 82%;
+  top: 38%;
+  animation-delay: -5s;
+}
+
+.circuit-bg.dark-theme .trace-h-1,
+.circuit-bg.dark-theme .trace-h-2,
+.circuit-bg.dark-theme .trace-h-3 {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(59, 130, 246, 0.3) 25%,
+    rgba(59, 130, 246, 0.98) 50%,
+    transparent 100%
+  );
+}
+
+.circuit-bg.dark-theme .trace-v-1,
+.circuit-bg.dark-theme .trace-v-2,
+.circuit-bg.dark-theme .trace-v-3 {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(14, 165, 233, 0.28) 25%,
+    rgba(14, 165, 233, 0.94) 50%,
+    transparent 100%
+  );
+}
+
+.circuit-particle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(59, 130, 246, 0.95);
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.95);
+  opacity: 0;
+}
+
+.particle-1 {
+  top: 23%;
+  animation: particle-run-x 5.2s linear infinite;
+}
+
+.particle-2 {
+  top: 55%;
+  animation: particle-run-x 6s linear infinite;
+  animation-delay: -1.8s;
+}
+
+.particle-3 {
+  left: 24%;
+  animation: particle-run-y 6.6s linear infinite;
+  animation-delay: -2.2s;
+}
+
+.particle-4 {
+  left: 64%;
+  animation: particle-run-y 5.4s linear infinite;
+  animation-delay: -3.2s;
+}
+
+.circuit-bg.dark-theme .circuit-particle {
+  background: rgba(59, 130, 246, 0.98);
+  box-shadow: 0 0 14px rgba(59, 130, 246, 0.95);
+}
+
+@keyframes current-flow-x {
+  0% {
+    transform: translateX(-26px);
   }
+  100% {
+    transform: translateX(26px);
+  }
+}
 
-  50% {
-    transform: translateY(-20px) rotate(180deg);
+@keyframes current-flow-y {
+  0% {
+    transform: translateY(-26px);
+  }
+  100% {
+    transform: translateY(26px);
+  }
+}
+
+@keyframes particle-run-x {
+  0% {
+    left: 8%;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    left: 78%;
+    opacity: 0;
+  }
+}
+
+@keyframes particle-run-y {
+  0% {
+    top: 16%;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    top: 74%;
+    opacity: 0;
   }
 }
 
@@ -357,5 +574,47 @@ watch(moduleTitle, newTitle => {
 .slide-leave-to {
   opacity: 0;
   transform: translateX(-20px);
+}
+
+.login-qrcode-panel {
+  padding-top: 8px;
+  border-top: 0;
+}
+
+.login-qrcode-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.login-qrcode-grid.single-item {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.login-qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 6px;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(248, 250, 252, 0.6);
+}
+
+.login-qrcode-image {
+  width: 92px;
+  height: 92px;
+  border-radius: 8px;
+  object-fit: contain;
+  background: #fff;
+  border: 1px solid rgba(203, 213, 225, 0.65);
+}
+
+.login-qrcode-label {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.2;
+  text-align: center;
 }
 </style>

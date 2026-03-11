@@ -58,6 +58,14 @@ export const resolveFileUrl = (path: string, baseUrl?: string): string => {
     origin = window.location.origin
   }
 
+  // 兼容仅暴露 /api/v1 的网关：本地文件统一走 /api/v1/files/*
+  if (path.startsWith('./files/')) {
+    return `${origin}/api/v1/files/${path.slice('./files/'.length)}`
+  }
+  if (path.startsWith('/files/')) {
+    return `${origin}/api/v1/files/${path.slice('/files/'.length)}`
+  }
+
   if (path.startsWith('./')) return `${origin}${path.slice(1)}`
   if (path.startsWith('/')) return `${origin}${path}`
   return `${origin}/${path}`

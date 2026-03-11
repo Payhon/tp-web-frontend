@@ -143,6 +143,8 @@
   "route.bms_dealer": "经销商管理",
   "route.bms_end_user": "终端用户",
   "route.bms_battery_list": "电池列表",
+  "route.bms_battery_history": "历史数据",
+  "route.bms_battery_cell_brand": "电芯品牌管理",
   "route.bms_battery_model": "电池型号管理",
   "route.bms_battery_tag": "标签管理",
   "route.bms_battery_offline": "离线指令",
@@ -177,5 +179,15 @@
   "route.app_manage_content": "内容管理",
   "route.app_manage_apps": "应用管理",
   "route.app_manage_upgrade": "App升级中心",
-  "route.app_manage_users": "用户管理"
+  "route.app_manage_users": "用户管理",
+  "route.bms_battery_bms_model": "BMS型号管理",
+  "perm.bms_battery_list_export": "导出",
+  "perm.bms_battery_list_add": "新增BMS",
+  "perm.bms_battery_list_import": "导入",
+  "perm.bms_battery_list_action_params": "参数",
+  "perm.bms_battery_list_action_offline_command": "离线指令",
+  "perm.bms_battery_list_action_lifecycle_factory": "生命周期-出厂",
+  "perm.bms_battery_list_action_lifecycle_activate": "生命周期-激活",
+  "perm.bms_battery_list_action_lifecycle_transfer": "生命周期-调拨",
+  "perm.bms_battery_history_export": "导出历史数据"
 }

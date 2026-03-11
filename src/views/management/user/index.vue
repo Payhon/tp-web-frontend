@@ -1,10 +1,11 @@
 <script setup lang="tsx">
 import { computed, reactive, getCurrentInstance, ref } from 'vue'
 import type { Ref } from 'vue'
-import { NButton, NPopconfirm, NSpace, NTag } from 'naive-ui'
-import type { DataTableColumns, PaginationProps } from 'naive-ui'
+import { NButton, NDropdown, NIcon, NSpace, NTag, useDialog } from 'naive-ui'
+import type { DataTableColumns, DropdownOption, PaginationProps } from 'naive-ui'
 import { useBoolean, useLoading } from '@sa/hooks'
 import dayjs from 'dayjs'
+import { EllipsisHorizontal } from '@vicons/ionicons5'
 import { userStatusOptions } from '@/constants/business'
 import { delUser, fetchUserList } from '@/service/api/auth'
 import { useAuthStore } from '@/store/modules/auth'
@@ -16,10 +17,20 @@ import pwData from './components/pw.json'
 // import ColumnSetting from './components/column-setting.vue'
 
 const authStore = useAuthStore()
+const dialog = useDialog()
 const { loading, startLoading, endLoading } = useLoading(false)
 const { bool: visible, setTrue: openModal } = useBoolean()
 const { bool: editPwdVisible, setTrue: openEditPwdModal } = useBoolean()
 const showEmpty = ref(false)
+
+type UserActionKey = 'enter' | 'resetPwd' | 'edit' | 'delete'
+
+const actionOptions = computed<DropdownOption[]>(() => [
+  { label: $t('page.manage.user.enter'), key: 'enter' },
+  { label: $t('page.login.resetPwd.title'), key: 'resetPwd' },
+  { label: $t('common.edit'), key: 'edit' },
+  { label: $t('common.delete'), key: 'delete' }
+])
 
 const customUserStatusOptions = computed(() => {
   return userStatusOptions.map(item => {
@@ -184,6 +195,20 @@ const columns: Ref<DataTableColumns<UserManagement.User>> = ref([
     align: 'left'
   },
   {
+    key: 'tenant_id',
+    minWidth: '160px',
+    title: () => '租户 ID',
+    align: 'left',
+    render: row => (row as any).tenant_id || '-'
+  },
+  {
+    key: 'organization',
+    minWidth: '160px',
+    title: () => $t('page.manage.user.organization'),
+    align: 'left',
+    render: row => (row as any).organization || '-'
+  },
+  {
     key: 'name',
     minWidth: '140px',
     title: () => $t('page.manage.user.userName'),
@@ -250,48 +275,24 @@ const columns: Ref<DataTableColumns<UserManagement.User>> = ref([
   },
   {
     key: 'actions',
-    width: '300px',
+    width: '120px',
     fixed: 'right',
     title: () => $t('common.actions'),
     align: 'left',
     render: row => {
       return (
-        <NSpace justify={'start'}>
-          <NPopconfirm
-            negative-text={$t('common.cancel')}
-            positive-text={$t('common.confirm')}
-            onPositiveClick={() => handleEnter(row.id)}
-          >
+        <NDropdown options={actionOptions.value} trigger="click" onSelect={key => handleActionSelect(String(key), row)}>
+          <NButton size={'small'} quaternary>
             {{
-              default: () => $t('common.confirm'),
-              trigger: () => (
-                <NButton type="warning" size={'small'}>
-                  {$t('page.manage.user.enter')}
-                </NButton>
-              )
+              icon: () => (
+                <NIcon>
+                  <EllipsisHorizontal />
+                </NIcon>
+              ),
+              default: () => $t('common.actions')
             }}
-          </NPopconfirm>
-          <NButton type="warning" size={'small'} onClick={() => handleEditPwd(row.id)}>
-            {$t('page.login.resetPwd.title')}
           </NButton>
-          <NButton type="primary" size={'small'} onClick={() => handleEditTable(row.id)}>
-            {$t('common.edit')}
-          </NButton>
-          <NPopconfirm
-            negative-text={$t('common.cancel')}
-            positive-text={$t('common.confirm')}
-            onPositiveClick={() => handleDeleteTable(row.id)}
-          >
-            {{
-              default: () => $t('common.confirm'),
-              trigger: () => (
-                <NButton type="error" size={'small'}>
-                  {$t('common.delete')}
-                </NButton>
-              )
-            }}
-          </NPopconfirm>
-        </NSpace>
+        </NDropdown>
       )
     }
   }
@@ -341,6 +342,43 @@ async function handleDeleteTable(rowId: string) {
   if (!data.error) {
     window.$message?.success($t('common.deleteSuccess'))
     getTableData()
+  }
+}
+
+function handleActionSelect(action: string, row: UserManagement.User) {
+  const actionKey = action as UserActionKey
+  if (actionKey === 'edit') {
+    handleEditTable(row.id)
+    return
+  }
+  if (actionKey === 'resetPwd') {
+    handleEditPwd(row.id)
+    return
+  }
+
+  if (actionKey === 'enter') {
+    dialog.warning({
+      title: $t('common.tip'),
+      content: $t('common.confirm'),
+      positiveText: $t('common.confirm'),
+      negativeText: $t('common.cancel'),
+      onPositiveClick: async () => {
+        await handleEnter(row.id)
+      }
+    })
+    return
+  }
+
+  if (actionKey === 'delete') {
+    dialog.warning({
+      title: $t('common.tip'),
+      content: $t('common.confirmDelete'),
+      positiveText: $t('common.confirm'),
+      negativeText: $t('common.cancel'),
+      onPositiveClick: async () => {
+        await handleDeleteTable(row.id)
+      }
+    })
   }
 }
 

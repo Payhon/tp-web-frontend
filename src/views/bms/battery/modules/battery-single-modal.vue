@@ -4,7 +4,7 @@ import { NButton, NDatePicker, NForm, NFormItem, NInput, NModal, NSelect, NSpace
 
 interface Props {
   visible: boolean
-  modelOptions: Array<{ label: string; value: string }>
+  bmsModelOptions: Array<{ label: string; value: string }>
 }
 
 const props = defineProps<Props>()
@@ -42,7 +42,7 @@ const rules = {
   bms_comm_type: { required: true, type: 'number', message: '请选择BMS通讯类型', trigger: 'change' }
 }
 
-const title = computed(() => '添加单个电池')
+const title = computed(() => '新增 BMS')
 
 watch(
   () => props.visible,
@@ -102,13 +102,13 @@ function handleSubmit() {
       <NFormItem label="BMS通讯类型" path="bms_comm_type">
         <NSelect v-model:value="formData.bms_comm_type" :options="commTypeOptions" placeholder="请选择" />
       </NFormItem>
-      <NFormItem label="电池型号" path="battery_model_id">
+      <NFormItem label="BMS型号" path="battery_model_id">
         <NSelect
           v-model:value="formData.battery_model_id"
           filterable
           clearable
-          :options="props.modelOptions"
-          placeholder="按名称选择（可选）"
+          :options="props.bmsModelOptions"
+          placeholder="从 BMS 型号列表选择（可选）"
         />
       </NFormItem>
       <NFormItem label="蓝牙Mac" path="ble_mac">

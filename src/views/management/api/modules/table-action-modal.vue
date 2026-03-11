@@ -15,6 +15,8 @@ export interface Props {
   editData?: UserManagement.UserKey | null
   isSysAdmin?: boolean
   defaultTenantId?: string
+  tenantOptions?: { label: string; value: string }[]
+  tenantLoading?: boolean
 }
 
 export type ModalType = NonNullable<Props['type']>
@@ -25,7 +27,9 @@ const props = withDefaults(defineProps<Props>(), {
   type: 'add',
   editData: null,
   isSysAdmin: false,
-  defaultTenantId: ''
+  defaultTenantId: '',
+  tenantOptions: () => [],
+  tenantLoading: false
 })
 
 interface Emits {
@@ -187,10 +191,13 @@ watch(
   <n-modal v-model:show="modalVisible" preset="card" :title="title">
     <n-form ref="formRef" label-placement="left" :label-width="100" :model="formModel" :rules="rules">
       <n-form-item v-if="isSysAdmin" :label="$t('page.manage.api.tenantId')" path="tenant_id">
-        <n-input
+        <n-select
           v-model:value="formModel.tenant_id"
           :disabled="type === 'edit'"
+          filterable
           :placeholder="$t('page.manage.api.form.tenantId')"
+          :loading="tenantLoading"
+          :options="tenantOptions"
         />
       </n-form-item>
 

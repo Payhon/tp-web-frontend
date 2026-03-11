@@ -11,6 +11,7 @@ import {
   NInput,
   NIcon,
   NModal,
+  NPagination,
   NRadioButton,
   NRadioGroup,
   NSelect,
@@ -23,6 +24,7 @@ import dayjs from 'dayjs'
 import { useTable } from '@/hooks/common/table'
 import { useRouterPush } from '@/hooks/common/router'
 import { useAuthStore } from '@/store/modules/auth'
+import { ensureUiPermissionState, hasUiPermission } from '@/utils/common/ui-permission'
 import { commandDataById } from '@/service/api/device'
 import ParamsModal from '@/views/bms/battery/modules/params-modal.vue'
 import BatteryImportModal from '@/views/bms/battery/modules/battery-import-modal.vue'
@@ -30,6 +32,7 @@ import BatterySingleModal from '@/views/bms/battery/modules/battery-single-modal
 import EndUserSelect from '@/components/EndUserSelect.vue'
 import {
   getBatteryList,
+  getBatteryBmsModelList,
   getBatteryModelList,
   getDealerList,
   exportBatteryList,
@@ -100,6 +103,7 @@ const authStore = useAuthStore()
 
 const dealerOptions = ref<Array<{ label: string; value: string }>>([])
 const modelOptions = ref<Array<{ label: string; value: string }>>([])
+const bmsModelOptions = ref<Array<{ label: string; value: string }>>([])
 const ownerOrgOptions = ref<Array<{ label: string; value: string }>>([])
 
 // 批量选择
@@ -278,33 +282,44 @@ function renderIcon(icon: any) {
 }
 
 function filterMenuOptions(options: any[]): any[] {
-  return options
-    .filter(o => !o.permissionKey || true)
-    .map(o => {
-      if (o.children?.length) return { ...o, children: filterMenuOptions(o.children) }
-      return o
+  const filtered = options
+    .filter(option => !option.permissionKey || hasUiPermission(option.permissionKey))
+    .map(option => {
+      if (option.children?.length) {
+        const children = filterMenuOptions(option.children)
+        if (!children.length) return null
+        return { ...option, children }
+      }
+      return option
     })
+    .filter(Boolean)
+
+  return filtered.filter((item, index, arr) => {
+    if (item?.type !== 'divider') return true
+    if (index === 0 || index === arr.length - 1) return false
+    return arr[index - 1]?.type !== 'divider' && arr[index + 1]?.type !== 'divider'
+  })
 }
 
-function getActionOptions(_row: BatteryItem) {
+function getActionOptions() {
   return filterMenuOptions([
     {
       label: '查看详情',
       key: 'detail',
       icon: renderIcon(EyeOutline),
-      permissionKey: 'battery.detail'
+      permissionKey: 'bms_battery_list_detail'
     },
     {
       label: '参数',
       key: 'params',
       icon: renderIcon(SettingsOutline),
-      permissionKey: 'battery.params'
+      permissionKey: 'bms_battery_list_action_params'
     },
     {
       label: '离线指令',
       key: 'offline',
       icon: renderIcon(FlashOutline),
-      permissionKey: 'battery.offline_command'
+      permissionKey: 'bms_battery_list_action_offline_command'
     },
     {
       type: 'divider',
@@ -319,19 +334,19 @@ function getActionOptions(_row: BatteryItem) {
           label: '出厂',
           key: 'lifecycle.factory',
           icon: renderIcon(CubeOutline),
-          permissionKey: 'battery.lifecycle.factory'
+          permissionKey: 'bms_battery_list_action_lifecycle_factory'
         },
         {
           label: '激活',
           key: 'lifecycle.activate',
           icon: renderIcon(CheckmarkCircleOutline),
-          permissionKey: 'battery.lifecycle.activate'
+          permissionKey: 'bms_battery_list_action_lifecycle_activate'
         },
         {
           label: '调拨',
           key: 'lifecycle.transfer',
           icon: renderIcon(SwapHorizontalOutline),
-          permissionKey: 'battery.lifecycle.transfer'
+          permissionKey: 'bms_battery_list_action_lifecycle_transfer'
         }
       ]
     }
@@ -366,6 +381,7 @@ const searchForm = ref<{
   production_range: null,
   warranty_status: null
 })
+const showAdvancedSearch = ref(false)
 
 const userOrgType = computed(() => String((authStore.userInfo as any)?.org_type || '').toUpperCase())
 const userAuthority = computed(() => String((authStore.userInfo as any)?.authority || '').toUpperCase())
@@ -449,28 +465,29 @@ const createColumns = (): DataTableColumns<BatteryItem> => [
     title: '操作',
     minWidth: 140,
     fixed: 'right',
-    render: row => (
-      <NDropdown
-        options={getActionOptions(row) as any}
-        trigger="click"
-        onSelect={(key: string) => handleActionSelect(key, row)}
-      >
-        <NButton size="small" quaternary>
-          {{
-            default: () => '操作',
-            icon: () => (
-              <NIcon>
-                <EllipsisHorizontal />
-              </NIcon>
-            )
-          }}
-        </NButton>
-      </NDropdown>
-    )
+    render: row => {
+      const options = getActionOptions() as any[]
+      if (!options.length) return null
+
+      return (
+        <NDropdown options={options as any} trigger="click" onSelect={(key: string) => handleActionSelect(key, row)}>
+          <NButton size="small" quaternary>
+            {{
+              default: () => '操作',
+              icon: () => (
+                <NIcon>
+                  <EllipsisHorizontal />
+                </NIcon>
+              )
+            }}
+          </NButton>
+        </NDropdown>
+      )
+    }
   }
 ]
 
-const { data, loading, columns, pagination, getData, updateSearchParams } = useTable<
+const { data, loading, columns, pagination, getData, updateSearchParams, reloadColumns } = useTable<
   BatteryItem,
   typeof getBatteryList
 >({
@@ -489,6 +506,17 @@ const { data, loading, columns, pagination, getData, updateSearchParams } = useT
     }
   },
   columns: (): any => createColumns()
+})
+
+const activeAdvancedFilterCount = computed(() => {
+  let count = 0
+  if (searchForm.value.owner_org_type) count += 1
+  if (searchForm.value.owner_org_id) count += 1
+  if (searchForm.value.is_online !== null) count += 1
+  if (searchForm.value.activation_status) count += 1
+  if (searchForm.value.production_range?.length) count += 1
+  if (searchForm.value.warranty_status) count += 1
+  return count
 })
 
 // 导出
@@ -992,6 +1020,25 @@ function handleSearch() {
   getData()
 }
 
+function handlePageChange(page: number) {
+  pagination.page = page
+  updateSearchParams({
+    page,
+    page_size: pagination.pageSize
+  })
+  getData()
+}
+
+function handlePageSizeChange(pageSize: number) {
+  pagination.pageSize = pageSize
+  pagination.page = 1
+  updateSearchParams({
+    page: 1,
+    page_size: pageSize
+  })
+  getData()
+}
+
 function handleReset() {
   searchForm.value = {
     device_number: '',
@@ -1038,11 +1085,22 @@ async function initSelectOptions() {
   } catch {
     modelOptions.value = []
   }
+
+  try {
+    const bmsModelRes: any = await getBatteryBmsModelList({ page: 1, page_size: 1000 })
+    const list = (bmsModelRes?.data?.list || []) as Array<{ id: string; name: string }>
+    bmsModelOptions.value = list.map(i => ({ label: i.name, value: i.id }))
+  } catch {
+    bmsModelOptions.value = []
+  }
 }
 
 const scrollX = computed(() => 1800)
 
-onMounted(() => {
+onMounted(async () => {
+  // 等待权限加载后刷新列，确保“操作”菜单按权限过滤
+  await ensureUiPermissionState()
+  reloadColumns()
   initSelectOptions()
 })
 </script>
@@ -1050,119 +1108,155 @@ onMounted(() => {
 <template>
   <div class="flex-vertical-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
     <NCard title="电池列表" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
-      <NForm
-        inline
-        :model="searchForm"
-        label-placement="left"
-        label-width="auto"
-        class="mb-4 flex flex-wrap gap-4 items-end"
-      >
-        <NFormItem label="序列号" path="device_number">
-          <NInput v-model:value="searchForm.device_number" placeholder="请输入序列号" style="width: 220px" clearable />
-        </NFormItem>
+      <div class="battery-list-layout">
+        <div class="battery-list-toolbar">
+          <NForm
+            :model="searchForm"
+            label-placement="left"
+            label-width="auto"
+            class="battery-search-panel"
+          >
+            <div class="battery-search-main">
+              <NFormItem label="序列号" path="device_number" class="battery-search-item">
+                <NInput
+                  v-model:value="searchForm.device_number"
+                  placeholder="请输入序列号"
+                  class="battery-search-control"
+                  clearable
+                />
+              </NFormItem>
 
-        <NFormItem label="电池型号" path="battery_model_id">
-          <NSelect
-            v-model:value="searchForm.battery_model_id"
-            :options="modelOptions"
-            placeholder="请选择型号"
-            clearable
-            style="width: 220px"
-          />
-        </NFormItem>
+              <NFormItem label="电池型号" path="battery_model_id" class="battery-search-item">
+                <NSelect
+                  v-model:value="searchForm.battery_model_id"
+                  :options="modelOptions"
+                  placeholder="请选择型号"
+                  clearable
+                  class="battery-search-control"
+                />
+              </NFormItem>
 
-        <NFormItem v-if="canFilterByOrgType" label="机构类型" path="owner_org_type">
-          <NSelect
-            v-model:value="searchForm.owner_org_type"
-            :options="ownerOrgTypeOptions"
-            placeholder="请选择类型"
-            clearable
-            style="width: 160px"
-            @update:value="handleOwnerOrgTypeChange"
-          />
-        </NFormItem>
+              <div class="battery-search-actions">
+                <NButton type="primary" @click="handleSearch">查询</NButton>
+                <NButton @click="handleReset">重置</NButton>
+                <NButton text type="primary" @click="showAdvancedSearch = !showAdvancedSearch">
+                  {{ showAdvancedSearch ? '收起高级' : `高级筛选${activeAdvancedFilterCount ? `(${activeAdvancedFilterCount})` : ''}` }}
+                </NButton>
+              </div>
+            </div>
 
-        <NFormItem v-if="canFilterByOrgType" label="归属机构" path="owner_org_id">
-          <NSelect
-            v-model:value="searchForm.owner_org_id"
-            :options="ownerOrgOptions"
-            placeholder="请选择机构"
-            clearable
-            style="width: 220px"
-          />
-        </NFormItem>
+            <div v-show="showAdvancedSearch" class="battery-search-advanced">
+              <NFormItem v-if="canFilterByOrgType" label="机构类型" path="owner_org_type" class="battery-search-item">
+                <NSelect
+                  v-model:value="searchForm.owner_org_type"
+                  :options="ownerOrgTypeOptions"
+                  placeholder="请选择类型"
+                  clearable
+                  class="battery-search-control"
+                  @update:value="handleOwnerOrgTypeChange"
+                />
+              </NFormItem>
 
-        <NFormItem label="在线状态" path="is_online">
-          <NSelect
-            v-model:value="searchForm.is_online"
-            :options="onlineOptions"
-            placeholder="请选择"
-            clearable
-            style="width: 160px"
-          />
-        </NFormItem>
+              <NFormItem v-if="canFilterByOrgType" label="归属机构" path="owner_org_id" class="battery-search-item">
+                <NSelect
+                  v-model:value="searchForm.owner_org_id"
+                  :options="ownerOrgOptions"
+                  placeholder="请选择机构"
+                  clearable
+                  class="battery-search-control battery-search-control-wide"
+                />
+              </NFormItem>
 
-        <NFormItem label="激活状态" path="activation_status">
-          <NSelect
-            v-model:value="searchForm.activation_status"
-            :options="activationOptions"
-            placeholder="请选择"
-            clearable
-            style="width: 160px"
-          />
-        </NFormItem>
+              <NFormItem label="在线状态" path="is_online" class="battery-search-item">
+                <NSelect
+                  v-model:value="searchForm.is_online"
+                  :options="onlineOptions"
+                  placeholder="请选择"
+                  clearable
+                  class="battery-search-control"
+                />
+              </NFormItem>
 
-        <NFormItem label="出厂日期" path="production_range">
-          <NDatePicker v-model:value="searchForm.production_range" type="daterange" clearable style="width: 260px" />
-        </NFormItem>
+              <NFormItem label="激活状态" path="activation_status" class="battery-search-item">
+                <NSelect
+                  v-model:value="searchForm.activation_status"
+                  :options="activationOptions"
+                  placeholder="请选择"
+                  clearable
+                  class="battery-search-control"
+                />
+              </NFormItem>
 
-        <NFormItem label="质保状态" path="warranty_status">
-          <NSelect
-            v-model:value="searchForm.warranty_status"
-            :options="warrantyOptions"
-            placeholder="请选择"
-            clearable
-            style="width: 160px"
-          />
-        </NFormItem>
+              <NFormItem label="出厂日期" path="production_range" class="battery-search-item">
+                <NDatePicker
+                  v-model:value="searchForm.production_range"
+                  type="daterange"
+                  clearable
+                  class="battery-search-control battery-search-control-wide"
+                />
+              </NFormItem>
 
-        <NFormItem>
-          <NSpace>
-            <NButton type="primary" @click="handleSearch">查询</NButton>
-            <NButton @click="handleReset">重置</NButton>
+              <NFormItem label="质保状态" path="warranty_status" class="battery-search-item">
+                <NSelect
+                  v-model:value="searchForm.warranty_status"
+                  :options="warrantyOptions"
+                  placeholder="请选择"
+                  clearable
+                  class="battery-search-control"
+                />
+              </NFormItem>
+            </div>
+          </NForm>
+
+          <NSpace class="battery-action-bar" justify="space-between">
+            <NSpace wrap>
+              <NButton v-ui-permission="'bms_battery_list_export'" type="primary" @click="handleExport">导出</NButton>
+              <NButton v-ui-permission="'bms_battery_list_add'" type="primary" @click="openSingleModal">+ 新增 BMS</NButton>
+              <NButton v-ui-permission="'bms_battery_list_import'" @click="openImportModal">导入</NButton>
+              <NButton v-if="selectedRowKeys.length > 0" type="warning" @click="handleBatchAssign">
+                批量分配经销商({{ selectedRowKeys.length }})
+              </NButton>
+              <NButton v-if="selectedRowKeys.length > 0" type="info" @click="handleBatchTag">
+                批量设置标签({{ selectedRowKeys.length }})
+              </NButton>
+              <NButton v-if="selectedRowKeys.length > 0" type="primary" @click="handleBatchCommand">
+                批量下发指令({{ selectedRowKeys.length }})
+              </NButton>
+              <NButton v-if="selectedRowKeys.length > 0" type="success" @click="handleBatchOta">
+                批量OTA推送({{ selectedRowKeys.length }})
+              </NButton>
+            </NSpace>
           </NSpace>
-        </NFormItem>
-      </NForm>
+        </div>
 
-      <NSpace class="mb-4" justify="space-between">
-        <NSpace>
-          <NButton type="primary" @click="handleExport">导出</NButton>
-          <NButton type="primary" @click="openSingleModal">+ 添加电池</NButton>
-          <NButton @click="openImportModal">导入</NButton>
-          <NButton v-if="selectedRowKeys.length > 0" type="warning" @click="handleBatchAssign">
-            批量分配经销商({{ selectedRowKeys.length }})
-          </NButton>
-          <NButton v-if="selectedRowKeys.length > 0" type="info" @click="handleBatchTag">
-            批量设置标签({{ selectedRowKeys.length }})
-          </NButton>
-          <NButton v-if="selectedRowKeys.length > 0" type="primary" @click="handleBatchCommand">
-            批量下发指令({{ selectedRowKeys.length }})
-          </NButton>
-          <NButton v-if="selectedRowKeys.length > 0" type="success" @click="handleBatchOta">
-            批量OTA推送({{ selectedRowKeys.length }})
-          </NButton>
-        </NSpace>
-      </NSpace>
+        <div class="battery-table-shell">
+          <div class="battery-table-scroll">
+            <NDataTable
+              v-model:checked-row-keys="selectedRowKeys"
+              :columns="columns"
+              :data="data"
+              class="battery-data-table"
+              flex-height
+              :loading="loading"
+              :pagination="false"
+              :row-key="row => row.device_id"
+              :scroll-x="scrollX"
+            />
+          </div>
 
-      <NDataTable
-        v-model:checked-row-keys="selectedRowKeys"
-        :columns="columns"
-        :data="data"
-        :loading="loading"
-        :pagination="pagination"
-        :row-key="row => row.device_id"
-        :scroll-x="scrollX"
-      />
+          <div class="battery-pagination-bar">
+            <NPagination
+              :page="pagination.page"
+              :page-size="pagination.pageSize"
+              :item-count="pagination.itemCount"
+              :page-sizes="pagination.pageSizes"
+              :show-size-picker="pagination.showSizePicker"
+              @update:page="handlePageChange"
+              @update:page-size="handlePageSizeChange"
+            />
+          </div>
+        </div>
+      </div>
     </NCard>
 
     <NModal
@@ -1484,12 +1578,128 @@ onMounted(() => {
 
     <BatteryImportModal v-model:visible="showImportModal" @finished="getData" />
 
-    <BatterySingleModal v-model:visible="showSingleModal" :model-options="modelOptions" @submit="handleSingleSubmit" />
+    <BatterySingleModal v-model:visible="showSingleModal" :bms-model-options="bmsModelOptions" @submit="handleSingleSubmit" />
   </div>
 </template>
 
 <style scoped>
 .card-wrapper {
   height: 100%;
+}
+
+.battery-list-layout {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.battery-list-toolbar {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.battery-search-panel {
+  padding: 14px 16px;
+  border: 1px solid var(--n-border-color);
+  border-radius: 12px;
+  background: var(--n-color-embedded);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.battery-search-main {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  align-items: flex-end;
+}
+
+.battery-search-advanced {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--n-border-color);
+}
+
+.battery-search-item {
+  margin-bottom: 0;
+}
+
+.battery-search-control {
+  width: 220px;
+}
+
+.battery-search-control-wide {
+  width: 260px;
+}
+
+.battery-search-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-left: auto;
+}
+
+.battery-action-bar {
+  flex-shrink: 0;
+}
+
+.battery-table-shell {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--n-border-color);
+  border-radius: 12px;
+  background: var(--n-color);
+}
+
+.battery-table-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 8px 8px 0;
+}
+
+.battery-pagination-bar {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 16px 16px;
+  border-top: 1px solid var(--n-border-color);
+  background: var(--n-color);
+}
+
+.battery-data-table {
+  height: 100%;
+}
+
+@media (max-width: 768px) {
+  .battery-search-control,
+  .battery-search-control-wide {
+    width: 100%;
+  }
+
+  .battery-search-item {
+    width: 100%;
+  }
+
+  .battery-search-actions {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .battery-pagination-bar {
+    justify-content: center;
+    overflow-x: auto;
+  }
 }
 </style>

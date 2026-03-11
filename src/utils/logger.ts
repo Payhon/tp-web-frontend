@@ -66,6 +66,7 @@ export default class Logger {
   debug(...args: any[]): void {
     if (this.isLevelEnabled(LogLevel.DEBUG)) {
       if (process.env.NODE_ENV === 'development') {
+        console.debug(this.formatPrefix('DEBUG'), ...args)
       }
     }
   }
@@ -84,7 +85,7 @@ export default class Logger {
    */
   warn(...args: any[]): void {
     if (this.isLevelEnabled(LogLevel.WARN)) {
-      console.error(this.formatPrefix('WARN'), ...args)
+      console.warn(this.formatPrefix('WARN'), ...args)
     }
   }
 

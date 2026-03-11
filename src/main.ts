@@ -3,7 +3,8 @@ import 'gridstack/dist/gridstack.css'
 import 'gridstack/dist/gridstack-extra.css'
 import './plugins/assets'
 import { useSysSettingStore } from '@/store/modules/sys-setting'
-import { setupDayjs, setupIconifyOffline, setupLoading, setupNProgress } from './plugins'
+import { lockLoadingScreen, setupDayjs, setupIconifyOffline, setupLoading, setupNProgress } from './plugins'
+import { setupDirectives } from './directives'
 import { setupStore } from './store'
 import { router, setupRouter } from './router'
 import { i18n, setupI18n } from './locales'
@@ -39,6 +40,8 @@ function debounce<T extends () => any>(func: T, wait: number): T {
 let recentRoutesCache: any[] | null = null
 
 async function setupApp() {
+  setupLoading()
+
   // 🧹 清理不需要的localStorage项
   cleanupLocalStorage()
 
@@ -47,6 +50,7 @@ async function setupApp() {
   // 1. 关键同步初始化 - 应用启动必需
   setupStore(app)
   setupI18n(app)
+  setupDirectives(app)
   setupNProgress()
   // 🔥 关键修复：初始化 Card2.1 组件系统
   initializeCard2System()
@@ -83,8 +87,6 @@ async function setupApp() {
             }
           })
         })
-        //加载时有用到locales，且是动态的，所以把这两个放这里来
-        setupLoading()
       },
       { immediate: true }
     )
@@ -204,7 +206,9 @@ async function setupApp() {
     return false
   }
 
+  lockLoadingScreen()
   app.mount('#app')
+  document.getElementById('app')?.setAttribute('data-app-mounted', '')
 }
 
 setupApp()

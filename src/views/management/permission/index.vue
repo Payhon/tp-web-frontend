@@ -1,10 +1,14 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue'
-import { useMessage } from 'naive-ui'
+import { computed, h, reactive, ref, watch } from 'vue'
+import { NIcon, useMessage } from 'naive-ui'
+import { RefreshOutline, SaveOutline } from '@vicons/ionicons5'
 import { $t } from '@/locales'
 import { useAuthStore } from '@/store/modules/auth'
 import { fetchUIElementList } from '@/service/api/route'
-import { buildDeviceParamPermissionTree } from '@/common/lib/bms-protocol/param-registry'
+import {
+  buildDeviceParamPermissionTree,
+  type DeviceParamPermissionNode
+} from '@/common/lib/bms-protocol/param-registry'
 import { fetchUserList } from '@/service/api/auth'
 import {
   fetchOrgTypePermissions,
@@ -48,12 +52,53 @@ const state = reactive<Record<OrgTypeKey, { uiCodes: string[]; deviceParams: str
   APP_USER: { uiCodes: [], deviceParams: [] }
 })
 
+function renderDeviceParamLabel({ option }: { option: DeviceParamPermissionNode }) {
+  const registerAddress = option.registerAddress?.trim()
+  const keyNames = (option.paramKeys || []).filter(Boolean).join(' / ')
+
+  if (!registerAddress && !keyNames) return option.label
+
+  const metaParts: string[] = []
+  if (registerAddress) metaParts.push(`寄存器: ${registerAddress}`)
+  if (keyNames) metaParts.push(`KEY: ${keyNames}`)
+
+  return h('span', { class: 'device-param-label' }, [
+    h('span', option.label),
+    h(
+      'span',
+      {
+        class: 'device-param-label__meta',
+        style: {
+          marginLeft: '6px',
+          color: '#999',
+          fontSize: '12px'
+        }
+      },
+      `（${metaParts.join(' / ')}）`
+    )
+  ])
+}
+
 function toTreeData(nodes: any[]): any[] {
   return (nodes || []).map(n => ({
     key: n.element_code,
     label: n.description || n.element_code || n.id,
     children: n.children?.length ? toTreeData(n.children) : undefined
   }))
+}
+
+function normalizeCheckedUICodes(codes: string[]): string[] {
+  const seen = new Set<string>()
+  const normalized: string[] = []
+
+  for (const raw of codes || []) {
+    const code = String(raw || '').trim()
+    if (!code || seen.has(code)) continue
+    seen.add(code)
+    normalized.push(code)
+  }
+
+  return normalized
 }
 
 async function loadTenants() {
@@ -103,7 +148,7 @@ async function loadAll() {
     for (const item of list) {
       const key = item.org_type as OrgTypeKey
       if (!(key in state)) continue
-      state[key].uiCodes = item.ui_codes || []
+      state[key].uiCodes = normalizeCheckedUICodes(item.ui_codes || [])
       const raw = (item.device_param_permissions || '').trim()
       state[key].deviceParams = raw
         ? raw
@@ -168,9 +213,19 @@ watch(
                 placeholder="请选择租户"
               />
             </div>
-            <NButton type="primary" :loading="loading" @click="loadAll">{{ $t('common.refresh') }}</NButton>
+            <NButton type="primary" :loading="loading" @click="loadAll">
+              <template #icon>
+                <NIcon><RefreshOutline /></NIcon>
+              </template>
+              {{ $t('common.refresh') }}
+            </NButton>
           </div>
-          <NButton type="primary" :loading="saving" @click="saveCurrent">{{ $t('common.save') }}</NButton>
+          <NButton type="primary" :loading="saving" @click="saveCurrent">
+            <template #icon>
+              <NIcon><SaveOutline /></NIcon>
+            </template>
+            {{ $t('common.save') }}
+          </NButton>
         </div>
 
         <NTabs v-model:value="activeOrgType" type="segment" animated>
@@ -186,7 +241,6 @@ watch(
                     <NTree
                       block-line
                       checkable
-                      cascade
                       default-expand-all
                       :data="menuTreeData"
                       :checked-keys="state[activeOrgType].uiCodes"
@@ -205,6 +259,7 @@ watch(
                       check-strategy="child"
                       default-expand-all
                       :data="deviceParamTreeData"
+                      :render-label="renderDeviceParamLabel"
                       :checked-keys="state[activeOrgType].deviceParams"
                       @update:checked-keys="keys => (state[activeOrgType].deviceParams = keys as string[])"
                     />

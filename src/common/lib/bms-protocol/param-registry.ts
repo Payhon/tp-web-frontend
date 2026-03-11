@@ -282,6 +282,8 @@ export const BMS_PARAM = Object.freeze({
   // 系统寄存器（doc/oriigin/device_comm_protocol_write.md 四、系统寄存器）
   // 0x0001 高低串数配置（H：高串数；L：低串数）
   SERIES_COUNT_CONFIG: 'SERIES_COUNT_CONFIG',
+  // 0x0004(H) 电池类型（L 保留）
+  BATTERY_TYPE: 'BATTERY_TYPE',
   // 0x0030~0x0031（48~49）设计容量（0.001Ah）
   DESIGN_CAPACITY_AH: 'DESIGN_CAPACITY_AH',
   // 0x0032~0x0033（50~51）满充容量（0.001Ah）
@@ -825,7 +827,7 @@ export const PARAM_DEFS = Object.freeze([
     unit: 'V'
   }),
   def(BMS_PARAM.CELL_OC_ALARM_RELEASE_DELTA_V, PARAM_CATEGORIES.VOLTAGE, {
-    label: '单体过充告警解除电压差',
+    label: '单体过充告警解除电压',
     access: 'RW',
     valueType: 'u16',
     address: 0x405,
@@ -1107,7 +1109,7 @@ export const PARAM_DEFS = Object.freeze([
 
   // --- Current (0x420~)
   def(BMS_PARAM.CHARGE_OC_PROTECT_SMALL_A, PARAM_CATEGORIES.CURRENT, {
-    label: '充电过流保护小电流',
+    label: '充电过流小电流保护电流',
     access: 'RW',
     valueType: 'u16',
     address: 0x420,
@@ -1115,7 +1117,7 @@ export const PARAM_DEFS = Object.freeze([
     unit: 'A'
   }),
   def(BMS_PARAM.CHARGE_OC_PROTECT_LARGE_A, PARAM_CATEGORIES.CURRENT, {
-    label: '充电过流保护大电流',
+    label: '充电过流大电流保护电流',
     access: 'RW',
     valueType: 'u16',
     address: 0x421,
@@ -2008,6 +2010,13 @@ export const PARAM_DEFS = Object.freeze([
     valueType: 'u16',
     address: 0x0001
   }),
+  def(BMS_PARAM.BATTERY_TYPE, PARAM_CATEGORIES.SYSTEM, {
+    label: '电池类型',
+    access: 'RW',
+    valueType: 'u8',
+    address: 0x0004,
+    byte: 'H'
+  }),
   def(BMS_PARAM.DESIGN_CAPACITY_AH, PARAM_CATEGORIES.SYSTEM, {
     label: '设计容量',
     access: 'RW',
@@ -2077,6 +2086,8 @@ export function camelToConst(camelKey: string): string {
 export type DeviceParamPermissionNode = {
   key: string
   label: string
+  registerAddress?: string
+  paramKeys?: string[]
   children?: DeviceParamPermissionNode[]
 }
 
@@ -2113,7 +2124,7 @@ export function buildDeviceParamPermissionTree(): DeviceParamPermissionNode[] {
     PARAM_CATEGORIES.SYSTEM
   ]
 
-  const grouped = new Map<ParamCategory, Map<string, { labels: string[] }>>()
+  const grouped = new Map<ParamCategory, Map<string, { labels: string[]; paramKeys: string[] }>>()
 
   for (const def of PARAM_DEFS) {
     if (def.access !== 'RW') continue
@@ -2123,11 +2134,12 @@ export function buildDeviceParamPermissionTree(): DeviceParamPermissionNode[] {
     if (!grouped.has(category)) grouped.set(category, new Map())
     const catMap = grouped.get(category)!
     if (!catMap.has(permKey)) {
-      catMap.set(permKey, { labels: [] })
+      catMap.set(permKey, { labels: [], paramKeys: [] })
     }
     const entry = catMap.get(permKey)!
     const label = (def.label || def.key || '').trim()
     if (label && !entry.labels.includes(label)) entry.labels.push(label)
+    if (def.key && !entry.paramKeys.includes(def.key)) entry.paramKeys.push(def.key)
   }
 
   const out: DeviceParamPermissionNode[] = []
@@ -2137,7 +2149,12 @@ export function buildDeviceParamPermissionTree(): DeviceParamPermissionNode[] {
     const children: DeviceParamPermissionNode[] = []
     for (const [key, entry] of catMap.entries()) {
       const label = entry.labels.length > 0 ? entry.labels.join(' / ') : key
-      children.push({ key, label })
+      children.push({
+        key,
+        label,
+        registerAddress: `0x${key.padStart(4, '0').toUpperCase()}`,
+        paramKeys: entry.paramKeys
+      })
     }
     out.push({
       key: `cat:${category}`,

@@ -23,9 +23,10 @@ import {
 const authStore = useAuthStore()
 const authority = computed(() => authStore.userInfo.authority)
 const isSysAdmin = computed(() => authority.value === 'SYS_ADMIN')
+const currentTenantId = computed(() => String(authStore.userInfo.tenant_id || ''))
 const canCreate = computed(() => isSysAdmin.value || scope.value !== 'global')
 
-const scope = ref<'all' | 'global' | 'tenant'>('all')
+const scope = ref<'all' | 'global' | 'tenant'>(isSysAdmin.value ? 'all' : 'tenant')
 const filterTenantID = ref<string>('')
 const tenantLoading = ref(false)
 const tenantOptions = ref<{ label: string; value: string }[]>([])
@@ -130,7 +131,7 @@ const categoryOptions = computed(() => {
 })
 
 async function refreshCategories() {
-  const params: any = { scope: scope.value }
+  const params: any = { scope: isSysAdmin.value ? scope.value : 'tenant' }
   if (isSysAdmin.value) {
     if (scope.value === 'tenant' && !filterTenantID.value) {
       categories.value = []
@@ -138,6 +139,8 @@ async function refreshCategories() {
       return
     }
     if (filterTenantID.value) params.tenant_id = filterTenantID.value
+  } else if (currentTenantId.value) {
+    params.tenant_id = currentTenantId.value
   }
   const data = await fetchDictCategories(params)
   categories.value = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : []
@@ -157,12 +160,13 @@ async function getTableData() {
     const params: any = {
       page: queryParams.page,
       page_size: queryParams.page_size,
-      scope: scope.value
+      scope: isSysAdmin.value ? scope.value : 'tenant'
     }
     if (activeCategory.value !== '__all__') params.category = activeCategory.value
     if (queryParams.dict_code) params.dict_code = queryParams.dict_code
     if (queryParams.dict_value) params.dict_value = queryParams.dict_value
     if (isSysAdmin.value && filterTenantID.value) params.tenant_id = filterTenantID.value
+    if (!isSysAdmin.value && currentTenantId.value) params.tenant_id = currentTenantId.value
 
     const data: any = await fetchDictList(params)
     const { total, list } = normalizePagedList(data)
@@ -189,7 +193,12 @@ watch(activeCategory, async () => {
 watch(
   isSysAdmin,
   async v => {
-    if (v) await loadTenantOptions()
+    if (v) {
+      await loadTenantOptions()
+      return
+    }
+    scope.value = 'tenant'
+    filterTenantID.value = currentTenantId.value
   },
   { immediate: true }
 )
@@ -211,7 +220,11 @@ function openCreate() {
   editForm.category = activeCategory.value !== '__all__' ? activeCategory.value : ''
   editForm.dict_code = ''
   editForm.dict_value = ''
-  editForm.tenant_id = '0'
+  editForm.tenant_id = isSysAdmin.value
+    ? scope.value === 'tenant' && filterTenantID.value
+      ? filterTenantID.value
+      : '0'
+    : currentTenantId.value
   editForm.remark = ''
   openEdit()
 }
@@ -241,10 +254,14 @@ async function submitEdit() {
       category: editForm.category,
       dict_code: editForm.dict_code,
       dict_value: editForm.dict_value,
-      tenant_id: isSysAdmin.value ? editForm.tenant_id : undefined,
+      tenant_id: isSysAdmin.value ? editForm.tenant_id : currentTenantId.value,
       remark: editForm.remark
     })
   } else if (editingRow.value) {
+    if (!isSysAdmin.value && editingRow.value.tenant_id !== currentTenantId.value) {
+      window.$message?.warning($t('custom.dict.globalReadonly'))
+      return
+    }
     await updateDictItem(editingRow.value.id, {
       category: editForm.category,
       dict_code: editForm.dict_code,
@@ -469,11 +486,12 @@ getTableData()
           <div class="flex items-center justify-between">
             <span class="text-16px font-600">{{ $t('custom.dict.category') }}</span>
           </div>
-          <NRadioGroup v-model:value="scope" size="small">
+          <NRadioGroup v-if="isSysAdmin" v-model:value="scope" size="small">
             <NRadioButton value="all">{{ $t('common.all') }}</NRadioButton>
             <NRadioButton value="global">{{ $t('custom.dict.scopeGlobal') }}</NRadioButton>
             <NRadioButton value="tenant">{{ $t('custom.dict.scopeTenant') }}</NRadioButton>
           </NRadioGroup>
+          <NTag v-else type="info">{{ $t('custom.dict.scopeTenant') }}</NTag>
           <NSelect
             v-if="isSysAdmin"
             v-model:value="filterTenantID"

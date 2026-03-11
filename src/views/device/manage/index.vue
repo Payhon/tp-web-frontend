@@ -145,10 +145,10 @@ const checkNetworkStatus = (): boolean => {
 /**
  * 节流错误日志记录
  */
-const logErrorThrottled = (message: string, error?: any) => {
+const logErrorThrottled = (message: string) => {
   const now = Date.now()
   if (now - lastErrorTime > ERROR_LOG_THROTTLE) {
-    console.error(message, error)
+    console.warn(message)
     lastErrorTime = now
   }
 }
@@ -230,16 +230,16 @@ const createEventSourceConnection = () => {
 
         updateDeviceStatusInTable(data.device_id, data.is_online)
       } catch (parseError) {
-        logErrorThrottled('解析设备状态事件数据失败:', parseError)
+        logErrorThrottled(`解析设备状态事件数据失败: ${String(parseError)}`)
       }
     })
 
     /**
      * 错误处理和智能重连机制
      */
-    eventSource.onerror = error => {
+    eventSource.onerror = () => {
       isConnecting = false
-      logErrorThrottled('EventSource连接错误:', error)
+      logErrorThrottled('EventSource连接错误')
 
       // 立即清理当前连接
       if (eventSource) {
@@ -275,7 +275,7 @@ const createEventSourceConnection = () => {
     }
   } catch (error) {
     isConnecting = false
-    console.error('创建设备管理页面EventSource连接失败:', error)
+    console.warn('创建设备管理页面EventSource连接失败:', error)
   }
 }
 
@@ -354,9 +354,6 @@ const getDeviceGroupOptions = async () => {
 }
 
 const getDeviceConfigOptions = async () => {
-  if (process.env.NODE_ENV === 'development') {
-  }
-
   const res = await getDeviceConfigList({
     page: 1,
     page_size: 99
@@ -801,9 +798,6 @@ const completeAdd = async () => {
 }
 
 const completeHandAdd = () => {
-  if (process.env.NODE_ENV === 'development') {
-  }
-
   tablePageRef.value?.handleSearch()
 }
 

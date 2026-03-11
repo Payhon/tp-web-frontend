@@ -12,7 +12,6 @@ import {
   NGrid,
   NGridItem,
   NInput,
-  NInputNumber,
   NModal,
   NProgress,
   NSpace,
@@ -26,16 +25,27 @@ import {
 import type { DataTableColumns } from 'naive-ui'
 import ChartComponent from '@/components/custom/ChartComponent.vue'
 import { localStg } from '@/utils/storage'
-import { getAppBatteryDetail } from '@/service/api/bms'
+import {
+  getAppBatteryDetail,
+  getBatteryRelayStatus,
+  sendBatteryRelayCommand,
+  type BatteryRelayCommandResp,
+  type BatteryRelayStatus
+} from '@/service/api/bms'
 import { telemetryDataCurrentKeys, telemetryDataHistoryList, telemetryHistoryData } from '@/service/api/device'
 import { fetchCurrentDeviceParamPermissions } from '@/service/api/org-type-permissions'
 import {
+  BMS_PARAM,
   BmsClient,
+  FUNCTION_CONFIG_ITEMS,
   PARAM_CATEGORIES,
   PARAM_DEF_BY_KEY,
   WebMqttSocketBmsTransport,
   getParamPermissionKey,
-  listParamsByCategory
+  listParamsByCategory,
+  parseFunctionConfigFlags,
+  setFunctionConfigFlag,
+  type FunctionConfigFlagKey
 } from '@/common/lib/bms-protocol'
 import type { BmsStatus } from '@/common/lib/bms-protocol'
 
@@ -69,7 +79,7 @@ type SnapshotHistoryRow = {
 const CLOUD_KEYS = [
   'soc',
   'soh',
-  'vPackV',
+  'packCellSumVoltageV',
   'currentA',
   'avgCellVoltageMv',
   'highestCellVoltageMv',
@@ -103,11 +113,26 @@ const cloudLoading = ref(false)
 const cloudCurrent = reactive<Record<string, unknown>>({})
 const cloudLastUpdateAt = ref<number | null>(null)
 const cloudWsState = ref<'closed' | 'connecting' | 'open' | 'error'>('closed')
+const relayState = reactive<{
+  loading: boolean
+  ownerOnline: boolean
+  sessionId: string
+  platform: string
+  connType: string
+  lastSeenTs: number | null
+}>({
+  loading: false,
+  ownerOnline: false,
+  sessionId: '',
+  platform: '',
+  connType: '',
+  lastSeenTs: null
+})
 const historyLoading = ref(false)
 const historyChartData = reactive<Record<string, Array<[number, number]>>>({
   soc: [],
   soh: [],
-  vPackV: [],
+  packCellSumVoltageV: [],
   currentA: []
 })
 const snapshotHistoryRows = ref<SnapshotHistoryRow[]>([])
@@ -128,13 +153,28 @@ let client: BmsClient | null = null
 
 let cloudWs: WebSocket | null = null
 let cloudHeartbeatTimer: number | null = null
+let relayStatusTimer: number | null = null
 
 const canUse4G = computed(() => {
   const v = String(battery.value?.comm_chip_id || '').trim()
   return v.length > 0
 })
+const canUseRelay = computed(() => !canUse4G.value)
+const relayReady = computed(() => canUseRelay.value && relayState.ownerOnline)
 
 const connText = computed(() => (connType.value === 'mqtt' ? '直连透传已连接' : '直连透传未连接'))
+const paramLinkText = computed(() => {
+  if (connType.value === 'mqtt') return '参数通道：直连透传可用'
+  if (relayReady.value) return '参数通道：APP蓝牙中继可用'
+  if (canUseRelay.value) return '参数通道：等待APP蓝牙连接设备'
+  return '参数通道：未连接'
+})
+const paramLinkType = computed(() => {
+  if (connType.value === 'mqtt') return 'success'
+  if (relayReady.value) return 'info'
+  if (canUseRelay.value) return 'warning'
+  return 'default'
+})
 
 const cloudStatusText = computed(() => {
   if (cloudWsState.value === 'open' && cloudLastUpdateAt.value) return '云端订阅已连接（有实时数据）'
@@ -194,6 +234,13 @@ function closeCloudWs() {
   cloudWsState.value = 'closed'
 }
 
+function stopRelayStatusTimer() {
+  if (relayStatusTimer != null) {
+    window.clearInterval(relayStatusTimer)
+    relayStatusTimer = null
+  }
+}
+
 function mergeCloudCurrent(patch: Record<string, unknown>, tsMs?: number | null) {
   Object.entries(patch).forEach(([k, v]) => {
     cloudCurrent[k] = v
@@ -216,6 +263,12 @@ function parseTsToMs(ts: unknown): number | null {
   return null
 }
 
+function parseNumberToMs(v: unknown): number | null {
+  const n = Number(v)
+  if (!Number.isFinite(n) || n <= 0) return null
+  return Math.floor(n)
+}
+
 function formatTime(ms: number | null): string {
   if (!ms) return '-'
   const d = new Date(ms)
@@ -230,7 +283,7 @@ function summarizeSnapshot(raw: string): string {
     const s = JSON.parse(raw) as BmsStatus
     const soc = s?.energy?.socPct
     const soh = s?.energy?.sohPct
-    const vPack = s?.electrical?.vPackV
+    const vPack = s?.electrical?.packCellSumVoltageV
     const current = s?.electrical?.currentA
     return `SOC:${Number(soc ?? 0).toFixed(1)}%, SOH:${Number(soh ?? 0).toFixed(1)}%, V:${Number(vPack ?? 0).toFixed(
       2
@@ -238,6 +291,58 @@ function summarizeSnapshot(raw: string): string {
   } catch {
     return '快照解析失败'
   }
+}
+
+function applyRelayStatus(raw: BatteryRelayStatus | null | undefined) {
+  relayState.ownerOnline = !!raw?.owner_online
+  relayState.sessionId = String(raw?.session_id || '')
+  relayState.platform = String(raw?.platform || '')
+  relayState.connType = String(raw?.conn_type || '')
+  relayState.lastSeenTs = parseNumberToMs(raw?.last_seen_ts)
+}
+
+async function loadRelayStatus({ silent = false }: { silent?: boolean } = {}) {
+  if (!props.id) return
+  if (!canUseRelay.value) {
+    applyRelayStatus(null)
+    return
+  }
+  relayState.loading = !silent
+  try {
+    const rsp: any = await getBatteryRelayStatus(props.id)
+    const data = (rsp?.data || rsp || {}) as BatteryRelayStatus
+    applyRelayStatus(data)
+  } catch (e: any) {
+    applyRelayStatus(null)
+    if (!silent) {
+      message.warning(e?.message || '获取APP中继状态失败')
+    }
+  } finally {
+    relayState.loading = false
+  }
+}
+
+function startRelayStatusTimer() {
+  stopRelayStatusTimer()
+  if (!canUseRelay.value) return
+  relayStatusTimer = window.setInterval(() => {
+    void loadRelayStatus({ silent: true })
+  }, 5000)
+}
+
+async function runRelayCommand(payload: Record<string, unknown>): Promise<BatteryRelayCommandResp> {
+  const req: any = {
+    device_id: props.id,
+    wait_ms: 15000,
+    ...payload
+  }
+  const rsp: any = await sendBatteryRelayCommand(req)
+  const data = (rsp?.data || rsp || {}) as BatteryRelayCommandResp
+  if (!data || !data.status) throw new Error('中继命令返回无效')
+  if (data.status !== 'SUCCESS') {
+    throw new Error(data.error_message || `中继命令执行失败(${data.status})`)
+  }
+  return data
 }
 
 async function loadCloudCurrent() {
@@ -287,7 +392,7 @@ function openCloudWs() {
     }, 15000)
   }
 
-  ws.onmessage = (event) => {
+  ws.onmessage = event => {
     if (!event.data || event.data === 'pong') return
     try {
       const payload = JSON.parse(String(event.data))
@@ -319,9 +424,9 @@ async function loadHistory() {
   if (!props.id) return
   historyLoading.value = true
   try {
-    const metricKeys = ['soc', 'soh', 'vPackV', 'currentA']
+    const metricKeys = ['soc', 'soh', 'packCellSumVoltageV', 'currentA']
     const chartResults = await Promise.all(
-      metricKeys.map(async (key) => {
+      metricKeys.map(async key => {
         const rsp: any = await telemetryDataHistoryList({
           device_id: props.id,
           key,
@@ -333,10 +438,10 @@ async function loadHistory() {
         return { key, points }
       })
     )
-    metricKeys.forEach((key) => {
+    metricKeys.forEach(key => {
       historyChartData[key] = []
     })
-    chartResults.forEach((item) => {
+    chartResults.forEach(item => {
       historyChartData[item.key] = item.points
         .filter((p: any) => typeof p?.x === 'number' && typeof p?.y === 'number')
         .map((p: any) => [p.x, p.y] as [number, number])
@@ -395,7 +500,7 @@ const historyChartOption = computed<EChartsCoreOption>(() => {
         smooth: true,
         showSymbol: false,
         yAxisIndex: 1,
-        data: historyChartData.vPackV
+        data: historyChartData.packCellSumVoltageV
       },
       { name: '电流(A)', type: 'line', smooth: true, showSymbol: false, yAxisIndex: 1, data: historyChartData.currentA }
     ]
@@ -407,7 +512,7 @@ const snapshotColumns: DataTableColumns<SnapshotHistoryRow> = [
     key: 'ts',
     title: '时间',
     width: 180,
-    render: (row) => formatTime(row.ts)
+    render: row => formatTime(row.ts)
   },
   {
     key: 'summary',
@@ -446,6 +551,13 @@ async function disconnectMqtt() {
 async function disconnectAllConnections() {
   await disconnectMqtt()
   closeCloudWs()
+  stopRelayStatusTimer()
+  applyRelayStatus(null)
+}
+
+async function handleDisconnect() {
+  await disconnectAllConnections()
+  message.success('已断开连接')
 }
 
 async function connectRealtime() {
@@ -453,6 +565,14 @@ async function connectRealtime() {
   openCloudWs()
   if (canUse4G.value) {
     await connectMqtt()
+    return
+  }
+  await loadRelayStatus()
+  startRelayStatusTimer()
+  if (relayReady.value) {
+    message.success('已连接APP蓝牙中继通道')
+  } else {
+    message.info('请先在手机APP中蓝牙连接该设备，WEB端将自动使用中继参数通道')
   }
 }
 
@@ -489,7 +609,10 @@ async function load() {
     battery.value = res?.data || res || null
     // 仅对具备 4G 的电池尝试连接
     if (canUse4G.value) {
-      connectMqtt()
+      void connectMqtt()
+    } else {
+      await loadRelayStatus({ silent: true })
+      startRelayStatusTimer()
     }
   } catch (e: any) {
     battery.value = null
@@ -517,10 +640,12 @@ async function loadDeviceParamPermissions() {
 watch(
   () => props.id,
   () => {
-    Object.keys(cloudCurrent).forEach((k) => {
+    Object.keys(cloudCurrent).forEach(k => {
       delete cloudCurrent[k]
     })
     cloudLastUpdateAt.value = null
+    stopRelayStatusTimer()
+    applyRelayStatus(null)
     load()
   }
 )
@@ -530,6 +655,7 @@ onMounted(() => {
   load()
 })
 onBeforeUnmount(() => {
+  stopRelayStatusTimer()
   disconnectAllConnections()
 })
 
@@ -548,13 +674,97 @@ const sohPct = computed(() => {
 })
 
 const cellCount = computed(() => Number(displayStatus.value?.meta?.seriesCount || cloudCurrent.seriesCount || 0))
+const indicatorStatus = computed(() => displayStatus.value?.status?.indicatorStatus || {})
+const protectionStatus = computed(() => displayStatus.value?.status?.protectionStatus || {})
 const packVoltageText = computed(() => {
-  const v = displayStatus.value?.electrical?.vPackV ?? cloudCurrent.vPackV
+  const v = displayStatus.value?.electrical?.packCellSumVoltageV ?? cloudCurrent.packCellSumVoltageV
   if (typeof v !== 'number' || !Number.isFinite(v)) return '-'
+  if (v >= 1000 || v >= 0xffff) return '-'
   return `${v.toFixed(1)}V`
 })
 
+function formatSignedCurrent(v: unknown) {
+  const n = typeof v === 'number' ? v : Number(v)
+  if (!Number.isFinite(n)) return '-'
+  const normalized = Math.abs(n) < 0.005 ? 0 : n
+  const sign = normalized > 0 ? '+' : ''
+  const text = normalized.toFixed(2).replace(/\.?0+$/u, '')
+  return `${sign}${text}A`
+}
+
+function isInvalidU16(v: unknown) {
+  const n = typeof v === 'number' ? v : Number(v)
+  return !Number.isFinite(n) || n >= 0xffff
+}
+
+function formatCountText(v: unknown) {
+  if (isInvalidU16(v)) return '-'
+  return `${Number(v || 0)}次`
+}
+
+function formatMinuteText(v: unknown) {
+  if (isInvalidU16(v)) return '-'
+  return `${Number(v || 0)}分钟`
+}
+
+function cToFText(c: number | null | undefined) {
+  if (typeof c !== 'number' || !Number.isFinite(c)) return '-'
+  const f = c * (9 / 5) + 32
+  return `${c.toFixed(0)}℃/${f.toFixed(0)}°F`
+}
+
+const currentText = computed(() => formatSignedCurrent(displayStatus.value?.electrical?.currentA ?? cloudCurrent.currentA))
+const cycleCountText = computed(() => formatCountText(displayStatus.value?.energy?.cycleCount ?? cloudCurrent.cycleCount))
+const chargeTimeText = computed(() => formatMinuteText(displayStatus.value?.timing?.chargeRemainingMin ?? cloudCurrent.chargeRemainingMin))
+const mosTempText = computed(() => cToFText(displayStatus.value?.temperature?.chargeMosC ?? (cloudCurrent.chargeMosC as number | null | undefined)))
+const ambientTempText = computed(() => cToFText(displayStatus.value?.temperature?.ambientC ?? (cloudCurrent.ambientC as number | null | undefined)))
+const cellTempText = computed(() => {
+  const cellTemps = displayStatus.value?.temperature?.cellTempsC || []
+  const v =
+    cellTemps.length > 0 ? cellTemps[0] : displayStatus.value?.temperature?.highestTemp?.valueC ?? displayStatus.value?.temperature?.poleC ?? null
+  return cToFText(v)
+})
+
 const highestIdx = computed(() => Number(displayStatus.value?.electrical?.cellVoltageIndex?.highest || 0))
+const lowestIdx = computed(() => Number(displayStatus.value?.electrical?.cellVoltageIndex?.lowest || 0))
+
+const STATUS_LABELS: Record<string, string> = {
+  chargeMosFault: '充电MOS故障',
+  dischargeMosFault: '放电MOS故障',
+  poleTempOverTempProtection: '极柱过温保护',
+  antiReverseMosFault: '防反MOS故障',
+  chargeOverCurrentProtectionLv1: '充电过流保护',
+  dischargeOverCurrentProtectionLv1: '放电过流保护',
+  shortCircuitProtection: '短路保护',
+  insulationProtection: '绝缘保护',
+  cellOverVoltageProtectionLv2: '电芯过压保护',
+  cellUnderVoltageProtectionLv2: '电芯欠压保护',
+  ambientNtcInvalid: '环境温度NTC异常',
+  chargeLowTempProtectionCell: '充电低温保护',
+  dischargeLowTempProtectionCell: '放电低温保护',
+  cellUnderTempProtection: '电芯低温保护',
+  cellOverTempProtection: '电芯高温保护',
+  dischargeMosOverTempProtection: '放电MOS过温保护',
+  chargeMosOverTempProtection: '充电MOS过温保护',
+  fullChargeProtection: '满充保护',
+  deltaVProtection: '压差保护',
+  tempDiffProtection: '温差保护',
+  heatingFilmTempProtection: '加热膜温度保护',
+  packUnderVoltageProtection: '电池包欠压保护',
+  packOverVoltageProtection: '电池包过压保护'
+}
+
+function labelForStatus(key: string) {
+  return STATUS_LABELS[key] || key
+}
+
+const protectStatusItems = computed(() =>
+  Object.keys(protectionStatus.value)
+    .filter(key => protectionStatus.value[key])
+    .map(labelForStatus)
+)
+const protectSummaryText = computed(() => (protectStatusItems.value.length ? `${protectStatusItems.value.length}项保护` : '无'))
+
 const cellVoltageRows = computed(() => {
   const list = displayStatus.value?.cell?.voltagesMv || []
   return list.map((mv, i) => {
@@ -563,7 +773,8 @@ const cellVoltageRows = computed(() => {
       index: i + 1,
       voltage: Number.isFinite(v) ? v : null,
       voltageText: Number.isFinite(v) ? `${v.toFixed(2)}V` : '-',
-      isHighest: i + 1 === highestIdx.value
+      isHighest: i + 1 === highestIdx.value,
+      isLowest: i + 1 === lowestIdx.value
     }
   })
 })
@@ -574,8 +785,11 @@ const cellColumns: DataTableColumns<any> = [
     key: 'voltageText',
     title: '电压',
     minWidth: 120,
-    render: (row) =>
-      row.isHighest ? <span style="color:#d03050;font-weight:600">{row.voltageText}</span> : row.voltageText
+    render: row => {
+      if (row.isHighest) return <span style="color:#d03050;font-weight:600">{row.voltageText}</span>
+      if (row.isLowest) return <span style="color:#0b3bff;font-weight:600">{row.voltageText}</span>
+      return row.voltageText
+    }
   }
 ]
 
@@ -591,13 +805,14 @@ type ParamItem = {
   valueType: string
 }
 type FactoryAction = { key: string; raw: number; confirm: boolean; label: string }
+type FunctionControlRow = (typeof FUNCTION_CONFIG_ITEMS)[number] & { enabled: boolean; statusText: string }
 
 const paramValues = reactive<Record<string, unknown>>({})
 const TEMP_DISPLAY_LABELS: Record<string, string> = {
-  CELL_OVER_TEMP_PROTECT_C: '单体过温保护温度',
-  CELL_OVER_TEMP_RELEASE_C: '单体过温保护恢复温度',
-  CELL_UNDER_TEMP_PROTECT_C: '单体低温保护温度',
-  CELL_UNDER_TEMP_RELEASE_C: '单体低温保护恢复温度'
+  CELL_OVER_TEMP_PROTECT_C: '电芯高温保护温度',
+  CELL_OVER_TEMP_RELEASE_C: '电芯高温保护解除温度',
+  CELL_UNDER_TEMP_PROTECT_C: '电芯低温保护温度',
+  CELL_UNDER_TEMP_RELEASE_C: '电芯低温保护解除温度'
 }
 const FACTORY_ACTION_LABELS: Record<string, string> = {
   enterTestMode: '进入测试模式',
@@ -626,6 +841,32 @@ function labelOf(key: string, actualKey?: string) {
 function unitOf(key: string) {
   return String(PARAM_DEF_BY_KEY[key]?.unit || '')
 }
+
+function getScaleDecimals(scale?: number) {
+  if (typeof scale !== 'number' || !Number.isFinite(scale) || scale <= 0) return 0
+  const text = scale.toString()
+  if (!text.includes('.')) return 0
+  return text.split('.')[1]?.length || 0
+}
+
+function normalizeEditableNumber(value: number, decimals: number) {
+  if (!Number.isFinite(value)) return ''
+  if (decimals <= 0) return String(Math.round(value))
+  return value
+    .toFixed(decimals)
+    .replace(/(\.\d*?[1-9])0+$/u, '$1')
+    .replace(/\.0+$/u, '')
+}
+
+function formatEditableValue(key: string, value: unknown) {
+  if (value == null || value === '') return ''
+  if (typeof value === 'string') return value
+  const n = typeof value === 'number' ? value : Number(value)
+  if (!Number.isFinite(n)) return ''
+  const def = PARAM_DEF_BY_KEY[key] as any
+  return normalizeEditableNumber(n, getScaleDecimals(def?.scale))
+}
+
 function formatValue(v: unknown, unit: string) {
   if (v == null || v === '') return '-'
   if (typeof v === 'string') return v
@@ -647,7 +888,7 @@ function canAccessParamKey(paramKey: string) {
 }
 
 const filterParamEntries = (entries: ParamEntry[]) =>
-  entries.filter((entry) => canAccessParamKey(resolveParamEntry(entry).actualKey))
+  entries.filter(entry => canAccessParamKey(resolveParamEntry(entry).actualKey))
 
 const SINGLE_KEYS = [
   'CELL_OV_ALARM_V',
@@ -687,7 +928,8 @@ const TEMP_KEYS = [
 ]
 const OTHER_KEYS = listParamsByCategory(PARAM_CATEGORIES.OTHER)
 const NUMBERING_KEYS = listParamsByCategory(PARAM_CATEGORIES.STRING)
-const SYSTEM_KEYS = listParamsByCategory(PARAM_CATEGORIES.SYSTEM)
+const SYSTEM_KEYS = listParamsByCategory(PARAM_CATEGORIES.SYSTEM).filter(key => key !== BMS_PARAM.FUNCTION_CONFIG)
+const SYSTEM_LOAD_KEYS = [...SYSTEM_KEYS, BMS_PARAM.FUNCTION_CONFIG]
 const FACTORY_ACTIONS: Array<Omit<FactoryAction, 'label'>> = [
   { key: 'enterTestMode', raw: 0x00000400, confirm: true },
   { key: 'exitTestMode', raw: 0x00000800, confirm: true },
@@ -701,11 +943,11 @@ const FACTORY_ACTIONS: Array<Omit<FactoryAction, 'label'>> = [
   { key: 'clearProtection', raw: 0x00080000, confirm: true }
 ]
 const factoryItems = computed<FactoryAction[]>(() =>
-  FACTORY_ACTIONS.map((item) => ({ ...item, label: FACTORY_ACTION_LABELS[item.key] || item.key }))
+  FACTORY_ACTIONS.map(item => ({ ...item, label: FACTORY_ACTION_LABELS[item.key] || item.key }))
 )
 
 const mkItems = (entries: ParamEntry[]): ParamItem[] =>
-  filterParamEntries(entries).map((entry) => {
+  filterParamEntries(entries).map(entry => {
     const { key, actualKey } = resolveParamEntry(entry)
     const unit = unitOf(actualKey)
     const value = paramValues[actualKey]
@@ -727,20 +969,50 @@ const temperatureItems = computed(() => mkItems(TEMP_KEYS))
 const otherItems = computed(() => mkItems(OTHER_KEYS))
 const numberingItems = computed(() => mkItems(NUMBERING_KEYS))
 const systemItems = computed(() => mkItems(SYSTEM_KEYS))
+const functionConfigFlags = computed(() => parseFunctionConfigFlags(paramValues[BMS_PARAM.FUNCTION_CONFIG]))
+const functionControlRows = computed<FunctionControlRow[]>(() =>
+  FUNCTION_CONFIG_ITEMS.map(item => ({
+    ...item,
+    enabled: functionConfigFlags.value[item.key],
+    statusText: functionConfigFlags.value[item.key] ? item.enabledLabel : item.disabledLabel
+  }))
+)
+const canManageFunctionConfig = computed(() => canAccessParamKey(BMS_PARAM.FUNCTION_CONFIG))
 
 async function loadKeys(entries: ParamEntry[]) {
-  if (!client || connType.value === 'offline') return
+  const useDirect = !!client && connType.value !== 'offline'
+  const useRelay = !useDirect && relayReady.value
+  if (!useDirect && !useRelay) return
   const allowedEntries = filterParamEntries(entries)
   for (const entry of allowedEntries) {
     const { actualKey } = resolveParamEntry(entry)
     try {
-      // eslint-disable-next-line no-await-in-loop
-      paramValues[actualKey] = await client.readParam(actualKey)
+      if (useDirect && client) {
+        // eslint-disable-next-line no-await-in-loop
+        paramValues[actualKey] = await client.readParam(actualKey)
+      } else {
+        // eslint-disable-next-line no-await-in-loop
+        const resp = await runRelayCommand({
+          command_type: 'read_param',
+          param_key: actualKey
+        })
+        paramValues[actualKey] = (resp?.result as any)?.value
+      }
     } catch {
       paramValues[actualKey] = null
     }
   }
 }
+
+watch(
+  () => [connType.value, relayReady.value, !!client],
+  ([currentConnType, currentRelayReady, hasClient]) => {
+    if ((currentConnType !== 'offline' && hasClient) || currentRelayReady) {
+      void loadKeys([BMS_PARAM.FUNCTION_CONFIG])
+    }
+  },
+  { immediate: true }
+)
 
 const editState = reactive({
   show: false,
@@ -748,7 +1020,6 @@ const editState = reactive({
   title: '',
   unit: '',
   valueType: 'u16',
-  inputNumber: null as number | null,
   inputText: ''
 })
 const advancedState = reactive({
@@ -757,7 +1028,7 @@ const advancedState = reactive({
 })
 
 function openEdit(item: ParamItem) {
-  if (!client || connType.value === 'offline') {
+  if ((!client || connType.value === 'offline') && !relayReady.value) {
     message.warning('当前离线，无法设置参数')
     return
   }
@@ -769,31 +1040,55 @@ function openEdit(item: ParamItem) {
   editState.title = item.label
   editState.unit = item.unit
   editState.valueType = item.valueType || 'u16'
-  const n = typeof item.value === 'number' ? item.value : Number(item.value)
   if (editState.valueType === 'str') {
     editState.inputText = item.value == null ? '' : String(item.value)
-    editState.inputNumber = null
   } else {
-    editState.inputNumber = Number.isFinite(n) ? n : null
-    editState.inputText = ''
+    editState.inputText = formatEditableValue(editState.key, item.value)
   }
   editState.show = true
 }
 
 async function confirmEdit() {
-  if (!client) return
+  const useDirect = !!client && connType.value !== 'offline'
+  const useRelay = !useDirect && relayReady.value
+  if (!useDirect && !useRelay) return
   try {
     if (editState.valueType === 'str') {
-      await client.writeParam(editState.key, editState.inputText)
+      if (useDirect && client) {
+        await client.writeParam(editState.key, editState.inputText)
+      } else {
+        await runRelayCommand({
+          command_type: 'write_param',
+          param_key: editState.key,
+          value: editState.inputText
+        })
+      }
     } else {
-      const v = editState.inputNumber
-      if (v == null || !Number.isFinite(Number(v))) {
+      const raw = editState.inputText.trim()
+      const v = Number(raw)
+      if (!raw || !Number.isFinite(v)) {
         message.warning('请输入有效数值')
         return
       }
-      await client.writeParam(editState.key, Number(v))
+      if (useDirect && client) {
+        await client.writeParam(editState.key, v)
+      } else {
+        await runRelayCommand({
+          command_type: 'write_param',
+          param_key: editState.key,
+          value: v
+        })
+      }
     }
-    paramValues[editState.key] = await client.readParam(editState.key)
+    if (useDirect && client) {
+      paramValues[editState.key] = await client.readParam(editState.key)
+    } else {
+      const after = await runRelayCommand({
+        command_type: 'read_param',
+        param_key: editState.key
+      })
+      paramValues[editState.key] = (after?.result as any)?.value
+    }
     editState.show = false
     message.success('已保存')
   } catch (e: any) {
@@ -803,21 +1098,57 @@ async function confirmEdit() {
 }
 
 async function openAdvancedSettings() {
-  if (!client || connType.value === 'offline') {
+  if ((!client || connType.value === 'offline') && !relayReady.value) {
     message.warning('当前离线，无法读取高级参数')
     return
   }
   advancedState.show = true
   advancedState.loading = true
   try {
-    await Promise.all([loadKeys(OTHER_KEYS), loadKeys(NUMBERING_KEYS), loadKeys(SYSTEM_KEYS)])
+    await Promise.all([loadKeys(OTHER_KEYS), loadKeys(NUMBERING_KEYS), loadKeys(SYSTEM_LOAD_KEYS)])
   } finally {
     advancedState.loading = false
   }
 }
 
+async function setFunctionControl(key: FunctionConfigFlagKey, enabled: boolean) {
+  const useDirect = !!client && connType.value !== 'offline'
+  const useRelay = !useDirect && relayReady.value
+  if (!useDirect && !useRelay) {
+    message.warning('当前离线，无法设置功能配置')
+    return
+  }
+  if (!canManageFunctionConfig.value) {
+    message.warning('当前账号无权限操作功能配置')
+    return
+  }
+  const nextWord = setFunctionConfigFlag(paramValues[BMS_PARAM.FUNCTION_CONFIG], key, enabled)
+  try {
+    if (useDirect && client) {
+      await client.writeParam(BMS_PARAM.FUNCTION_CONFIG, nextWord)
+      paramValues[BMS_PARAM.FUNCTION_CONFIG] = await client.readParam(BMS_PARAM.FUNCTION_CONFIG)
+    } else {
+      await runRelayCommand({
+        command_type: 'write_param',
+        param_key: BMS_PARAM.FUNCTION_CONFIG,
+        value: nextWord
+      })
+      const after = await runRelayCommand({
+        command_type: 'read_param',
+        param_key: BMS_PARAM.FUNCTION_CONFIG
+      })
+      paramValues[BMS_PARAM.FUNCTION_CONFIG] = (after?.result as any)?.value
+    }
+    message.success('功能配置已更新')
+  } catch (e: any) {
+    message.error(e?.message || '功能配置更新失败')
+  }
+}
+
 async function runFactoryAction(item: FactoryAction) {
-  if (!client || connType.value === 'offline') {
+  const useDirect = !!client && connType.value !== 'offline'
+  const useRelay = !useDirect && relayReady.value
+  if (!useDirect && !useRelay) {
     message.warning('当前离线，无法执行工厂命令')
     return
   }
@@ -828,7 +1159,15 @@ async function runFactoryAction(item: FactoryAction) {
   try {
     const hi = (item.raw >>> 16) & 0xffff
     const lo = item.raw & 0xffff
-    await client.writeRegisters(0x57a, new Uint16Array([hi, lo]))
+    if (useDirect && client) {
+      await client.writeRegisters(0x57a, new Uint16Array([hi, lo]))
+    } else {
+      await runRelayCommand({
+        command_type: 'write_registers',
+        start_address: 0x57a,
+        register_values: [hi, lo]
+      })
+    }
     message.success('工厂命令已发送')
   } catch (e: any) {
     message.error(e?.message || '工厂命令执行失败')
@@ -843,7 +1182,7 @@ const paramColumns: DataTableColumns<ParamItem> = [
     key: 'actions',
     title: '操作',
     width: 120,
-    render: (row) => (
+    render: row => (
       <NButton size="small" tertiary type="primary" onClick={() => openEdit(row)}>
         设置
       </NButton>
@@ -856,16 +1195,52 @@ const factoryColumns: DataTableColumns<FactoryAction> = [
     key: 'raw',
     title: '命令字',
     width: 140,
-    render: (row) => `0x${row.raw.toString(16).toUpperCase().padStart(8, '0')}`
+    render: row => `0x${row.raw.toString(16).toUpperCase().padStart(8, '0')}`
   },
   {
     key: 'actions',
     title: '操作',
     width: 120,
-    render: (row) => (
+    render: row => (
       <NButton size="small" tertiary type="warning" onClick={() => runFactoryAction(row)}>
         执行
       </NButton>
+    )
+  }
+]
+const functionColumns: DataTableColumns<FunctionControlRow> = [
+  { key: 'label', title: '功能项', minWidth: 220 },
+  {
+    key: 'status',
+    title: '当前状态',
+    width: 120,
+    render: row => <NTag type={row.enabled ? 'success' : 'default'}>{row.statusText}</NTag>
+  },
+  {
+    key: 'actions',
+    title: '操作',
+    minWidth: 220,
+    render: row => (
+      <NSpace>
+        <NButton
+          size="small"
+          tertiary
+          type="primary"
+          disabled={row.enabled || !canManageFunctionConfig.value}
+          onClick={() => setFunctionControl(row.key, true)}
+        >
+          {row.enabledLabel}
+        </NButton>
+        <NButton
+          size="small"
+          tertiary
+          type="warning"
+          disabled={!row.enabled || !canManageFunctionConfig.value}
+          onClick={() => setFunctionControl(row.key, false)}
+        >
+          {row.disabledLabel}
+        </NButton>
+      </NSpace>
     )
   }
 ]
@@ -882,16 +1257,11 @@ const factoryColumns: DataTableColumns<FactoryAction> = [
             <NTag v-if="battery?.comm_chip_id" type="info">4G卡ID：{{ battery.comm_chip_id }}</NTag>
             <NTag :type="cloudStatusType">{{ cloudStatusText }}</NTag>
             <NTag type="default">最近云端数据时间：{{ cloudUpdateText }}</NTag>
+            <NTag :type="paramLinkType">{{ paramLinkText }}</NTag>
           </NSpace>
           <NSpace>
             <NButton size="small" :disabled="connecting" @click="connectRealtime">连接</NButton>
-            <NButton
-              size="small"
-              :disabled="connecting || (connType === 'offline' && cloudWsState === 'closed')"
-              @click="disconnectAllConnections"
-            >
-              断开
-            </NButton>
+            <NButton size="small" :disabled="connecting" @click="handleDisconnect">断开</NButton>
             <NButton size="small" @click="loadCloudCurrent">刷新云端</NButton>
           </NSpace>
         </NSpace>
@@ -919,6 +1289,51 @@ const factoryColumns: DataTableColumns<FactoryAction> = [
                 <NCard size="small" title="Pack电压" :bordered="false">
                   <div class="metric-big">{{ packVoltageText }}</div>
                   <div class="metric-sub">电芯串数：{{ cellCount || '-' }}</div>
+                </NCard>
+              </NGridItem>
+
+              <NGridItem :span="8">
+                <NCard size="small" title="循环次数" :bordered="false">
+                  <div class="metric-big">{{ cycleCountText }}</div>
+                </NCard>
+              </NGridItem>
+              <NGridItem :span="8">
+                <NCard size="small" title="充电时间" :bordered="false">
+                  <div class="metric-big">{{ chargeTimeText }}</div>
+                </NCard>
+              </NGridItem>
+              <NGridItem :span="8">
+                <NCard size="small" title="充放电电流" :bordered="false">
+                  <div class="metric-big">{{ currentText }}</div>
+                </NCard>
+              </NGridItem>
+
+              <NGridItem :span="12">
+                <NCard size="small" title="温度信息" :bordered="false">
+                  <div class="temp-list">
+                    <div class="temp-row">
+                      <span class="temp-label">MOS温度</span>
+                      <span>{{ mosTempText }}</span>
+                    </div>
+                    <div class="temp-row">
+                      <span class="temp-label">T1：环境温度</span>
+                      <span>{{ ambientTempText }}</span>
+                    </div>
+                    <div class="temp-row">
+                      <span class="temp-label">T2：电芯温度</span>
+                      <span>{{ cellTempText }}</span>
+                    </div>
+                  </div>
+                </NCard>
+              </NGridItem>
+
+              <NGridItem :span="12">
+                <NCard size="small" title="BMS保护状态" :bordered="false">
+                  <div class="metric-sub mb-12px">{{ protectSummaryText }}</div>
+                  <NSpace v-if="protectStatusItems.length" size="small">
+                    <NTag v-for="item in protectStatusItems" :key="item" type="warning" round>{{ item }}</NTag>
+                  </NSpace>
+                  <NEmpty v-else description="无保护" size="small" />
                 </NCard>
               </NGridItem>
 
@@ -973,16 +1388,22 @@ const factoryColumns: DataTableColumns<FactoryAction> = [
 
           <NTabPane name="params" tab="参数设置">
             <NAlert class="mb-12px" type="info" :show-icon="false">
-              仅在“MQTT透传”连接成功后可读写参数；写入参数请谨慎操作。
+              参数读写支持两种通道：4G设备走 MQTT 直连，BLE设备走“APP蓝牙中继”；写入参数请谨慎操作。
             </NAlert>
             <NSpace class="mb-12px" justify="end">
-              <NButton size="small" :disabled="connType === 'offline'" @click="openAdvancedSettings">高级设置</NButton>
+              <NButton size="small" :disabled="connType === 'offline' && !relayReady" @click="openAdvancedSettings">
+                高级设置
+              </NButton>
             </NSpace>
             <NGrid :cols="24" :x-gap="12" :y-gap="12">
               <NGridItem :span="12">
-                <NCard size="small" title="单体保护" :bordered="false">
+                <NCard size="small" title="单体设置" :bordered="false">
                   <NSpace justify="space-between" class="mb-10px">
-                    <NButton size="small" :disabled="connType === 'offline'" @click="loadKeys(SINGLE_KEYS)">
+                    <NButton
+                      size="small"
+                      :disabled="connType === 'offline' && !relayReady"
+                      @click="loadKeys(SINGLE_KEYS)"
+                    >
                       刷新
                     </NButton>
                   </NSpace>
@@ -990,9 +1411,13 @@ const factoryColumns: DataTableColumns<FactoryAction> = [
                 </NCard>
               </NGridItem>
               <NGridItem :span="12">
-                <NCard size="small" title="电压保护" :bordered="false">
+                <NCard size="small" title="总压设置" :bordered="false">
                   <NSpace justify="space-between" class="mb-10px">
-                    <NButton size="small" :disabled="connType === 'offline'" @click="loadKeys(VOLTAGE_KEYS)">
+                    <NButton
+                      size="small"
+                      :disabled="connType === 'offline' && !relayReady"
+                      @click="loadKeys(VOLTAGE_KEYS)"
+                    >
                       刷新
                     </NButton>
                   </NSpace>
@@ -1000,9 +1425,13 @@ const factoryColumns: DataTableColumns<FactoryAction> = [
                 </NCard>
               </NGridItem>
               <NGridItem :span="12">
-                <NCard size="small" title="电流保护" :bordered="false">
+                <NCard size="small" title="电流设置" :bordered="false">
                   <NSpace justify="space-between" class="mb-10px">
-                    <NButton size="small" :disabled="connType === 'offline'" @click="loadKeys(CURRENT_KEYS)">
+                    <NButton
+                      size="small"
+                      :disabled="connType === 'offline' && !relayReady"
+                      @click="loadKeys(CURRENT_KEYS)"
+                    >
                       刷新
                     </NButton>
                   </NSpace>
@@ -1010,11 +1439,32 @@ const factoryColumns: DataTableColumns<FactoryAction> = [
                 </NCard>
               </NGridItem>
               <NGridItem :span="12">
-                <NCard size="small" title="温度保护" :bordered="false">
+                <NCard size="small" title="温度设置" :bordered="false">
                   <NSpace justify="space-between" class="mb-10px">
-                    <NButton size="small" :disabled="connType === 'offline'" @click="loadKeys(TEMP_KEYS)">刷新</NButton>
+                    <NButton
+                      size="small"
+                      :disabled="connType === 'offline' && !relayReady"
+                      @click="loadKeys(TEMP_KEYS)"
+                    >
+                      刷新
+                    </NButton>
                   </NSpace>
                   <NDataTable :columns="paramColumns" :data="temperatureItems" :bordered="false" :max-height="260" />
+                </NCard>
+              </NGridItem>
+              <NGridItem :span="24">
+                <NCard size="small" title="功能控制" :bordered="false">
+                  <NSpace justify="space-between" class="mb-10px">
+                    <NText depth="3">基于地址 62 的功能位定义，按功能项进行开启、关闭、允许和禁止操作。</NText>
+                    <NButton
+                      size="small"
+                      :disabled="connType === 'offline' && !relayReady"
+                      @click="loadKeys([BMS_PARAM.FUNCTION_CONFIG])"
+                    >
+                      刷新
+                    </NButton>
+                  </NSpace>
+                  <NDataTable :columns="functionColumns" :data="functionControlRows" :bordered="false" :max-height="260" />
                 </NCard>
               </NGridItem>
             </NGrid>
@@ -1026,8 +1476,11 @@ const factoryColumns: DataTableColumns<FactoryAction> = [
     <NModal v-model:show="editState.show" preset="card" style="width: 520px" :title="`设置：${editState.title}`">
       <NSpace vertical size="large">
         <NText depth="3">单位：{{ editState.unit || '-' }}</NText>
-        <NInput v-if="editState.valueType === 'str'" v-model:value="editState.inputText" placeholder="请输入文本值" />
-        <NInputNumber v-else v-model:value="editState.inputNumber" placeholder="请输入数值" :show-button="false" />
+        <NInput
+          v-model:value="editState.inputText"
+          :placeholder="editState.valueType === 'str' ? '请输入文本值' : '请输入数值'"
+          type="text"
+        />
         <NSpace justify="end">
           <NButton @click="editState.show = false">取消</NButton>
           <NButton type="primary" @click="confirmEdit">保存</NButton>
@@ -1045,7 +1498,12 @@ const factoryColumns: DataTableColumns<FactoryAction> = [
             <NDataTable :columns="paramColumns" :data="numberingItems" :bordered="false" :max-height="420" />
           </NTabPane>
           <NTabPane name="system-config" tab="系统配置">
-            <NDataTable :columns="paramColumns" :data="systemItems" :bordered="false" :max-height="420" />
+            <NSpace vertical size="large">
+              <NCard size="small" title="功能控制" :bordered="false">
+                <NDataTable :columns="functionColumns" :data="functionControlRows" :bordered="false" :max-height="240" />
+              </NCard>
+              <NDataTable :columns="paramColumns" :data="systemItems" :bordered="false" :max-height="420" />
+            </NSpace>
           </NTabPane>
           <NTabPane name="factory-config" tab="工厂配置">
             <NDataTable :columns="factoryColumns" :data="factoryItems" :bordered="false" :max-height="420" />
@@ -1078,6 +1536,20 @@ const factoryColumns: DataTableColumns<FactoryAction> = [
   margin-top: 8px;
   color: rgba(55, 65, 81, 0.7);
   font-size: 12px;
+}
+.temp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.temp-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.temp-label {
+  color: rgba(55, 65, 81, 0.7);
 }
 .history-chart {
   width: 100%;

@@ -7,7 +7,6 @@ import type { LayoutMode } from '@sa/materials'
 import { EventSourcePolyfill } from 'event-source-polyfill'
 import { useAppStore } from '@/store/modules/app'
 import { useThemeStore } from '@/store/modules/theme'
-import { useRouteStore } from '@/store/modules/route'
 import { localStg } from '@/utils/storage'
 import { useRouterPush } from '@/hooks/common/router'
 import { useRouter, useRoute } from 'vue-router'
@@ -32,7 +31,6 @@ defineOptions({
 
 const appStore = useAppStore()
 const themeStore = useThemeStore()
-const routeStore = useRouteStore()
 const router = useRouter()
 const route = useRoute()
 
@@ -185,10 +183,11 @@ const checkNetworkStatus = (): boolean => {
 /**
  * 节流错误日志记录
  */
-const logErrorThrottled = (message: string, error?: any) => {
+const logErrorThrottled = (message: string) => {
   const now = Date.now()
   if (now - lastErrorTime > ERROR_LOG_THROTTLE) {
-    logger.error(message, error)
+    // SSE 断连在离线/服务未开启时属于可恢复场景，避免持续污染控制台 error
+    logger.warn(message)
     lastErrorTime = now
   }
 }
@@ -362,9 +361,9 @@ const createEventSource = () => {
     /**
      * 错误处理和智能重连机制
      */
-    eventSource.onerror = error => {
+    eventSource.onerror = () => {
       isConnecting = false
-      logErrorThrottled('EventSource连接错误:', error)
+      logErrorThrottled('EventSource连接错误')
 
       // 立即清理当前连接
       if (eventSource) {
@@ -400,7 +399,7 @@ const createEventSource = () => {
     }
   } catch (error) {
     isConnecting = false
-    logger.error('创建设备状态监控EventSource连接失败:', error)
+    logger.warn('创建设备状态监控EventSource连接失败:', error)
   }
 }
 

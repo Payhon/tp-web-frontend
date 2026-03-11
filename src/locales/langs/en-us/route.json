@@ -143,5 +143,17 @@
   "route.app_manage_content": "Content",
   "route.app_manage_apps": "Applications",
   "route.app_manage_upgrade": "App Upgrade Center",
-  "route.app_manage_users": "Users"
+  "route.app_manage_users": "Users",
+  "route.bms_battery_bms_model": "BMS Model Management",
+  "route.bms_battery_history": "History Data",
+  "route.bms_battery_cell_brand": "Cell Brand Management",
+  "perm.bms_battery_list_export": "Export",
+  "perm.bms_battery_list_add": "Add BMS",
+  "perm.bms_battery_list_import": "Import",
+  "perm.bms_battery_list_action_params": "Parameters",
+  "perm.bms_battery_list_action_offline_command": "Offline Command",
+  "perm.bms_battery_list_action_lifecycle_factory": "Lifecycle - Factory Out",
+  "perm.bms_battery_list_action_lifecycle_activate": "Lifecycle - Activate",
+  "perm.bms_battery_list_action_lifecycle_transfer": "Lifecycle - Transfer",
+  "perm.bms_battery_history_export": "Export History Data"
 }

@@ -4,7 +4,15 @@ import { $t } from '@/locales'
 import { localStg } from '@/utils/storage'
 import systemLogo from '@/assets/svg-icon/logo.svg?raw'
 
+let loadingLocked = false
+
+export function lockLoadingScreen() {
+  loadingLocked = true
+}
+
 export function setupLoading() {
+  if (loadingLocked) return
+
   const themeColor = localStg.get('themeColor') || '#646cff'
   const logoLoading = localStg.get('logoLoading') || ''
 
@@ -42,6 +50,7 @@ export function setupLoading() {
 
   const app = document.getElementById('app')
   if (app) {
+    if (app.hasAttribute('data-app-mounted')) return
     app.innerHTML = loading
   }
 }

@@ -38,7 +38,9 @@ function createDefaultFormModel(): GeneralSetting.ThemeSetting {
     logo_background: '',
     logo_cache: '',
     logo_loading: '',
-    home_background: ''
+    home_background: '',
+    wxmp_qrcode: '',
+    app_download_qrcode: ''
   }
 }
 
@@ -64,7 +66,7 @@ init()
 
 <template>
   <NSpin :show="loading">
-    <NForm ref="formRef" label-placement="left" :label-width="120" :model="formModel">
+    <NForm ref="formRef" label-placement="left" :label-width="180" :model="formModel">
       <NGrid :cols="24" :x-gap="18">
         <NFormItemGridItem
           :span="24"
@@ -96,6 +98,20 @@ init()
         <NFormItemGridItem :span="24" :label="$t('page.manage.setting.themeSetting.form.background')">
           <UploadImage
             v-model="formModel.home_background"
+            accept="image/png, image/jpeg, image/jpg"
+            :file-type="['jpg', 'png', 'jpeg']"
+          ></UploadImage>
+        </NFormItemGridItem>
+        <NFormItemGridItem :span="24" :label="$t('page.manage.setting.themeSetting.form.wxmpQrcode')">
+          <UploadImage
+            v-model="formModel.wxmp_qrcode"
+            accept="image/png, image/jpeg, image/jpg"
+            :file-type="['jpg', 'png', 'jpeg']"
+          ></UploadImage>
+        </NFormItemGridItem>
+        <NFormItemGridItem :span="24" :label="$t('page.manage.setting.themeSetting.form.appDownloadQrcode')">
+          <UploadImage
+            v-model="formModel.app_download_qrcode"
             accept="image/png, image/jpeg, image/jpg"
             :file-type="['jpg', 'png', 'jpeg']"
           ></UploadImage>

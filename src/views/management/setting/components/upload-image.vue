@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { getDemoServerUrl } from '@/utils/common/tool'
+import { getDemoServerUrl, resolveFileUrl } from '@/utils/common/tool'
 import FilePicker from '@/components/business/file-picker/index.vue'
 defineOptions({ name: 'UploadFile' })
 export interface Props {
@@ -25,7 +25,7 @@ interface Emits {
 const emit = defineEmits<Emits>()
 
 const url = ref(new URL(getDemoServerUrl()))
-const previewSrc = computed(() => (props.modelValue ? url.value.origin + props.modelValue.slice(1) : ''))
+const previewSrc = computed(() => (props.modelValue ? resolveFileUrl(props.modelValue, url.value.href) : ''))
 
 function handleUpdate(val: string) {
   emit('update:modelValue', val)

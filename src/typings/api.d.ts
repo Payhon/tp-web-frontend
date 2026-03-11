@@ -73,6 +73,12 @@ declare namespace Api {
       expires_in: number
     }
 
+    interface LoginCaptcha {
+      captcha_id: string
+      captcha_image: string
+      expires_in: number
+    }
+
     /** 用户信息 */
     interface UserInfo {
       /** 用户id */
@@ -345,6 +351,10 @@ declare namespace Api {
       logo_cache: string | undefined
       /** 背景图片 */
       home_background: string | undefined
+      /** 微信小程序二维码 */
+      wxmp_qrcode: string | undefined
+      /** App下载页二维码 */
+      app_download_qrcode: string | undefined
     }
 
     /** 数据清理设置 */

@@ -7,6 +7,7 @@ interface Props {
   visible: boolean
   type: 'add' | 'edit'
   data?: any
+  entityName?: string
 }
 
 const props = defineProps<Props>()
@@ -34,7 +35,8 @@ const rules = {
   cell_count: { required: true, type: 'number', message: '请输入电芯串数', trigger: 'blur' }
 }
 
-const title = computed(() => (props.type === 'add' ? '新增电池型号' : '编辑电池型号'))
+const entityName = computed(() => props.entityName || '电池型号')
+const title = computed(() => (props.type === 'add' ? `新增${entityName.value}` : `编辑${entityName.value}`))
 
 async function fetchDeviceConfigs() {
   try {

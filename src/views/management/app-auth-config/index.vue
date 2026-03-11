@@ -62,6 +62,21 @@ const scenes: { key: AuthTemplateScene; label: string }[] = [
   { key: 'BIND', label: $t('page.manage.appAuthConfig.scenes.bind') }
 ]
 
+const activeScenes = reactive<Record<AuthTemplateChannel, AuthTemplateScene>>({
+  EMAIL: 'LOGIN',
+  SMS: 'LOGIN'
+})
+
+const sceneLabelMap = computed<Record<AuthTemplateScene, string>>(() => {
+  return scenes.reduce(
+    (acc, item) => {
+      acc[item.key] = item.label
+      return acc
+    },
+    {} as Record<AuthTemplateScene, string>
+  )
+})
+
 type TemplateForm = {
   channel: AuthTemplateChannel
   scene: AuthTemplateScene
@@ -115,7 +130,9 @@ async function loadTemplates() {
   }
   templateLoading.value = true
   try {
-    const data = await fetchAuthMessageTemplates(isSysAdmin.value ? effectiveTenantId.value : undefined)
+    const resp: any = await fetchAuthMessageTemplates(isSysAdmin.value ? effectiveTenantId.value : undefined)
+    const payload = resp?.data ?? resp
+    const templateList = Array.isArray(payload) ? payload : Array.isArray(payload?.list) ? payload.list : []
 
     for (const channel of ['EMAIL', 'SMS'] as AuthTemplateChannel[]) {
       for (const scene of ['LOGIN', 'REGISTER', 'RESET_PASSWORD', 'BIND'] as AuthTemplateScene[]) {
@@ -123,7 +140,7 @@ async function loadTemplates() {
       }
     }
 
-    for (const item of data || []) {
+    for (const item of templateList) {
       const channel = item.channel
       const scene = item.scene
       const form = templates[channel]?.[scene]
@@ -182,10 +199,11 @@ async function loadWxmpConfig() {
   }
   wxmpLoading.value = true
   try {
-    const data = await fetchWxMpConfig(isSysAdmin.value ? effectiveTenantId.value : undefined)
-    wxmpForm.appid = data?.appid || ''
-    wxmpForm.status = (data?.status as any) || 'CLOSE'
-    wxmpForm.remark = (data?.remark as any) || ''
+    const resp: any = await fetchWxMpConfig(isSysAdmin.value ? effectiveTenantId.value : undefined)
+    const dataAny = (resp?.data ?? resp ?? {}) as any
+    wxmpForm.appid = dataAny.appid || dataAny.app_id || dataAny.AppID || ''
+    wxmpForm.status = (dataAny.status || dataAny.Status || 'CLOSE') as 'OPEN' | 'CLOSE'
+    wxmpForm.remark = (dataAny.remark || dataAny.Remark || '') as string
     wxmpForm.app_secret = ''
   } finally {
     wxmpLoading.value = false
@@ -265,18 +283,29 @@ if (!isSysAdmin.value) {
             <NSpin :show="templateLoading">
               <NTabs type="segment" animated>
                 <NTabPane name="email" :tab="$t('page.manage.appAuthConfig.channels.email')">
-                  <div class="grid grid-cols-1 gap-12px lg:grid-cols-2">
-                    <NCard
-                      v-for="s in scenes"
-                      :key="`EMAIL_${s.key}`"
-                      size="small"
-                      :title="s.label"
-                      class="rounded-8px"
-                    >
+                  <div class="template-split-layout">
+                    <NCard size="small" class="scene-list-card rounded-8px">
+                      <div class="scene-list-title">消息场景</div>
+                      <div class="scene-list-items">
+                        <NButton
+                          v-for="s in scenes"
+                          :key="`EMAIL_SCENE_${s.key}`"
+                          block
+                          text
+                          class="justify-start"
+                          :type="activeScenes.EMAIL === s.key ? 'primary' : 'default'"
+                          @click="activeScenes.EMAIL = s.key"
+                        >
+                          {{ s.label }}
+                        </NButton>
+                      </div>
+                    </NCard>
+
+                    <NCard size="small" class="scene-form-card rounded-8px" :title="sceneLabelMap[activeScenes.EMAIL]">
                       <NForm label-placement="left" :label-width="110">
                         <NFormItem :label="$t('page.manage.appAuthConfig.fields.status')">
                           <NSelect
-                            v-model:value="templates.EMAIL[s.key].status"
+                            v-model:value="templates.EMAIL[activeScenes.EMAIL].status"
                             :options="[
                               { label: $t('page.manage.appAuthConfig.status.open'), value: 'OPEN' },
                               { label: $t('page.manage.appAuthConfig.status.close'), value: 'CLOSE' }
@@ -284,24 +313,28 @@ if (!isSysAdmin.value) {
                           />
                         </NFormItem>
                         <NFormItem :label="$t('page.manage.appAuthConfig.fields.subject')">
-                          <NInput v-model:value="templates.EMAIL[s.key].subject" />
+                          <NInput v-model:value="templates.EMAIL[activeScenes.EMAIL].subject" />
                         </NFormItem>
                         <NFormItem :label="$t('page.manage.appAuthConfig.fields.content')">
                           <NInput
-                            v-model:value="templates.EMAIL[s.key].content"
+                            v-model:value="templates.EMAIL[activeScenes.EMAIL].content"
                             type="textarea"
                             :placeholder="$t('page.manage.appAuthConfig.emailContentPlaceholder')"
                             :autosize="{ minRows: 3, maxRows: 6 }"
                           />
                         </NFormItem>
                         <NFormItem :label="$t('page.manage.appAuthConfig.fields.remark')">
-                          <NInput v-model:value="templates.EMAIL[s.key].remark" />
+                          <NInput
+                            v-model:value="templates.EMAIL[activeScenes.EMAIL].remark"
+                            type="textarea"
+                            :autosize="{ minRows: 2, maxRows: 4 }"
+                          />
                         </NFormItem>
                         <div class="flex justify-end">
                           <NButton
                             type="primary"
-                            :loading="templateSavingKey === `EMAIL_${s.key}`"
-                            @click="saveTemplate('EMAIL', s.key)"
+                            :loading="templateSavingKey === `EMAIL_${activeScenes.EMAIL}`"
+                            @click="saveTemplate('EMAIL', activeScenes.EMAIL)"
                           >
                             {{ $t('common.save') }}
                           </NButton>
@@ -315,12 +348,29 @@ if (!isSysAdmin.value) {
                   <NAlert type="info" class="mb-12px">
                     {{ $t('page.manage.appAuthConfig.smsHint') }}
                   </NAlert>
-                  <div class="grid grid-cols-1 gap-12px lg:grid-cols-2">
-                    <NCard v-for="s in scenes" :key="`SMS_${s.key}`" size="small" :title="s.label" class="rounded-8px">
+                  <div class="template-split-layout">
+                    <NCard size="small" class="scene-list-card rounded-8px">
+                      <div class="scene-list-title">消息场景</div>
+                      <div class="scene-list-items">
+                        <NButton
+                          v-for="s in scenes"
+                          :key="`SMS_SCENE_${s.key}`"
+                          block
+                          text
+                          class="justify-start"
+                          :type="activeScenes.SMS === s.key ? 'primary' : 'default'"
+                          @click="activeScenes.SMS = s.key"
+                        >
+                          {{ s.label }}
+                        </NButton>
+                      </div>
+                    </NCard>
+
+                    <NCard size="small" class="scene-form-card rounded-8px" :title="sceneLabelMap[activeScenes.SMS]">
                       <NForm label-placement="left" :label-width="130">
                         <NFormItem :label="$t('page.manage.appAuthConfig.fields.status')">
                           <NSelect
-                            v-model:value="templates.SMS[s.key].status"
+                            v-model:value="templates.SMS[activeScenes.SMS].status"
                             :options="[
                               { label: $t('page.manage.appAuthConfig.status.open'), value: 'OPEN' },
                               { label: $t('page.manage.appAuthConfig.status.close'), value: 'CLOSE' }
@@ -329,21 +379,25 @@ if (!isSysAdmin.value) {
                         </NFormItem>
                         <NFormItem :label="$t('page.manage.appAuthConfig.fields.provider')">
                           <NSelect
-                            v-model:value="templates.SMS[s.key].provider"
+                            v-model:value="templates.SMS[activeScenes.SMS].provider"
                             :options="[{ label: 'ALIYUN', value: 'ALIYUN' }]"
                           />
                         </NFormItem>
                         <NFormItem :label="$t('page.manage.appAuthConfig.fields.providerTemplateCode')">
-                          <NInput v-model:value="templates.SMS[s.key].provider_template_code" />
+                          <NInput v-model:value="templates.SMS[activeScenes.SMS].provider_template_code" />
                         </NFormItem>
                         <NFormItem :label="$t('page.manage.appAuthConfig.fields.remark')">
-                          <NInput v-model:value="templates.SMS[s.key].remark" />
+                          <NInput
+                            v-model:value="templates.SMS[activeScenes.SMS].remark"
+                            type="textarea"
+                            :autosize="{ minRows: 2, maxRows: 4 }"
+                          />
                         </NFormItem>
                         <div class="flex justify-end">
                           <NButton
                             type="primary"
-                            :loading="templateSavingKey === `SMS_${s.key}`"
-                            @click="saveTemplate('SMS', s.key)"
+                            :loading="templateSavingKey === `SMS_${activeScenes.SMS}`"
+                            @click="saveTemplate('SMS', activeScenes.SMS)"
                           >
                             {{ $t('common.save') }}
                           </NButton>
@@ -397,5 +451,33 @@ if (!isSysAdmin.value) {
 <style scoped lang="scss">
 .pannel-content {
   padding-top: 16px !important;
+}
+
+.template-split-layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.scene-list-card {
+  min-height: 100%;
+}
+
+.scene-list-title {
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.scene-list-items {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+@media (max-width: 1024px) {
+  .template-split-layout {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

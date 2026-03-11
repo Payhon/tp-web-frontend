@@ -18,6 +18,13 @@ export type DeviceParamPermissionResp = {
   device_param_permissions: string[]
 }
 
+export type UiPermissionResp = {
+  org_type: string
+  org_types: string[]
+  allow_all: boolean
+  ui_codes: string[]
+}
+
 export const fetchOrgTypePermissions = (params?: { tenant_id?: string }) => {
   return request.get<OrgTypePermissionItem[]>('/org_type_permissions', { params })
 }
@@ -36,4 +43,8 @@ export const fetchDeviceParamPermissionOptions = () => {
 
 export const fetchCurrentDeviceParamPermissions = () => {
   return request.get<DeviceParamPermissionResp>('/org_type_permissions/device_param_permissions/me')
+}
+
+export const fetchCurrentUiPermissions = () => {
+  return request.get<UiPermissionResp>('/org_type_permissions/ui_codes/me')
 }

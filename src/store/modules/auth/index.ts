@@ -10,6 +10,7 @@ import { transformUser } from '@/service/api/auth'
 import { localStg } from '@/utils/storage'
 import { $t } from '@/locales'
 import { encryptDataByRsa, generateRandomHexString, validPassword } from '@/utils/common/tool'
+import { resetUiPermissionState } from '@/utils/common/ui-permission'
 import { useRouteStore } from '../route'
 import { useTabStore } from '../tab'
 import { clearAuthStorage, getToken, getUserInfo } from './shared'
@@ -32,6 +33,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     const authStore = useAuthStore()
 
     clearAuthStorage()
+    resetUiPermissionState()
 
     authStore.$reset()
 
@@ -48,7 +50,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
    * @param userName User name
    * @param password Password
    */
-  async function login(userName: string, password: string) {
+  async function login(userName: string, password: string, captchaId: string, captchaCode: string) {
     startLoading()
     try {
       let newP = password
@@ -59,7 +61,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
         newP = encryptDataByRsa(password + salt)
       }
 
-      const { data: loginToken } = await fetchLogin(userName, newP, salt)
+      const { data: loginToken } = await fetchLogin(userName, newP, salt, captchaId, captchaCode)
       if (!loginToken) {
         await resetStore()
         return
@@ -160,6 +162,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
       // 3. update auth route
       token.value = loginToken.token
       Object.assign(userInfo, info)
+      resetUiPermissionState()
 
       return { loop: true, info }
     }

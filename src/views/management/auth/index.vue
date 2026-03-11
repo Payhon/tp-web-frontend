@@ -73,7 +73,10 @@ const columns: Ref<DataTableColumns<CustomRoute.Route>> = ref([
     minWidth: '140px',
     render: row => {
       if (row.multilingual && row.multilingual !== 'default') {
-        return <span>{$t(row.multilingual)}</span>
+        const translated = $t(row.multilingual)
+        if (translated && translated !== row.multilingual) {
+          return <span>{translated}</span>
+        }
       }
       return <span>{row.description}</span>
     }

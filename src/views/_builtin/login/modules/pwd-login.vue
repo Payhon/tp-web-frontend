@@ -8,6 +8,7 @@ import { useRouterPush } from '@/hooks/common/router'
 import { useNaiveForm } from '@/hooks/common/form'
 import { useAuthStore } from '@/store/modules/auth'
 import { getFunction } from '@/service/api/setting'
+import { fetchLoginCaptcha } from '@/service/api/auth'
 
 defineOptions({
   name: 'PwdLogin'
@@ -25,12 +26,19 @@ const showZc = ref(false)
 interface FormModel {
   userName: string
   password: string
+  captchaCode: string
 }
 
 const model: FormModel = reactive({
   userName: '',
-  password: ''
+  password: '',
+  captchaCode: ''
 })
+
+const captchaLoading = ref(false)
+const captchaId = ref('')
+const captchaImage = ref('')
+const showOtherLoginActions = computed(() => showYzm.value || showZc.value)
 
 const rules = computed<Record<keyof FormModel, App.Global.FormRule[]>>(() => {
   // 定义邮箱和手机号的正则表达式
@@ -60,6 +68,13 @@ const rules = computed<Record<keyof FormModel, App.Global.FormRule[]>>(() => {
       {
         required: true,
         message: () => $t('form.pwd.required'),
+        trigger: ['input', 'blur']
+      }
+    ],
+    captchaCode: [
+      {
+        required: true,
+        message: () => $t('page.login.pwdLogin.captchaPlaceholder'),
         trigger: ['input', 'blur']
       }
     ]
@@ -99,8 +114,15 @@ async function handleSubmit() {
     return // 仍然阻止提交
   }
 
+  if (!captchaId.value) {
+    await refreshCaptcha()
+    return
+  }
+
   await validate()
-  await authStore.login(model.userName.trim(), model.password)
+  await authStore.login(model.userName.trim(), model.password, captchaId.value, model.captchaCode.trim())
+  model.captchaCode = ''
+  await refreshCaptcha()
 
   if (rememberMe.value) {
     localStorage.setItem('rememberMe', 'true')
@@ -120,6 +142,16 @@ async function getFunctionOption() {
     showZc.value = data.find(v => v.name === 'enable_reg')?.enable_flag === 'enable'
 
     showYzm.value = data.find(v => v.name === 'use_captcha')?.enable_flag === 'enable'
+  }
+}
+
+async function refreshCaptcha() {
+  captchaLoading.value = true
+  const { data } = await fetchLoginCaptcha()
+  captchaLoading.value = false
+  if (data) {
+    captchaId.value = data.captcha_id
+    captchaImage.value = data.captcha_image
   }
 }
 
@@ -148,17 +180,26 @@ async function loadAutoLoginCredentials() {
   const urlUsername = urlParams.get('username')
   const urlPassword = urlParams.get('password')
 
-  // 只要URL参数中有账号密码且auto=true就允许自动登录
-  if (autoLogin && urlUsername && urlPassword) {
+  const urlCaptchaCode = urlParams.get('captcha_code')
+
+  // 自动登录模式下，若未提供验证码则提示手动登录（本版本登录必须验证码）。
+  if (autoLogin && urlUsername && urlPassword && !urlCaptchaCode) {
+    window.$message?.warning($t('page.login.pwdLogin.autoLoginNeedCaptcha'))
+    return
+  }
+
+  // 只要URL参数中有账号密码且auto=true并携带验证码就允许自动登录
+  if (autoLogin && urlUsername && urlPassword && urlCaptchaCode && captchaId.value) {
     // 设置表单数据
     model.userName = urlUsername
     model.password = urlPassword
+    model.captchaCode = urlCaptchaCode
 
     // 延迟一下确保组件完全挂载
     setTimeout(async () => {
       try {
-        await authStore.login(model.userName.trim(), model.password)
-      } catch (error) {
+        await authStore.login(model.userName.trim(), model.password, captchaId.value, model.captchaCode.trim())
+      } catch {
         window.$message?.error('自动登录失败，请手动输入账号密码')
       }
     }, 500)
@@ -172,7 +213,9 @@ onMounted(() => {
   }
   getFunctionOption()
   loadSavedCredentials()
-  loadAutoLoginCredentials()
+  refreshCaptcha().then(() => {
+    loadAutoLoginCredentials()
+  })
 })
 </script>
 
@@ -212,6 +255,25 @@ onMounted(() => {
         </template>
       </NInput>
     </NFormItem>
+    <NFormItem path="captchaCode">
+      <div class="w-full flex-y-center gap-10px">
+        <NInput
+          v-model:value="model.captchaCode"
+          class="h-40px"
+          :placeholder="$t('page.login.pwdLogin.captchaPlaceholder')"
+          @keydown.enter="handleSubmit"
+        />
+        <div
+          class="h-40px w-120px cursor-pointer rounded-8px border border-[#e5e7eb] bg-white overflow-hidden flex items-center justify-center"
+          @click="refreshCaptcha"
+        >
+          <img v-if="captchaImage" :src="captchaImage" class="h-full w-full object-cover" />
+          <span v-else class="text-12px text-#999">
+            {{ captchaLoading ? '...' : $t('page.login.pwdLogin.captchaRefresh') }}
+          </span>
+        </div>
+      </div>
+    </NFormItem>
     <NSpace vertical :size="18">
       <div class="flex-y-center justify-between">
         <NCheckbox v-model:checked="rememberMe">{{ $t('page.login.pwdLogin.rememberMe') }}</NCheckbox>
@@ -229,26 +291,28 @@ onMounted(() => {
       >
         {{ $t('route.login') }}
       </NButton>
-      <n-divider title-placement="center" style="padding: 0px; margin: 0px">
-        {{ $t('generate.or') }}
-      </n-divider>
-      <div class="flex-y-center justify-between gap-12px mt--4">
-        <NButton v-if="showYzm" class="flex-1" block @click="toggleLoginModule('code-login')">
-          {{ $t(loginModuleRecord['code-login']) }}
-        </NButton>
+      <template v-if="showOtherLoginActions">
+        <n-divider title-placement="center" style="padding: 0px; margin: 0px">
+          {{ $t('generate.or') }}
+        </n-divider>
+        <div class="flex-y-center justify-between gap-12px mt--4">
+          <NButton v-if="showYzm" class="flex-1" block @click="toggleLoginModule('code-login')">
+            {{ $t(loginModuleRecord['code-login']) }}
+          </NButton>
 
-        <NButton
-          v-if="showZc"
-          class="flex-1"
-          block
-          type="primary"
-          quaternary
-          @click="toggleLoginModule('register-email')"
-        >
-          {{ $t('page.login.common.noAccount') }}
-          {{ $t(loginModuleRecord.register) }}
-        </NButton>
-      </div>
+          <NButton
+            v-if="showZc"
+            class="flex-1"
+            block
+            type="primary"
+            quaternary
+            @click="toggleLoginModule('register-email')"
+          >
+            {{ $t('page.login.common.noAccount') }}
+            {{ $t(loginModuleRecord.register) }}
+          </NButton>
+        </div>
+      </template>
     </NSpace>
   </NForm>
 </template>

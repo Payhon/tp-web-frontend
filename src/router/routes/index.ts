@@ -169,6 +169,33 @@ const customRoutes: ElegantRoute[] = [
             }
           },
           {
+            name: 'bms_battery_history',
+            path: '/bms/battery/history',
+            component: 'view.bms_battery_history',
+            meta: {
+              title: '历史数据',
+              icon: 'mdi:chart-timeline-variant'
+            }
+          },
+          {
+            name: 'bms_battery_cell_brand',
+            path: '/bms/battery/cell-brand',
+            component: 'view.bms_battery_cell_brand',
+            meta: {
+              title: '电芯品牌管理',
+              icon: 'mdi:alpha-c-circle-outline'
+            }
+          },
+          {
+            name: 'bms_battery_bms_model',
+            path: '/bms/battery/bms-model',
+            component: 'view.bms_battery_bms_model',
+            meta: {
+              title: 'BMS型号管理',
+              icon: 'mdi:chip'
+            }
+          },
+          {
             name: 'bms_battery_model',
             path: '/bms/battery/model',
             component: 'view.bms_battery_model',

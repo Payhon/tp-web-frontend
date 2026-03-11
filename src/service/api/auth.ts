@@ -7,8 +7,24 @@ import { request } from '../request'
  * @param password Password
  */
 
-export function fetchLogin(email: string, password: string, salt: string | null) {
-  return request.post<Api.Auth.LoginToken>('/login', { email, password, salt })
+export function fetchLogin(
+  email: string,
+  password: string,
+  salt: string | null,
+  captchaId: string,
+  captchaCode: string
+) {
+  return request.post<Api.Auth.LoginToken>('/login', {
+    email,
+    password,
+    salt,
+    captcha_id: captchaId,
+    captcha_code: captchaCode
+  })
+}
+
+export function fetchLoginCaptcha() {
+  return request.get<Api.Auth.LoginCaptcha>('/login/captcha')
 }
 
 /** Get user info */

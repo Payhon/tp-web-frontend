@@ -236,6 +236,33 @@ export const generatedRoutes: GeneratedRoute[] = [
         },
         children: [
           {
+            name: 'bms_battery_bms-model',
+            path: '/bms/battery/bms-model',
+            component: 'view.bms_battery_bms-model',
+            meta: {
+              title: 'bms_battery_bms-model',
+              i18nKey: 'route.bms_battery_bms-model'
+            }
+          },
+          {
+            name: 'bms_battery_cell-brand',
+            path: '/bms/battery/cell-brand',
+            component: 'view.bms_battery_cell-brand',
+            meta: {
+              title: 'bms_battery_cell-brand',
+              i18nKey: 'route.bms_battery_cell-brand'
+            }
+          },
+          {
+            name: 'bms_battery_history',
+            path: '/bms/battery/history',
+            component: 'view.bms_battery_history',
+            meta: {
+              title: 'bms_battery_history',
+              i18nKey: 'route.bms_battery_history'
+            }
+          },
+          {
             name: 'bms_battery_list',
             path: '/bms/battery/list',
             component: 'view.bms_battery_list',
