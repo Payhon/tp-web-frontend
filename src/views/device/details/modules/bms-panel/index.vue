@@ -14,7 +14,9 @@ import {
   NInput,
   NModal,
   NProgress,
+  NSelect,
   NSpace,
+  NSwitch,
   NSpin,
   NTabPane,
   NTabs,
@@ -41,6 +43,8 @@ import {
   PARAM_CATEGORIES,
   PARAM_DEF_BY_KEY,
   WebMqttSocketBmsTransport,
+  getFactoryPermissionKey,
+  getFunctionPermissionKey,
   getParamPermissionKey,
   listParamsByCategory,
   parseFunctionConfigFlags,
@@ -676,6 +680,10 @@ const sohPct = computed(() => {
 const cellCount = computed(() => Number(displayStatus.value?.meta?.seriesCount || cloudCurrent.seriesCount || 0))
 const indicatorStatus = computed(() => displayStatus.value?.status?.indicatorStatus || {})
 const protectionStatus = computed(() => displayStatus.value?.status?.protectionStatus || {})
+const chargeSwitchOn = computed(() => Boolean(indicatorStatus.value.chargeFetOn))
+const dischargeSwitchOn = computed(() => Boolean(indicatorStatus.value.dischargeFetOn))
+const balancingOn = computed(() => Boolean((displayStatus.value?.cell?.balancing || []).some(item => item)))
+const protectOn = computed(() => Boolean(Object.values(protectionStatus.value).some(Boolean)))
 const packVoltageText = computed(() => {
   const v = displayStatus.value?.electrical?.packCellSumVoltageV ?? cloudCurrent.packCellSumVoltageV
   if (typeof v !== 'number' || !Number.isFinite(v)) return '-'
@@ -723,6 +731,30 @@ const cellTempText = computed(() => {
   const v =
     cellTemps.length > 0 ? cellTemps[0] : displayStatus.value?.temperature?.highestTemp?.valueC ?? displayStatus.value?.temperature?.poleC ?? null
   return cToFText(v)
+})
+const avgVoltageText = computed(() => {
+  const v = displayStatus.value?.electrical?.avgCellVoltageMv ?? cloudCurrent.avgCellVoltageMv
+  const n = Number(v)
+  if (!Number.isFinite(n) || n >= 0xffff) return '-'
+  return `${formatDisplayNumber(n / 1000, 2)}V`
+})
+const highestVoltageText = computed(() => {
+  const v = displayStatus.value?.electrical?.highestCellVoltageMv ?? cloudCurrent.highestCellVoltageMv
+  const n = Number(v)
+  if (!Number.isFinite(n) || n >= 0xffff) return '-'
+  return `${formatDisplayNumber(n / 1000, 2)}V`
+})
+const lowestVoltageText = computed(() => {
+  const v = displayStatus.value?.electrical?.lowestCellVoltageMv ?? cloudCurrent.lowestCellVoltageMv
+  const n = Number(v)
+  if (!Number.isFinite(n) || n >= 0xffff) return '-'
+  return `${formatDisplayNumber(n / 1000, 2)}V`
+})
+const diffVoltageText = computed(() => {
+  const v = displayStatus.value?.electrical?.maxCellVoltageDiffMv ?? cloudCurrent.maxCellVoltageDiffMv
+  const n = Number(v)
+  if (!Number.isFinite(n) || n >= 0xffff) return '-'
+  return `${formatDisplayNumber(n, 0)}mV`
 })
 
 const highestIdx = computed(() => Number(displayStatus.value?.electrical?.cellVoltageIndex?.highest || 0))
@@ -807,12 +839,37 @@ type ParamItem = {
 type FactoryAction = { key: string; raw: number; confirm: boolean; label: string }
 type FunctionControlRow = (typeof FUNCTION_CONFIG_ITEMS)[number] & { enabled: boolean; statusText: string }
 
+const BATTERY_TYPE_OPTIONS = [
+  { label: '默认保留', value: 0x00 },
+  { label: '磷酸铁锂', value: 0x01 },
+  { label: '锰酸锂', value: 0x02 },
+  { label: '三元锂', value: 0x03 },
+  { label: '钴酸锂', value: 0x04 },
+  { label: '聚合锂', value: 0x05 },
+  { label: '钛酸锂', value: 0x06 },
+  { label: '铅酸', value: 0x07 },
+  { label: '镍氢', value: 0x08 },
+  { label: '钠离子', value: 0x09 }
+] as const
+
 const paramValues = reactive<Record<string, unknown>>({})
 const TEMP_DISPLAY_LABELS: Record<string, string> = {
-  CELL_OVER_TEMP_PROTECT_C: '电芯高温保护温度',
-  CELL_OVER_TEMP_RELEASE_C: '电芯高温保护解除温度',
-  CELL_UNDER_TEMP_PROTECT_C: '电芯低温保护温度',
-  CELL_UNDER_TEMP_RELEASE_C: '电芯低温保护解除温度'
+  CELL_OVER_TEMP_PROTECT_C: 'MOS高温保护温度',
+  CELL_OVER_TEMP_RELEASE_C: 'MOS高温保护解除温度',
+  MOS_OVER_TEMP_PROTECT_DELAY_S: 'MOS高温保护延时',
+  MOS_OVER_TEMP_RELEASE_DELAY_S: 'MOS高温保护解除延时',
+  CELL_UNDER_TEMP_PROTECT_C: '充电低温保护温度',
+  CELL_UNDER_TEMP_RELEASE_C: '充电低温保护解除温度',
+  CHARGE_OVER_TEMP_PROTECT_C: '充电高温保护温度',
+  CHARGE_OVER_TEMP_RELEASE_C: '充电高温保护解除温度',
+  CHARGE_OVER_TEMP_PROTECT_DELAY_S: '充电高温保护延时',
+  CHARGE_OVER_TEMP_RELEASE_DELAY_S: '充电高温保护解除延时',
+  DISCHARGE_UNDER_TEMP_PROTECT_C: '放电低温保护温度',
+  DISCHARGE_UNDER_TEMP_RELEASE_C: '放电低温保护解除温度',
+  DISCHARGE_OVER_TEMP_PROTECT_C: '放电高温保护温度',
+  DISCHARGE_OVER_TEMP_RELEASE_C: '放电高温保护解除温度',
+  DISCHARGE_OVER_TEMP_PROTECT_DELAY_S: '放电高温保护延时',
+  DISCHARGE_OVER_TEMP_RELEASE_DELAY_S: '放电高温保护解除延时'
 }
 const FACTORY_ACTION_LABELS: Record<string, string> = {
   enterTestMode: '进入测试模式',
@@ -842,6 +899,10 @@ function unitOf(key: string) {
   return String(PARAM_DEF_BY_KEY[key]?.unit || '')
 }
 
+function isBatteryTypeKey(key: string) {
+  return key === BMS_PARAM.BATTERY_TYPE
+}
+
 function getScaleDecimals(scale?: number) {
   if (typeof scale !== 'number' || !Number.isFinite(scale) || scale <= 0) return 0
   const text = scale.toString()
@@ -858,6 +919,23 @@ function normalizeEditableNumber(value: number, decimals: number) {
     .replace(/\.0+$/u, '')
 }
 
+function formatDisplayNumber(value: number, decimals: number) {
+  if (!Number.isFinite(value)) return '-'
+  if (decimals <= 0) return String(Math.round(value))
+  const factor = 10 ** decimals
+  const normalized = Math.round((value + Number.EPSILON) * factor) / factor
+  return normalized
+    .toFixed(decimals)
+    .replace(/(\.\d*?[1-9])0+$/u, '$1')
+    .replace(/\.0+$/u, '')
+}
+
+function getBatteryTypeLabel(value: unknown) {
+  const n = typeof value === 'number' ? value : Number(value)
+  if (!Number.isFinite(n)) return '-'
+  return BATTERY_TYPE_OPTIONS.find(item => item.value === n)?.label || `未知类型(${Math.trunc(n)})`
+}
+
 function formatEditableValue(key: string, value: unknown) {
   if (value == null || value === '') return ''
   if (typeof value === 'string') return value
@@ -867,17 +945,16 @@ function formatEditableValue(key: string, value: unknown) {
   return normalizeEditableNumber(n, getScaleDecimals(def?.scale))
 }
 
-function formatValue(v: unknown, unit: string) {
-  if (v == null || v === '') return '-'
-  if (typeof v === 'string') return v
-  const n = typeof v === 'number' ? v : Number(v)
+function formatParamValue(key: string, value: unknown) {
+  if (isBatteryTypeKey(key)) return getBatteryTypeLabel(value)
+  if (value == null || value === '') return '-'
+  if (typeof value === 'string') return value
+  const n = typeof value === 'number' ? value : Number(value)
   if (!Number.isFinite(n)) return '-'
-  if (unit === 'V') return `${n.toFixed(2)}V`
-  if (unit === 'A') return `${n.toFixed(1)}A`
-  if (unit === '°C') return `${n.toFixed(0)}°C`
-  if (unit.toLowerCase() === 's') return `${n.toFixed(0)}S`
-  if (unit.toLowerCase() === 'min') return `${n.toFixed(0)}MIN`
-  return `${n}${unit}`
+  const def = PARAM_DEF_BY_KEY[key] as any
+  const unit = String(def?.unit || '')
+  const text = formatDisplayNumber(n, getScaleDecimals(def?.scale))
+  return unit ? `${text}${unit}` : text
 }
 
 function canAccessParamKey(paramKey: string) {
@@ -885,6 +962,19 @@ function canAccessParamKey(paramKey: string) {
   const permKey = getParamPermissionKey(paramKey)
   if (!permKey) return true
   return deviceParamPermSet.value.has(permKey)
+}
+
+function canAccessPermissionKey(permissionKey: string) {
+  if (deviceParamPerm.allowAll) return true
+  return deviceParamPermSet.value.has(permissionKey)
+}
+
+function canAccessFunctionControl(flagKey: FunctionConfigFlagKey) {
+  return canAccessPermissionKey(getFunctionPermissionKey(flagKey))
+}
+
+function canAccessFactoryAction(actionKey: string) {
+  return canAccessPermissionKey(getFactoryPermissionKey(actionKey))
 }
 
 const filterParamEntries = (entries: ParamEntry[]) =>
@@ -902,29 +992,61 @@ const SINGLE_KEYS = [
   'NORMAL_CELL_UV_ALARM_V',
   'NORMAL_CELL_UV_PROTECT_V',
   'CELL_UV_ALARM_DELAY_S',
-  'CELL_UV_PROTECT_DELAY_S'
+  'CELL_UV_PROTECT_DELAY_S',
+  'CELL_UV_PROTECT_RELEASE_V',
+  'CELL_UV_ALARM_RELEASE_DELAY_S',
+  'CELL_UV_PROTECT_RELEASE_DELAY_S'
 ]
 const VOLTAGE_KEYS = [
   'PACK_OV_ALARM_V',
   'PACK_OV_PROTECT_V',
   'PACK_OV_ALARM_DELAY_S',
   'PACK_OV_PROTECT_DELAY_S',
+  'PACK_OV_ALARM_RELEASE_V',
+  'PACK_OV_PROTECT_RELEASE_V',
+  'PACK_OV_ALARM_RELEASE_DELAY_S',
+  'PACK_OV_PROTECT_RELEASE_DELAY_S',
+  'NORMAL_PACK_UV_ALARM_V',
+  'NORMAL_PACK_UV_PROTECT_V',
+  'LOW_TEMP_PACK_UV_ALARM_V',
+  'LOW_TEMP_PACK_UV_PROTECT_V',
   'PACK_UV_ALARM_DELAY_S',
-  'PACK_UV_PROTECT_DELAY_S'
+  'PACK_UV_PROTECT_DELAY_S',
+  'PACK_UV_ALARM_RELEASE_V',
+  'PACK_UV_PROTECT_RELEASE_V',
+  'PACK_UV_ALARM_RELEASE_DELAY_S',
+  'PACK_UV_PROTECT_RELEASE_DELAY_S'
 ]
 const CURRENT_KEYS = [
   'CHARGE_OC_PROTECT_SMALL_A',
   'CHARGE_OC_PROTECT_LARGE_A',
   'CHARGE_OC_ALARM_DELAY_S',
+  'CHARGE_OC_PROTECT_SMALL_DELAY_S',
+  'CHARGE_OC_PROTECT_LARGE_DELAY_S',
   'DISCHARGE_OC_ALARM_A',
   'DISCHARGE_OC_PROTECT_SMALL_A',
-  'DISCHARGE_OC_PROTECT_LARGE_A'
+  'DISCHARGE_OC_PROTECT_LARGE_A',
+  'DISCHARGE_OC_ALARM_DELAY_S',
+  'DISCHARGE_OC_PROTECT_SMALL_DELAY_S',
+  'DISCHARGE_OC_PROTECT_LARGE_DELAY_S'
 ]
 const TEMP_KEYS = [
   { displayKey: 'CELL_OVER_TEMP_PROTECT_C', actualKey: 'MOS_OT_PROTECT_C' },
   { displayKey: 'CELL_OVER_TEMP_RELEASE_C', actualKey: 'MOS_OT_PROTECT_RELEASE_C' },
+  { displayKey: 'MOS_OVER_TEMP_PROTECT_DELAY_S', actualKey: 'MOS_OT_PROTECT_DELAY_S' },
+  { displayKey: 'MOS_OVER_TEMP_RELEASE_DELAY_S', actualKey: 'MOS_OT_PROTECT_RELEASE_DELAY_S' },
   { displayKey: 'CELL_UNDER_TEMP_PROTECT_C', actualKey: 'CHARGE_UT_PROTECT_C' },
-  { displayKey: 'CELL_UNDER_TEMP_RELEASE_C', actualKey: 'CHARGE_UT_PROTECT_RELEASE_C' }
+  { displayKey: 'CELL_UNDER_TEMP_RELEASE_C', actualKey: 'CHARGE_UT_PROTECT_RELEASE_C' },
+  { displayKey: 'CHARGE_OVER_TEMP_PROTECT_C', actualKey: 'CHARGE_OT_PROTECT_C' },
+  { displayKey: 'CHARGE_OVER_TEMP_RELEASE_C', actualKey: 'CHARGE_OT_PROTECT_RELEASE_C' },
+  { displayKey: 'CHARGE_OVER_TEMP_PROTECT_DELAY_S', actualKey: 'CHARGE_OT_PROTECT_DELAY_S' },
+  { displayKey: 'CHARGE_OVER_TEMP_RELEASE_DELAY_S', actualKey: 'CHARGE_OT_PROTECT_RELEASE_DELAY_S' },
+  { displayKey: 'DISCHARGE_UNDER_TEMP_PROTECT_C', actualKey: 'DISCHARGE_UT_PROTECT_C' },
+  { displayKey: 'DISCHARGE_UNDER_TEMP_RELEASE_C', actualKey: 'DISCHARGE_UT_PROTECT_RELEASE_C' },
+  { displayKey: 'DISCHARGE_OVER_TEMP_PROTECT_C', actualKey: 'DISCHARGE_OT_PROTECT_C' },
+  { displayKey: 'DISCHARGE_OVER_TEMP_RELEASE_C', actualKey: 'DISCHARGE_OT_PROTECT_RELEASE_C' },
+  { displayKey: 'DISCHARGE_OVER_TEMP_PROTECT_DELAY_S', actualKey: 'DISCHARGE_OT_PROTECT_DELAY_S' },
+  { displayKey: 'DISCHARGE_OVER_TEMP_RELEASE_DELAY_S', actualKey: 'DISCHARGE_OT_PROTECT_RELEASE_DELAY_S' }
 ]
 const OTHER_KEYS = listParamsByCategory(PARAM_CATEGORIES.OTHER)
 const NUMBERING_KEYS = listParamsByCategory(PARAM_CATEGORIES.STRING)
@@ -943,7 +1065,10 @@ const FACTORY_ACTIONS: Array<Omit<FactoryAction, 'label'>> = [
   { key: 'clearProtection', raw: 0x00080000, confirm: true }
 ]
 const factoryItems = computed<FactoryAction[]>(() =>
-  FACTORY_ACTIONS.map(item => ({ ...item, label: FACTORY_ACTION_LABELS[item.key] || item.key }))
+  FACTORY_ACTIONS.filter(item => canAccessFactoryAction(item.key)).map(item => ({
+    ...item,
+    label: FACTORY_ACTION_LABELS[item.key] || item.key
+  }))
 )
 
 const mkItems = (entries: ParamEntry[]): ParamItem[] =>
@@ -958,7 +1083,7 @@ const mkItems = (entries: ParamEntry[]): ParamItem[] =>
       unit,
       value,
       valueType: PARAM_DEF_BY_KEY[actualKey]?.valueType || 'u16',
-      valueText: formatValue(value, unit)
+      valueText: formatParamValue(actualKey, value)
     }
   })
 
@@ -966,18 +1091,30 @@ const singleItems = computed(() => mkItems(SINGLE_KEYS))
 const voltageItems = computed(() => mkItems(VOLTAGE_KEYS))
 const currentItems = computed(() => mkItems(CURRENT_KEYS))
 const temperatureItems = computed(() => mkItems(TEMP_KEYS))
+const hasSingleItems = computed(() => singleItems.value.length > 0)
+const hasVoltageItems = computed(() => voltageItems.value.length > 0)
+const hasCurrentItems = computed(() => currentItems.value.length > 0)
+const hasTemperatureItems = computed(() => temperatureItems.value.length > 0)
 const otherItems = computed(() => mkItems(OTHER_KEYS))
 const numberingItems = computed(() => mkItems(NUMBERING_KEYS))
 const systemItems = computed(() => mkItems(SYSTEM_KEYS))
+const hasOtherItems = computed(() => otherItems.value.length > 0)
+const hasNumberingItems = computed(() => numberingItems.value.length > 0)
+const hasSystemItems = computed(() => systemItems.value.length > 0)
 const functionConfigFlags = computed(() => parseFunctionConfigFlags(paramValues[BMS_PARAM.FUNCTION_CONFIG]))
 const functionControlRows = computed<FunctionControlRow[]>(() =>
-  FUNCTION_CONFIG_ITEMS.map(item => ({
+  FUNCTION_CONFIG_ITEMS.filter(item => canAccessFunctionControl(item.key)).map(item => ({
     ...item,
     enabled: functionConfigFlags.value[item.key],
     statusText: functionConfigFlags.value[item.key] ? item.enabledLabel : item.disabledLabel
   }))
 )
-const canManageFunctionConfig = computed(() => canAccessParamKey(BMS_PARAM.FUNCTION_CONFIG))
+const hasFunctionControlRows = computed(() => functionControlRows.value.length > 0)
+const hasSystemSection = computed(() => hasSystemItems.value || hasFunctionControlRows.value)
+const hasFactoryItems = computed(() => factoryItems.value.length > 0)
+const hasAdvancedSections = computed(
+  () => hasOtherItems.value || hasNumberingItems.value || hasSystemSection.value || hasFactoryItems.value
+)
 
 async function loadKeys(entries: ParamEntry[]) {
   const useDirect = !!client && connType.value !== 'offline'
@@ -1020,7 +1157,8 @@ const editState = reactive({
   title: '',
   unit: '',
   valueType: 'u16',
-  inputText: ''
+  inputText: '',
+  selectValue: null as number | null
 })
 const advancedState = reactive({
   show: false,
@@ -1040,12 +1178,39 @@ function openEdit(item: ParamItem) {
   editState.title = item.label
   editState.unit = item.unit
   editState.valueType = item.valueType || 'u16'
-  if (editState.valueType === 'str') {
+  if (isBatteryTypeKey(editState.key)) {
+    const current = typeof item.value === 'number' ? item.value : Number(item.value)
+    editState.selectValue = Number.isFinite(current) ? current : null
+    editState.inputText = ''
+  } else if (editState.valueType === 'str') {
     editState.inputText = item.value == null ? '' : String(item.value)
+    editState.selectValue = null
   } else {
     editState.inputText = formatEditableValue(editState.key, item.value)
+    editState.selectValue = null
   }
   editState.show = true
+}
+
+async function writeParamValue(key: string, value: string | number) {
+  const useDirect = !!client && connType.value !== 'offline'
+  const useRelay = !useDirect && relayReady.value
+  if (!useDirect && !useRelay) return
+  if (useDirect && client) {
+    await client.writeParam(key, value)
+    paramValues[key] = await client.readParam(key)
+    return
+  }
+  await runRelayCommand({
+    command_type: 'write_param',
+    param_key: key,
+    value
+  })
+  const after = await runRelayCommand({
+    command_type: 'read_param',
+    param_key: key
+  })
+  paramValues[key] = (after?.result as any)?.value
 }
 
 async function confirmEdit() {
@@ -1053,16 +1218,14 @@ async function confirmEdit() {
   const useRelay = !useDirect && relayReady.value
   if (!useDirect && !useRelay) return
   try {
-    if (editState.valueType === 'str') {
-      if (useDirect && client) {
-        await client.writeParam(editState.key, editState.inputText)
-      } else {
-        await runRelayCommand({
-          command_type: 'write_param',
-          param_key: editState.key,
-          value: editState.inputText
-        })
+    if (isBatteryTypeKey(editState.key)) {
+      if (editState.selectValue == null || !Number.isFinite(editState.selectValue)) {
+        message.warning('请选择电池类型')
+        return
       }
+      await writeParamValue(editState.key, editState.selectValue)
+    } else if (editState.valueType === 'str') {
+      await writeParamValue(editState.key, editState.inputText)
     } else {
       const raw = editState.inputText.trim()
       const v = Number(raw)
@@ -1070,24 +1233,7 @@ async function confirmEdit() {
         message.warning('请输入有效数值')
         return
       }
-      if (useDirect && client) {
-        await client.writeParam(editState.key, v)
-      } else {
-        await runRelayCommand({
-          command_type: 'write_param',
-          param_key: editState.key,
-          value: v
-        })
-      }
-    }
-    if (useDirect && client) {
-      paramValues[editState.key] = await client.readParam(editState.key)
-    } else {
-      const after = await runRelayCommand({
-        command_type: 'read_param',
-        param_key: editState.key
-      })
-      paramValues[editState.key] = (after?.result as any)?.value
+      await writeParamValue(editState.key, v)
     }
     editState.show = false
     message.success('已保存')
@@ -1118,7 +1264,7 @@ async function setFunctionControl(key: FunctionConfigFlagKey, enabled: boolean) 
     message.warning('当前离线，无法设置功能配置')
     return
   }
-  if (!canManageFunctionConfig.value) {
+  if (!canAccessFunctionControl(key)) {
     message.warning('当前账号无权限操作功能配置')
     return
   }
@@ -1150,6 +1296,10 @@ async function runFactoryAction(item: FactoryAction) {
   const useRelay = !useDirect && relayReady.value
   if (!useDirect && !useRelay) {
     message.warning('当前离线，无法执行工厂命令')
+    return
+  }
+  if (!canAccessFactoryAction(item.key)) {
+    message.warning('当前账号无权限执行工厂命令')
     return
   }
   if (item.confirm) {
@@ -1218,30 +1368,9 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
   },
   {
     key: 'actions',
-    title: '操作',
-    minWidth: 220,
-    render: row => (
-      <NSpace>
-        <NButton
-          size="small"
-          tertiary
-          type="primary"
-          disabled={row.enabled || !canManageFunctionConfig.value}
-          onClick={() => setFunctionControl(row.key, true)}
-        >
-          {row.enabledLabel}
-        </NButton>
-        <NButton
-          size="small"
-          tertiary
-          type="warning"
-          disabled={!row.enabled || !canManageFunctionConfig.value}
-          onClick={() => setFunctionControl(row.key, false)}
-        >
-          {row.disabledLabel}
-        </NButton>
-      </NSpace>
-    )
+    title: '开关',
+    width: 100,
+    render: row => <NSwitch value={row.enabled} onUpdateValue={value => setFunctionControl(row.key, value)} />
   }
 ]
 </script>
@@ -1305,6 +1434,52 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
               <NGridItem :span="8">
                 <NCard size="small" title="充放电电流" :bordered="false">
                   <div class="metric-big">{{ currentText }}</div>
+                </NCard>
+              </NGridItem>
+
+              <NGridItem :span="12">
+                <NCard size="small" title="开关状态" :bordered="false">
+                  <div class="switch-grid">
+                    <div class="switch-item">
+                      <span class="switch-item__label">充电开关</span>
+                      <NSwitch :value="chargeSwitchOn" disabled />
+                    </div>
+                    <div class="switch-item">
+                      <span class="switch-item__label">放电开关</span>
+                      <NSwitch :value="dischargeSwitchOn" disabled />
+                    </div>
+                    <div class="switch-item">
+                      <span class="switch-item__label">均衡状态</span>
+                      <NSwitch :value="balancingOn" disabled />
+                    </div>
+                    <div class="switch-item">
+                      <span class="switch-item__label">保护状态</span>
+                      <NSwitch :value="protectOn" disabled />
+                    </div>
+                  </div>
+                </NCard>
+              </NGridItem>
+
+              <NGridItem :span="12">
+                <NCard size="small" title="电压信息" :bordered="false">
+                  <div class="temp-list">
+                    <div class="temp-row">
+                      <span class="temp-label">平均电压</span>
+                      <span>{{ avgVoltageText }}</span>
+                    </div>
+                    <div class="temp-row">
+                      <span class="temp-label">最高电压</span>
+                      <span>{{ highestVoltageText }}</span>
+                    </div>
+                    <div class="temp-row">
+                      <span class="temp-label">最低电压</span>
+                      <span>{{ lowestVoltageText }}</span>
+                    </div>
+                    <div class="temp-row">
+                      <span class="temp-label">电压差</span>
+                      <span>{{ diffVoltageText }}</span>
+                    </div>
+                  </div>
                 </NCard>
               </NGridItem>
 
@@ -1390,13 +1565,13 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
             <NAlert class="mb-12px" type="info" :show-icon="false">
               参数读写支持两种通道：4G设备走 MQTT 直连，BLE设备走“APP蓝牙中继”；写入参数请谨慎操作。
             </NAlert>
-            <NSpace class="mb-12px" justify="end">
+            <NSpace v-if="hasAdvancedSections" class="mb-12px" justify="end">
               <NButton size="small" :disabled="connType === 'offline' && !relayReady" @click="openAdvancedSettings">
                 高级设置
               </NButton>
             </NSpace>
             <NGrid :cols="24" :x-gap="12" :y-gap="12">
-              <NGridItem :span="12">
+              <NGridItem v-if="hasSingleItems" :span="12">
                 <NCard size="small" title="单体设置" :bordered="false">
                   <NSpace justify="space-between" class="mb-10px">
                     <NButton
@@ -1410,7 +1585,7 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
                   <NDataTable :columns="paramColumns" :data="singleItems" :bordered="false" :max-height="260" />
                 </NCard>
               </NGridItem>
-              <NGridItem :span="12">
+              <NGridItem v-if="hasVoltageItems" :span="12">
                 <NCard size="small" title="总压设置" :bordered="false">
                   <NSpace justify="space-between" class="mb-10px">
                     <NButton
@@ -1424,7 +1599,7 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
                   <NDataTable :columns="paramColumns" :data="voltageItems" :bordered="false" :max-height="260" />
                 </NCard>
               </NGridItem>
-              <NGridItem :span="12">
+              <NGridItem v-if="hasCurrentItems" :span="12">
                 <NCard size="small" title="电流设置" :bordered="false">
                   <NSpace justify="space-between" class="mb-10px">
                     <NButton
@@ -1438,7 +1613,7 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
                   <NDataTable :columns="paramColumns" :data="currentItems" :bordered="false" :max-height="260" />
                 </NCard>
               </NGridItem>
-              <NGridItem :span="12">
+              <NGridItem v-if="hasTemperatureItems" :span="12">
                 <NCard size="small" title="温度设置" :bordered="false">
                   <NSpace justify="space-between" class="mb-10px">
                     <NButton
@@ -1452,21 +1627,6 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
                   <NDataTable :columns="paramColumns" :data="temperatureItems" :bordered="false" :max-height="260" />
                 </NCard>
               </NGridItem>
-              <NGridItem :span="24">
-                <NCard size="small" title="功能控制" :bordered="false">
-                  <NSpace justify="space-between" class="mb-10px">
-                    <NText depth="3">基于地址 62 的功能位定义，按功能项进行开启、关闭、允许和禁止操作。</NText>
-                    <NButton
-                      size="small"
-                      :disabled="connType === 'offline' && !relayReady"
-                      @click="loadKeys([BMS_PARAM.FUNCTION_CONFIG])"
-                    >
-                      刷新
-                    </NButton>
-                  </NSpace>
-                  <NDataTable :columns="functionColumns" :data="functionControlRows" :bordered="false" :max-height="260" />
-                </NCard>
-              </NGridItem>
             </NGrid>
           </NTabPane>
         </NTabs>
@@ -1476,7 +1636,14 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
     <NModal v-model:show="editState.show" preset="card" style="width: 520px" :title="`设置：${editState.title}`">
       <NSpace vertical size="large">
         <NText depth="3">单位：{{ editState.unit || '-' }}</NText>
+        <NSelect
+          v-if="editState.key === BMS_PARAM.BATTERY_TYPE"
+          v-model:value="editState.selectValue"
+          :options="BATTERY_TYPE_OPTIONS"
+          placeholder="请选择电池类型"
+        />
         <NInput
+          v-else
           v-model:value="editState.inputText"
           :placeholder="editState.valueType === 'str' ? '请输入文本值' : '请输入数值'"
           type="text"
@@ -1491,21 +1658,21 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
     <NModal v-model:show="advancedState.show" preset="card" style="width: min(1100px, 95vw)" title="高级设置">
       <NSpin :show="advancedState.loading">
         <NTabs type="line" animated>
-          <NTabPane name="advanced-config" tab="高级配置">
+          <NTabPane v-if="hasOtherItems" name="advanced-config" tab="高级配置">
             <NDataTable :columns="paramColumns" :data="otherItems" :bordered="false" :max-height="420" />
           </NTabPane>
-          <NTabPane name="numbering-config" tab="编号配置">
+          <NTabPane v-if="hasNumberingItems" name="numbering-config" tab="编号配置">
             <NDataTable :columns="paramColumns" :data="numberingItems" :bordered="false" :max-height="420" />
           </NTabPane>
-          <NTabPane name="system-config" tab="系统配置">
+          <NTabPane v-if="hasSystemSection" name="system-config" tab="系统配置">
             <NSpace vertical size="large">
-              <NCard size="small" title="功能控制" :bordered="false">
+              <NCard v-if="hasFunctionControlRows" size="small" title="功能控制" :bordered="false">
                 <NDataTable :columns="functionColumns" :data="functionControlRows" :bordered="false" :max-height="240" />
               </NCard>
-              <NDataTable :columns="paramColumns" :data="systemItems" :bordered="false" :max-height="420" />
+              <NDataTable v-if="hasSystemItems" :columns="paramColumns" :data="systemItems" :bordered="false" :max-height="420" />
             </NSpace>
           </NTabPane>
-          <NTabPane name="factory-config" tab="工厂配置">
+          <NTabPane v-if="hasFactoryItems" name="factory-config" tab="工厂配置">
             <NDataTable :columns="factoryColumns" :data="factoryItems" :bordered="false" :max-height="420" />
           </NTabPane>
         </NTabs>
@@ -1550,6 +1717,24 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
 }
 .temp-label {
   color: rgba(55, 65, 81, 0.7);
+}
+.switch-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+}
+.switch-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.03);
+}
+.switch-item__label {
+  color: rgba(55, 65, 81, 0.82);
+  font-size: 14px;
 }
 .history-chart {
   width: 100%;

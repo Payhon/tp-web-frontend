@@ -9,6 +9,8 @@ export type OrgTypePermissionItem = {
 export type DeviceParamNode = {
   label: string
   value: string
+  register_address?: string
+  param_keys?: string[]
   children?: DeviceParamNode[]
 }
 

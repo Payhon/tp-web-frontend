@@ -15,7 +15,6 @@ import CommandDelivery from '@/views/device/details/modules/command-delivery.vue
 import ExpectMessage from '@/views/device/details/modules/expect-message.vue'
 import Automate from '@/views/device/details/modules/automate.vue'
 import GiveAnAlarm from '@/views/device/details/modules/give-an-alarm.vue'
-import User from '@/views/device/details/modules/user.vue'
 import Settings from '@/views/device/details/modules/settings.vue'
 import DeviceStatusHistory from '@/views/device/details/modules/device-status.vue'
 import DeviceDiagnosis from '@/views/device/details/modules/device-diagnosis.vue'
@@ -34,6 +33,7 @@ const appStore = useAppStore()
 let { d_id } = query
 const { loading, startLoading, endLoading } = useLoading()
 const enableBmsPanel = computed(() => String(route.query?.bms || '') === '1')
+const enableBmsBatteryDetailMode = computed(() => enableBmsPanel.value)
 
 const bmsPanelTab = {
   key: 'bms-panel',
@@ -176,6 +176,17 @@ function rebuildComponents(data: any) {
   const deviceConfig = data?.device_config
   const deviceType = deviceConfig?.device_type
   const hasDeviceConfigName = Boolean(data?.device_config_name)
+
+  if (enableBmsBatteryDetailMode.value) {
+    const connectionTab = baseComponents.find(item => item.key === 'join')
+    list = connectionTab ? [bmsPanelTab, connectionTab] : [bmsPanelTab]
+
+    if (!list.some(item => item.key === tabValue.value)) {
+      tabValue.value = 'bms-panel'
+    }
+    components.value = list
+    return
+  }
 
   if (deviceConfig) {
     if (deviceType !== '2' || !hasDeviceConfigName) {

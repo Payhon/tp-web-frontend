@@ -5,13 +5,11 @@ import { RefreshOutline, SaveOutline } from '@vicons/ionicons5'
 import { $t } from '@/locales'
 import { useAuthStore } from '@/store/modules/auth'
 import { fetchUIElementList } from '@/service/api/route'
-import {
-  buildDeviceParamPermissionTree,
-  type DeviceParamPermissionNode
-} from '@/common/lib/bms-protocol/param-registry'
 import { fetchUserList } from '@/service/api/auth'
 import {
+  fetchDeviceParamPermissionOptions,
   fetchOrgTypePermissions,
+  type DeviceParamNode,
   upsertOrgTypePermission,
   type OrgTypePermissionItem
 } from '@/service/api/org-type-permissions'
@@ -42,7 +40,9 @@ const saving = ref(false)
 const tenantLoading = ref(false)
 
 const menuTreeData = ref<any[]>([])
-const deviceParamTreeData = ref<any[]>(buildDeviceParamPermissionTree())
+type DeviceParamTreeOption = DeviceParamNode & { key: string; children?: DeviceParamTreeOption[] }
+
+const deviceParamTreeData = ref<DeviceParamTreeOption[]>([])
 const tenantOptions = ref<{ label: string; value: string }[]>([])
 
 const state = reactive<Record<OrgTypeKey, { uiCodes: string[]; deviceParams: string[] }>>({
@@ -52,9 +52,9 @@ const state = reactive<Record<OrgTypeKey, { uiCodes: string[]; deviceParams: str
   APP_USER: { uiCodes: [], deviceParams: [] }
 })
 
-function renderDeviceParamLabel({ option }: { option: DeviceParamPermissionNode }) {
-  const registerAddress = option.registerAddress?.trim()
-  const keyNames = (option.paramKeys || []).filter(Boolean).join(' / ')
+function renderDeviceParamLabel({ option }: { option: DeviceParamTreeOption & Record<string, any> }) {
+  const registerAddress = String(option.register_address || option.registerAddress || '').trim()
+  const keyNames = (option.param_keys || option.paramKeys || []).filter(Boolean).join(' / ')
 
   if (!registerAddress && !keyNames) return option.label
 
@@ -77,6 +77,14 @@ function renderDeviceParamLabel({ option }: { option: DeviceParamPermissionNode 
       `（${metaParts.join(' / ')}）`
     )
   ])
+}
+
+function toDeviceParamTreeData(nodes: DeviceParamNode[]): DeviceParamTreeOption[] {
+  return (nodes || []).map(node => ({
+    ...node,
+    key: String(node.value || '').trim(),
+    children: node.children?.length ? toDeviceParamTreeData(node.children) : undefined
+  }))
 }
 
 function toTreeData(nodes: any[]): any[] {
@@ -134,6 +142,8 @@ async function loadAll() {
   try {
     const ui = await fetchUIElementList()
     menuTreeData.value = toTreeData(ui || [])
+    const deviceResp: any = await fetchDeviceParamPermissionOptions()
+    deviceParamTreeData.value = toDeviceParamTreeData((deviceResp?.data || deviceResp || []) as DeviceParamNode[])
 
     const permResp = await fetchOrgTypePermissions(
       isSysAdmin.value ? { tenant_id: effectiveTenantId.value } : undefined

@@ -44,11 +44,14 @@ function setTableData(data: Api.NotificationServices.SMS) {
 
 async function getNotificationServices() {
   startLoading()
-  const { data } = await fetchNotificationServicesSMS()
-  if (data) {
-    setTableData(data)
+  try {
+    const data = await fetchNotificationServicesSMS()
+    if (data) {
+      setTableData(data)
+    }
+  } finally {
+    endLoading()
   }
-  endLoading()
 }
 
 const rules = {
@@ -64,14 +67,17 @@ const formRef = ref<HTMLElement & FormInst>()
 async function handleSubmit() {
   await formRef.value?.validate()
   startLoading()
-  const formData = deepClone(formModel) as any
-  delete formData.config
-  const data: any = await editNotificationServices(formData)
-  if (!data.error) {
-    window.$message?.success('success')
-    await getNotificationServices()
+  try {
+    const formData = deepClone(formModel) as any
+    delete formData.config
+    const data: any = await editNotificationServices(formData)
+    if (!data.error) {
+      window.$message?.success('success')
+      await getNotificationServices()
+    }
+  } finally {
+    endLoading()
   }
-  endLoading()
 }
 
 function init() {

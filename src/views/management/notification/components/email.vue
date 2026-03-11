@@ -15,28 +15,47 @@ const formModel = reactive<NotificationServices.Email>(createDefaultFormModel())
 
 function setTableData(data: Api.NotificationServices.Email) {
   Object.assign(formModel, data)
-  if (data.config !== 'null') {
-    formModel.email_config = JSON.parse(data.config)
+  if (!data.config || data.config === 'null') return
+  try {
+    formModel.email_config = {
+      ...createDefaultEmailConfig(),
+      ...JSON.parse(data.config)
+    }
+  } catch {
+    formModel.email_config = createDefaultEmailConfig()
   }
 }
 
 async function getNotificationServices() {
   startLoading()
-  const { data } = await fetchNotificationServicesEmail()
-  if (data) {
-    setTableData(data)
+  try {
+    const data = await fetchNotificationServicesEmail()
+    if (data) {
+      setTableData(data)
+    }
+  } finally {
+    endLoading()
   }
-  endLoading()
 }
 
 function createDefaultFormModel(): NotificationServices.Email {
   return {
     id: '',
-    email_config: {},
+    email_config: createDefaultEmailConfig(),
     config: '',
     notice_type: 'EMAIL',
     status: 'OPEN',
     remark: ''
+  }
+}
+
+function createDefaultEmailConfig() {
+  return {
+    host: '',
+    port: 465,
+    from_email: '',
+    from_password: '',
+    ssl: true
   }
 }
 
@@ -52,13 +71,16 @@ const formRef = ref<HTMLElement & FormInst>()
 async function handleSubmit() {
   await formRef.value?.validate()
   startLoading()
-  const formData = deepClone(formModel)
-  delete formData.config
-  const data: any = await editNotificationServices(formData)
-  if (!data.error) {
-    window.$message?.success('success')
+  try {
+    const formData = deepClone(formModel)
+    delete formData.config
+    const data: any = await editNotificationServices(formData)
+    if (!data.error) {
+      window.$message?.success('success')
+      await getNotificationServices()
+    }
+  } finally {
     endLoading()
-    await getNotificationServices()
   }
 }
 
