@@ -59,21 +59,31 @@ const title = computed(() => {
 
 const formRef = ref<HTMLElement & FormInst>()
 
-type FormModel = Pick<UserManagement.User, 'name' | 'description' | 'email'>
+type FormModel = Pick<UserManagement.User, 'name' | 'description' | 'email'> & {
+  authority: 'TENANT_ADMIN' | 'TENANT_USER'
+  user_kind: 'ORG_USER' | 'END_USER'
+  org_type: string
+}
 
 const formModel = reactive<FormModel>(createDefaultFormModel())
 
 const rules: Record<keyof FormModel, FormItemRule | FormItemRule[]> = {
   name: createRequiredFormRule('请输入用户名'),
   description: createRequiredFormRule('请输入角色备注'),
-  email: {}
+  email: {},
+  authority: createRequiredFormRule('请选择适用账号'),
+  user_kind: createRequiredFormRule('请选择用户类型'),
+  org_type: {}
 }
 
 function createDefaultFormModel(): FormModel {
   return {
     name: '',
     email: '',
-    description: ''
+    description: '',
+    authority: 'TENANT_ADMIN',
+    user_kind: 'ORG_USER',
+    org_type: ''
   }
 }
 
@@ -127,6 +137,35 @@ watch(
     <n-form ref="formRef" label-placement="left" :label-width="80" :model="formModel" :rules="rules">
       <n-form-item :label="$t('page.manage.role.roleName')" path="name">
         <n-input v-model:value="formModel.name" />
+      </n-form-item>
+      <n-form-item label="适用账号" path="authority">
+        <n-select
+          v-model:value="formModel.authority"
+          :options="[
+            { label: '租户后台账号', value: 'TENANT_ADMIN' },
+            { label: '机构后台账号', value: 'TENANT_USER' }
+          ]"
+        />
+      </n-form-item>
+      <n-form-item label="用户类型" path="user_kind">
+        <n-select
+          v-model:value="formModel.user_kind"
+          :options="[
+            { label: '组织用户', value: 'ORG_USER' },
+            { label: '终端用户', value: 'END_USER' }
+          ]"
+        />
+      </n-form-item>
+      <n-form-item v-if="formModel.authority === 'TENANT_USER' && formModel.user_kind === 'ORG_USER'" label="机构类型">
+        <n-select
+          v-model:value="formModel.org_type"
+          :options="[
+            { label: 'PACK工厂', value: 'PACK_FACTORY' },
+            { label: '经销商', value: 'DEALER' },
+            { label: '门店', value: 'STORE' }
+          ]"
+          clearable
+        />
       </n-form-item>
       <n-form-item :label="$t('generate.role-description')">
         <n-input v-model:value="formModel.description" type="textarea" />

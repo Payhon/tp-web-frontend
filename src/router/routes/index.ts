@@ -333,19 +333,19 @@ const customRoutes: ElegantRoute[] = [
         children: [
           {
             name: 'bms_system_user',
-            path: '/bms/system/user',
+            path: '/management/backoffice-user',
             component: 'view.bms_system_user',
             meta: {
-              title: '账号管理',
+              title: '后台账号管理',
               icon: 'mdi:account-cog'
             }
           },
           {
             name: 'bms_system_role',
-            path: '/bms/system/role',
+            path: '/management/backoffice-role',
             component: 'view.bms_system_role',
             meta: {
-              title: '角色管理',
+              title: '后台角色管理',
               icon: 'mdi:account-key'
             }
           }

@@ -83,7 +83,11 @@ const initRolePermissions = async () => {
 }
 
 const initUIElementList = async () => {
-  const uiElementList = await fetchUIElementList()
+  const uiElementList = await fetchUIElementList({
+    authority: props.editData?.authority,
+    user_kind: props.editData?.user_kind,
+    org_type: props.editData?.org_type
+  })
   treeOptions.value = convertToTreeNodes(uiElementList)
   initRolePermissions()
 }

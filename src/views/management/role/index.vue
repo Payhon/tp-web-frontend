@@ -62,6 +62,25 @@ const columns: Ref<DataTableColumns<UserManagement.User>> = ref([
     align: 'left'
   },
   {
+    key: 'authority',
+    title: '适用账号',
+    minWidth: '120px',
+    align: 'left',
+    render: row => {
+      const authority = (row as any).authority
+      if (authority === 'TENANT_ADMIN') return '租户后台账号'
+      if (authority === 'TENANT_USER') return '机构后台账号'
+      return authority || '--'
+    }
+  },
+  {
+    key: 'org_type',
+    title: '机构类型',
+    minWidth: '120px',
+    align: 'left',
+    render: row => (row as any).org_type || '--'
+  },
+  {
     key: 'created_at',
     title: $t('page.product.update-ota.createTime'),
     minWidth: '100px',

@@ -39,8 +39,8 @@ export const delElement = async (id: string) => {
 }
 
 /** Get UI Element List */
-export const fetchUIElementList = async () => {
-  const data = await request.get<Api.Route.Data>('/ui_elements/select/form')
+export const fetchUIElementList = async (params?: Record<string, any>) => {
+  const data = await request.get<Api.Route.Data>('/ui_elements/select/form', { params })
   return data?.data?.list || []
 }
 

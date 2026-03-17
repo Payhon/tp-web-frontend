@@ -721,15 +721,27 @@ function cToFText(c: number | null | undefined) {
   return `${c.toFixed(0)}℃/${f.toFixed(0)}°F`
 }
 
-const currentText = computed(() => formatSignedCurrent(displayStatus.value?.electrical?.currentA ?? cloudCurrent.currentA))
-const cycleCountText = computed(() => formatCountText(displayStatus.value?.energy?.cycleCount ?? cloudCurrent.cycleCount))
-const chargeTimeText = computed(() => formatMinuteText(displayStatus.value?.timing?.chargeRemainingMin ?? cloudCurrent.chargeRemainingMin))
-const mosTempText = computed(() => cToFText(displayStatus.value?.temperature?.chargeMosC ?? (cloudCurrent.chargeMosC as number | null | undefined)))
-const ambientTempText = computed(() => cToFText(displayStatus.value?.temperature?.ambientC ?? (cloudCurrent.ambientC as number | null | undefined)))
+const currentText = computed(() =>
+  formatSignedCurrent(displayStatus.value?.electrical?.currentA ?? cloudCurrent.currentA)
+)
+const cycleCountText = computed(() =>
+  formatCountText(displayStatus.value?.energy?.cycleCount ?? cloudCurrent.cycleCount)
+)
+const chargeTimeText = computed(() =>
+  formatMinuteText(displayStatus.value?.timing?.chargeRemainingMin ?? cloudCurrent.chargeRemainingMin)
+)
+const mosTempText = computed(() =>
+  cToFText(displayStatus.value?.temperature?.chargeMosC ?? (cloudCurrent.chargeMosC as number | null | undefined))
+)
+const ambientTempText = computed(() =>
+  cToFText(displayStatus.value?.temperature?.ambientC ?? (cloudCurrent.ambientC as number | null | undefined))
+)
 const cellTempText = computed(() => {
   const cellTemps = displayStatus.value?.temperature?.cellTempsC || []
   const v =
-    cellTemps.length > 0 ? cellTemps[0] : displayStatus.value?.temperature?.highestTemp?.valueC ?? displayStatus.value?.temperature?.poleC ?? null
+    cellTemps.length > 0
+      ? cellTemps[0]
+      : (displayStatus.value?.temperature?.highestTemp?.valueC ?? displayStatus.value?.temperature?.poleC ?? null)
   return cToFText(v)
 })
 const avgVoltageText = computed(() => {
@@ -795,10 +807,13 @@ const protectStatusItems = computed(() =>
     .filter(key => protectionStatus.value[key])
     .map(labelForStatus)
 )
-const protectSummaryText = computed(() => (protectStatusItems.value.length ? `${protectStatusItems.value.length}项保护` : '无'))
+const protectSummaryText = computed(() =>
+  protectStatusItems.value.length ? `${protectStatusItems.value.length}项保护` : '无'
+)
 
 const cellVoltageRows = computed(() => {
   const list = displayStatus.value?.cell?.voltagesMv || []
+  const balancingList = displayStatus.value?.cell?.balancing || []
   return list.map((mv, i) => {
     const v = Number(mv || 0) / 1000
     return {
@@ -806,24 +821,11 @@ const cellVoltageRows = computed(() => {
       voltage: Number.isFinite(v) ? v : null,
       voltageText: Number.isFinite(v) ? `${v.toFixed(2)}V` : '-',
       isHighest: i + 1 === highestIdx.value,
-      isLowest: i + 1 === lowestIdx.value
+      isLowest: i + 1 === lowestIdx.value,
+      isBalancing: Boolean(balancingList[i])
     }
   })
 })
-
-const cellColumns: DataTableColumns<any> = [
-  { key: 'index', title: '电芯', width: 80 },
-  {
-    key: 'voltageText',
-    title: '电压',
-    minWidth: 120,
-    render: row => {
-      if (row.isHighest) return <span style="color:#d03050;font-weight:600">{row.voltageText}</span>
-      if (row.isLowest) return <span style="color:#0b3bff;font-weight:600">{row.voltageText}</span>
-      return row.voltageText
-    }
-  }
-]
 
 // 参数设置（与移动端对齐）
 type ParamEntry = string | { displayKey: string; actualKey: string }
@@ -862,26 +864,39 @@ const TEMP_DISPLAY_LABELS: Record<string, string> = {
   CELL_UNDER_TEMP_RELEASE_C: '充电低温保护解除温度',
   CHARGE_OVER_TEMP_PROTECT_C: '充电高温保护温度',
   CHARGE_OVER_TEMP_RELEASE_C: '充电高温保护解除温度',
-  CHARGE_OVER_TEMP_PROTECT_DELAY_S: '充电高温保护延时',
-  CHARGE_OVER_TEMP_RELEASE_DELAY_S: '充电高温保护解除延时',
+  CHARGE_OVER_TEMP_PROTECT_DELAY_S: '充电高低温保护延时',
+  CHARGE_OVER_TEMP_RELEASE_DELAY_S: '充电高低温保护解除延时',
   DISCHARGE_UNDER_TEMP_PROTECT_C: '放电低温保护温度',
   DISCHARGE_UNDER_TEMP_RELEASE_C: '放电低温保护解除温度',
   DISCHARGE_OVER_TEMP_PROTECT_C: '放电高温保护温度',
   DISCHARGE_OVER_TEMP_RELEASE_C: '放电高温保护解除温度',
-  DISCHARGE_OVER_TEMP_PROTECT_DELAY_S: '放电高温保护延时',
-  DISCHARGE_OVER_TEMP_RELEASE_DELAY_S: '放电高温保护解除延时'
+  DISCHARGE_OVER_TEMP_PROTECT_DELAY_S: '放电高低温保护延时',
+  DISCHARGE_OVER_TEMP_RELEASE_DELAY_S: '放电高低温保护解除延时'
 }
 const FACTORY_ACTION_LABELS: Record<string, string> = {
   enterTestMode: '进入测试模式',
   exitTestMode: '退出测试模式',
   balanceAllOn: '开启全均衡',
   balanceAllOff: '关闭全均衡',
+  function1On: '功能1打开',
+  function1Off: '功能1关闭',
+  function2On: '功能2打开',
+  function2Off: '功能2关闭',
+  function3On: '功能3打开',
+  function3Off: '功能3关闭',
+  function4On: '功能4打开',
+  function4Off: '功能4关闭',
+  resetProtectionBoard: '复位保护板',
+  mcuProtectionOn: 'MCU进入保护',
+  mcuProtectionOff: 'MCU退出保护',
+  manualChargeDischargeOn: '手动打开充放电管',
+  manualChargeDischargeOff: '手动关闭充放电管',
+  manualHeatingOn: '手动打开加热',
+  manualHeatingOff: '手动关闭加热',
+  gpsPowerOn: 'GPS电源打开',
+  gpsPowerOff: 'GPS电源关闭',
   sleep: '进入休眠',
-  powerOff: '关机',
-  restoreDefaults: '恢复出厂参数',
-  clearHistory: '清除历史数据',
-  clearCycles: '清除循环计数',
-  clearProtection: '清除保护状态'
+  powerOff: '关机'
 }
 
 function resolveParamEntry(entry: ParamEntry) {
@@ -985,6 +1000,7 @@ const SINGLE_KEYS = [
   'CELL_OC_PROTECT_V',
   'CELL_OC_ALARM_DELAY_S',
   'CELL_OC_PROTECT_DELAY_S',
+  'FEEDBACK_OC_PROTECT_DELAY_S',
   'CELL_OV_PROTECT_RELEASE_V',
   'CELL_OC_ALARM_RELEASE_DELTA_V',
   'CELL_OV_ALARM_RELEASE_DELAY_S',
@@ -993,6 +1009,7 @@ const SINGLE_KEYS = [
   'NORMAL_CELL_UV_PROTECT_V',
   'CELL_UV_ALARM_DELAY_S',
   'CELL_UV_PROTECT_DELAY_S',
+  'CELL_UV_ALARM_RELEASE_V',
   'CELL_UV_PROTECT_RELEASE_V',
   'CELL_UV_ALARM_RELEASE_DELAY_S',
   'CELL_UV_PROTECT_RELEASE_DELAY_S'
@@ -1018,6 +1035,7 @@ const VOLTAGE_KEYS = [
   'PACK_UV_PROTECT_RELEASE_DELAY_S'
 ]
 const CURRENT_KEYS = [
+  'CHARGE_OC_ALARM_A',
   'CHARGE_OC_PROTECT_SMALL_A',
   'CHARGE_OC_PROTECT_LARGE_A',
   'CHARGE_OC_ALARM_DELAY_S',
@@ -1046,7 +1064,19 @@ const TEMP_KEYS = [
   { displayKey: 'DISCHARGE_OVER_TEMP_PROTECT_C', actualKey: 'DISCHARGE_OT_PROTECT_C' },
   { displayKey: 'DISCHARGE_OVER_TEMP_RELEASE_C', actualKey: 'DISCHARGE_OT_PROTECT_RELEASE_C' },
   { displayKey: 'DISCHARGE_OVER_TEMP_PROTECT_DELAY_S', actualKey: 'DISCHARGE_OT_PROTECT_DELAY_S' },
-  { displayKey: 'DISCHARGE_OVER_TEMP_RELEASE_DELAY_S', actualKey: 'DISCHARGE_OT_PROTECT_RELEASE_DELAY_S' }
+  { displayKey: 'DISCHARGE_OVER_TEMP_RELEASE_DELAY_S', actualKey: 'DISCHARGE_OT_PROTECT_RELEASE_DELAY_S' },
+  'CELL_OT_ALARM_C',
+  'CELL_OT_ALARM_RELEASE_C',
+  'CELL_OT_ALARM_DELAY_S',
+  'CELL_OT_ALARM_RELEASE_DELAY_S',
+  'HEAT_CELL_ON_C',
+  'HEAT_CELL_OFF_C',
+  'HEAT_FILM_PROTECT_C',
+  'HEAT_FILM_PROTECT_RELEASE_C',
+  'HEAT_ON_DELAY_S',
+  'HEAT_OFF_DELAY_S',
+  'POLE_TEMP_PROTECT_C',
+  'POLE_TEMP_PROTECT_RELEASE_C'
 ]
 const OTHER_KEYS = listParamsByCategory(PARAM_CATEGORIES.OTHER)
 const NUMBERING_KEYS = listParamsByCategory(PARAM_CATEGORIES.STRING)
@@ -1057,12 +1087,25 @@ const FACTORY_ACTIONS: Array<Omit<FactoryAction, 'label'>> = [
   { key: 'exitTestMode', raw: 0x00000800, confirm: true },
   { key: 'balanceAllOn', raw: 0x00001000, confirm: true },
   { key: 'balanceAllOff', raw: 0x00002000, confirm: true },
+  { key: 'function1On', raw: 0x00400000, confirm: true },
+  { key: 'function1Off', raw: 0x00800000, confirm: true },
+  { key: 'function2On', raw: 0x01000000, confirm: true },
+  { key: 'function2Off', raw: 0x02000000, confirm: true },
+  { key: 'function3On', raw: 0x04000000, confirm: true },
+  { key: 'function3Off', raw: 0x08000000, confirm: true },
+  { key: 'function4On', raw: 0x10000000, confirm: true },
+  { key: 'function4Off', raw: 0x20000000, confirm: true },
+  { key: 'resetProtectionBoard', raw: 0x00200000, confirm: true },
+  { key: 'mcuProtectionOn', raw: 0x00004000, confirm: true },
+  { key: 'mcuProtectionOff', raw: 0x00008000, confirm: true },
+  { key: 'manualChargeDischargeOn', raw: 0x00000100, confirm: true },
+  { key: 'manualChargeDischargeOff', raw: 0x00000200, confirm: true },
+  { key: 'manualHeatingOn', raw: 0x00000040, confirm: true },
+  { key: 'manualHeatingOff', raw: 0x00000080, confirm: true },
+  { key: 'gpsPowerOn', raw: 0x00000010, confirm: true },
+  { key: 'gpsPowerOff', raw: 0x00000020, confirm: true },
   { key: 'sleep', raw: 0x00000004, confirm: true },
-  { key: 'powerOff', raw: 0x00000001, confirm: true },
-  { key: 'restoreDefaults', raw: 0x00010000, confirm: true },
-  { key: 'clearHistory', raw: 0x00020000, confirm: true },
-  { key: 'clearCycles', raw: 0x00040000, confirm: true },
-  { key: 'clearProtection', raw: 0x00080000, confirm: true }
+  { key: 'powerOff', raw: 0x00000001, confirm: true }
 ]
 const factoryItems = computed<FactoryAction[]>(() =>
   FACTORY_ACTIONS.filter(item => canAccessFactoryAction(item.key)).map(item => ({
@@ -1533,7 +1576,27 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
                 <NTag type="info">Pack：{{ packVoltageText }}</NTag>
                 <NTag type="default">电芯串数：{{ cellCount || '-' }}</NTag>
               </NSpace>
-              <NDataTable :columns="cellColumns" :data="cellVoltageRows" :bordered="false" :max-height="420" />
+              <div v-if="cellVoltageRows.length > 0" class="cell-grid">
+                <div
+                  v-for="item in cellVoltageRows"
+                  :key="item.index"
+                  class="cell-card"
+                  :class="{
+                    highest: item.isHighest,
+                    lowest: item.isLowest,
+                    balancing: item.isBalancing
+                  }"
+                >
+                  <div class="cell-card-head">
+                    <span class="cell-index">#{{ item.index }}</span>
+                    <NTag v-if="item.isHighest" size="small" type="error" round>最高</NTag>
+                    <NTag v-else-if="item.isLowest" size="small" type="info" round>最低</NTag>
+                    <NTag v-else-if="item.isBalancing" size="small" type="warning" round>均衡中</NTag>
+                  </div>
+                  <div class="cell-voltage">{{ item.voltageText }}</div>
+                </div>
+              </div>
+              <NEmpty v-else description="暂无电芯数据" />
             </NCard>
           </NTabPane>
 
@@ -1667,9 +1730,20 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
           <NTabPane v-if="hasSystemSection" name="system-config" tab="系统配置">
             <NSpace vertical size="large">
               <NCard v-if="hasFunctionControlRows" size="small" title="功能控制" :bordered="false">
-                <NDataTable :columns="functionColumns" :data="functionControlRows" :bordered="false" :max-height="240" />
+                <NDataTable
+                  :columns="functionColumns"
+                  :data="functionControlRows"
+                  :bordered="false"
+                  :max-height="240"
+                />
               </NCard>
-              <NDataTable v-if="hasSystemItems" :columns="paramColumns" :data="systemItems" :bordered="false" :max-height="420" />
+              <NDataTable
+                v-if="hasSystemItems"
+                :columns="paramColumns"
+                :data="systemItems"
+                :bordered="false"
+                :max-height="420"
+              />
             </NSpace>
           </NTabPane>
           <NTabPane v-if="hasFactoryItems" name="factory-config" tab="工厂配置">
@@ -1739,6 +1813,51 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
 .history-chart {
   width: 100%;
   height: 320px;
+}
+.cell-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 10px;
+}
+.cell-card {
+  display: flex;
+  min-height: 82px;
+  flex-direction: column;
+  justify-content: space-between;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.98));
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+.cell-card.highest {
+  border-color: rgba(208, 48, 80, 0.3);
+  background: linear-gradient(180deg, rgba(254, 242, 242, 0.98), rgba(255, 255, 255, 0.98));
+}
+.cell-card.lowest {
+  border-color: rgba(59, 130, 246, 0.26);
+  background: linear-gradient(180deg, rgba(239, 246, 255, 0.98), rgba(255, 255, 255, 0.98));
+}
+.cell-card.balancing {
+  border-color: rgba(240, 160, 32, 0.26);
+  background: linear-gradient(180deg, rgba(255, 251, 235, 0.98), rgba(255, 255, 255, 0.98));
+}
+.cell-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.cell-index {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+}
+.cell-voltage {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #111827;
 }
 .mb-10px {
   margin-bottom: 10px;

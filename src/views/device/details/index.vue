@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import { useLoading } from '@sa/hooks'
 import { useWebSocket } from '@vueuse/core'
 import BmsPanel from '@/views/device/details/modules/bms-panel/index.vue'
+import BatteryBasicInfo from '@/views/device/details/modules/battery-basic-info.vue'
 import Telemetry from '@/views/device/details/modules/telemetry/telemetry.vue'
 import TelemetryChart from '@/views/device/details/modules/telemetry-chart.vue'
 import Join from '@/views/device/details/modules/join.vue'
@@ -39,6 +40,13 @@ const bmsPanelTab = {
   key: 'bms-panel',
   name: () => 'BMS面板',
   component: BmsPanel,
+  refreshKey: 0
+}
+
+const batteryBasicInfoTab = {
+  key: 'battery-basic-info',
+  name: () => '基本信息',
+  component: BatteryBasicInfo,
   refreshKey: 0
 }
 
@@ -179,7 +187,7 @@ function rebuildComponents(data: any) {
 
   if (enableBmsBatteryDetailMode.value) {
     const connectionTab = baseComponents.find(item => item.key === 'join')
-    list = connectionTab ? [bmsPanelTab, connectionTab] : [bmsPanelTab]
+    list = connectionTab ? [bmsPanelTab, batteryBasicInfoTab, connectionTab] : [bmsPanelTab, batteryBasicInfoTab]
 
     if (!list.some(item => item.key === tabValue.value)) {
       tabValue.value = 'bms-panel'

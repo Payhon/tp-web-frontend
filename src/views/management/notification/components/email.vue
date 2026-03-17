@@ -13,23 +13,40 @@ const { bool: visible, setTrue: openModal, setFalse: closeModal } = useBoolean()
 
 const formModel = reactive<NotificationServices.Email>(createDefaultFormModel())
 
-function setTableData(data: Api.NotificationServices.Email) {
-  Object.assign(formModel, data)
-  if (!data.config || data.config === 'null') return
-  try {
-    formModel.email_config = {
-      ...createDefaultEmailConfig(),
-      ...JSON.parse(data.config)
-    }
-  } catch {
-    formModel.email_config = createDefaultEmailConfig()
+function resolveNotificationConfigPayload<T>(payload: T | { data?: T | null } | null | undefined): T | null {
+  if (!payload) return null
+
+  if (typeof payload === 'object' && 'data' in payload) {
+    return (payload as { data?: T | null }).data ?? null
   }
+
+  return payload as T
+}
+
+function setTableData(data: Api.NotificationServices.Email) {
+  const nextFormModel = createDefaultFormModel()
+  Object.assign(formModel, nextFormModel, data)
+
+  const nextEmailConfig = createDefaultEmailConfig()
+  if (!data.config || data.config === 'null') {
+    Object.assign(formModel.email_config, nextEmailConfig)
+    return
+  }
+
+  try {
+    Object.assign(nextEmailConfig, JSON.parse(data.config))
+  } catch {
+    // keep default config when parse fails
+  }
+
+  Object.assign(formModel.email_config, nextEmailConfig)
 }
 
 async function getNotificationServices() {
   startLoading()
   try {
-    const data = await fetchNotificationServicesEmail()
+    const response = await fetchNotificationServicesEmail()
+    const data = resolveNotificationConfigPayload<Api.NotificationServices.Email>(response as any)
     if (data) {
       setTableData(data)
     }

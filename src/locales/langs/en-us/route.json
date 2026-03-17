@@ -155,5 +155,13 @@
   "perm.bms_battery_list_action_lifecycle_factory": "Lifecycle - Factory Out",
   "perm.bms_battery_list_action_lifecycle_activate": "Lifecycle - Activate",
   "perm.bms_battery_list_action_lifecycle_transfer": "Lifecycle - Transfer",
+  "perm.bms_battery_list_batch_info_complete": "Batch Battery Info Completion",
+  "perm.bms_battery_list_batch_assign_dealer": "Batch Assign Dealer",
+  "perm.bms_battery_list_batch_tag": "Batch Tag Assignment",
+  "perm.bms_battery_list_batch_command": "Batch Command Dispatch",
+  "perm.bms_battery_list_batch_ota": "Batch OTA Push",
+  "perm.bms_battery_list_action_lifecycle_info_complete": "Lifecycle - Info Completion",
+  "perm.bms_battery_list_action_edit_bms_info": "Edit BMS Info",
+  "perm.bms_battery_list_action_delete": "Delete",
   "perm.bms_battery_history_export": "Export History Data"
 }

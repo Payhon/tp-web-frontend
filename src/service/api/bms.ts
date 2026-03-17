@@ -275,6 +275,14 @@ export const createSingleBattery = (data: any) => {
   return request.post('/battery/single', data)
 }
 
+export const updateSingleBattery = (deviceId: string, data: any) => {
+  return request.put(`/battery/single/${deviceId}`, data)
+}
+
+export const deleteBattery = (deviceId: string) => {
+  return request.delete(`/battery/${deviceId}`)
+}
+
 // 运营管理：电池运营日志
 export const getBatteryOperationLogList = (params: any) => {
   return request.get('/battery/operation_logs', { params })
@@ -291,6 +299,14 @@ export const transferBattery = (data: { device_id: string; to_org_id: string; re
 
 export const activateBattery = (data: { device_id: string; user_id: string; remark?: string }) => {
   return request.post('/battery/activate', data)
+}
+
+export const completeBatteryInfo = (data: {
+  device_ids: string[]
+  cell_brand_seq_no: number
+  battery_model_seq_no: number
+}) => {
+  return request.post('/battery/complete-info', data)
 }
 
 // 批量分配经销商

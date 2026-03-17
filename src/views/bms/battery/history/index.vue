@@ -201,6 +201,7 @@ const tableColumns = computed<DataTableColumns<Record<string, any>>>(() => {
     title: '时间',
     key: 'time',
     width: 180,
+    fixed: viewMode.value === 'wide' ? 'left' : undefined,
     render: (row: Record<string, any>) => row.time || dayjs(Number(row.ts || 0)).format('YYYY-MM-DD HH:mm:ss')
   }
 
@@ -234,6 +235,12 @@ const tableColumns = computed<DataTableColumns<Record<string, any>>>(() => {
   })
 
   return [timeColumn, ...dynamicColumns]
+})
+
+const tableScrollX = computed(() => {
+  if (viewMode.value !== 'wide') return undefined
+  const dynamicWidth = wideColumns.value.length * 160
+  return 180 + dynamicWidth
 })
 
 function mapCommType(type?: number) {
@@ -505,6 +512,7 @@ watch(
                 :data="historyRows"
                 size="small"
                 :max-height="tableMaxHeight"
+                :scroll-x="tableScrollX"
               />
             </div>
 

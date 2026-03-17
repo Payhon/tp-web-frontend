@@ -4,13 +4,15 @@ import { NButton, NDatePicker, NForm, NFormItem, NInput, NModal, NSelect, NSpace
 
 interface Props {
   visible: boolean
+  mode?: 'add' | 'edit'
+  editData?: Record<string, any> | null
   bmsModelOptions: Array<{ label: string; value: string }>
 }
 
 const props = defineProps<Props>()
 const emit = defineEmits<{
-  (e: 'update:visible', v: boolean): void
-  (e: 'submit', data: any): void
+  'update:visible': [v: boolean]
+  submit: [data: any]
 }>()
 
 const formRef = ref()
@@ -42,24 +44,50 @@ const rules = {
   bms_comm_type: { required: true, type: 'number', message: '请选择BMS通讯类型', trigger: 'change' }
 }
 
-const title = computed(() => '新增 BMS')
+const title = computed(() => (props.mode === 'edit' ? '编辑 BMS 信息' : '新增 BMS'))
+
+function buildEmptyForm() {
+  return {
+    item_uuid: '',
+    batch_number: '',
+    product_spec: '',
+    order_number: '',
+    bms_comm_type: 1 as 1 | 2 | 3,
+    battery_model_id: null as string | null,
+    ble_mac: '',
+    comm_chip_id: '',
+    production_date: null as number | null,
+    warranty_expire_date: null as number | null,
+    remark: ''
+  }
+}
+
+function normalizeDateValue(value: unknown) {
+  if (!value) return null
+  const ts = new Date(String(value)).getTime()
+  return Number.isFinite(ts) ? ts : null
+}
 
 watch(
   () => props.visible,
   v => {
     if (v) {
-      formData.value = {
-        item_uuid: '',
-        batch_number: '',
-        product_spec: '',
-        order_number: '',
-        bms_comm_type: 1,
-        battery_model_id: null,
-        ble_mac: '',
-        comm_chip_id: '',
-        production_date: null,
-        warranty_expire_date: null,
-        remark: ''
+      if (props.mode === 'edit' && props.editData) {
+        formData.value = {
+          item_uuid: String(props.editData.item_uuid || props.editData.device_number || '').trim(),
+          batch_number: String(props.editData.batch_number || '').trim(),
+          product_spec: String(props.editData.product_spec || '').trim(),
+          order_number: String(props.editData.order_number || '').trim(),
+          bms_comm_type: Number(props.editData.bms_comm_type || 1) as 1 | 2 | 3,
+          battery_model_id: props.editData.battery_model_id || null,
+          ble_mac: String(props.editData.ble_mac || '').trim(),
+          comm_chip_id: String(props.editData.comm_chip_id || '').trim(),
+          production_date: normalizeDateValue(props.editData.production_date),
+          warranty_expire_date: normalizeDateValue(props.editData.warranty_expire_date),
+          remark: String(props.editData.remark || '').trim()
+        }
+      } else {
+        formData.value = buildEmptyForm()
       }
     }
   }

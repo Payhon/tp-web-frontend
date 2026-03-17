@@ -15,8 +15,8 @@ interface Props {
 
 const props = defineProps<Props>()
 const emit = defineEmits<{
-  (e: 'update:visible', v: boolean): void
-  (e: 'finished'): void
+  'update:visible': [v: boolean]
+  finished: []
 }>()
 
 const message = useMessage()
@@ -61,7 +61,7 @@ function stopPolling() {
 async function downloadTemplate() {
   try {
     const response = await getBatteryImportTemplate()
-    const blob = new Blob([response.data], {
+    const blob = new Blob([response.data ?? ''], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     })
     const url = window.URL.createObjectURL(blob)
