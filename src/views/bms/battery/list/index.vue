@@ -464,6 +464,8 @@ function handleBatchActionSelect(key: string) {
 }
 
 const searchForm = ref<{
+  search_field: 'device_number' | 'batch_number' | 'battery_model_name' | 'product_spec' | 'ble_mac' | 'comm_chip_id'
+  search_value: string
   device_number: string
   battery_model_id: string | null
   cell_brand_seq_no: number | null
@@ -475,6 +477,8 @@ const searchForm = ref<{
   production_range: [number, number] | null
   warranty_status: string | null
 }>({
+  search_field: 'device_number',
+  search_value: '',
   device_number: '',
   battery_model_id: null,
   cell_brand_seq_no: null,
@@ -487,6 +491,20 @@ const searchForm = ref<{
   warranty_status: null
 })
 const showAdvancedSearch = ref(false)
+
+const textSearchFieldOptions = [
+  { label: '序列号', value: 'device_number' },
+  { label: '批号', value: 'batch_number' },
+  { label: 'BMS型号', value: 'battery_model_name' },
+  { label: '产品规格', value: 'product_spec' },
+  { label: '蓝牙MAC', value: 'ble_mac' },
+  { label: '4G卡ID', value: 'comm_chip_id' }
+] as const
+
+const textSearchPlaceholder = computed(() => {
+  const current = textSearchFieldOptions.find(item => item.value === searchForm.value.search_field)
+  return current ? `请输入${current.label}` : '请输入搜索内容'
+})
 
 const userOrgType = computed(() => String((authStore.userInfo as any)?.org_type || '').toUpperCase())
 const userAuthority = computed(() => String((authStore.userInfo as any)?.authority || '').toUpperCase())
@@ -640,6 +658,8 @@ async function handleExport() {
   try {
     const [start, end] = searchForm.value.production_range || []
     const params: any = {
+      search_field: searchForm.value.search_value ? searchForm.value.search_field : undefined,
+      search_value: searchForm.value.search_value || undefined,
       device_number: searchForm.value.device_number || undefined,
       battery_model_id: searchForm.value.battery_model_id || undefined,
       cell_brand_seq_no: searchForm.value.cell_brand_seq_no ?? undefined,
@@ -1216,6 +1236,8 @@ function handleSearch() {
   updateSearchParams({
     page: 1,
     page_size: pagination.pageSize,
+    search_field: searchForm.value.search_value ? searchForm.value.search_field : undefined,
+    search_value: searchForm.value.search_value || undefined,
     device_number: searchForm.value.device_number || undefined,
     battery_model_id: searchForm.value.battery_model_id || undefined,
     cell_brand_seq_no: searchForm.value.cell_brand_seq_no ?? undefined,
@@ -1252,6 +1274,8 @@ function handlePageSizeChange(pageSize: number) {
 
 function handleReset() {
   searchForm.value = {
+    search_field: 'device_number',
+    search_value: '',
     device_number: '',
     battery_model_id: null,
     cell_brand_seq_no: null,
@@ -1325,10 +1349,17 @@ onMounted(async () => {
         <div class="battery-list-toolbar">
           <NForm :model="searchForm" label-placement="left" label-width="auto" class="battery-search-panel">
             <div class="battery-search-main">
-              <NFormItem label="序列号" path="device_number" class="battery-search-item">
+              <NFormItem path="search_value" class="battery-search-item">
+                <template #label>
+                  <NSelect
+                    v-model:value="searchForm.search_field"
+                    :options="textSearchFieldOptions"
+                    class="battery-search-label-select"
+                  />
+                </template>
                 <NInput
-                  v-model:value="searchForm.device_number"
-                  placeholder="请输入序列号"
+                  v-model:value="searchForm.search_value"
+                  :placeholder="textSearchPlaceholder"
                   class="battery-search-control"
                   clearable
                 />
@@ -1928,6 +1959,10 @@ onMounted(async () => {
   width: 220px;
 }
 
+.battery-search-label-select {
+  width: 120px;
+}
+
 .battery-search-control-wide {
   width: 260px;
 }
@@ -1998,7 +2033,8 @@ onMounted(async () => {
 
 @media (max-width: 768px) {
   .battery-search-control,
-  .battery-search-control-wide {
+  .battery-search-control-wide,
+  .battery-search-label-select {
     width: 100%;
   }
 
