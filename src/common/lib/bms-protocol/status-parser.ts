@@ -138,7 +138,7 @@ export function parseStatusRegisters({
     lowest: view.byteL(0x128)
   }
 
-  const protectionStatus = decodeBitField32(view.u32(0x12d), PROTECTION_BITS)
+  const protectionStatus = decodeBitField32(view.u32(0x12f), PROTECTION_BITS)
   const indicatorStatus = decodeBitField32(view.u32(0x132), INDICATOR_BITS)
   const alarmStatus = decodeBitField32(view.u32(0x134), ALARM_BITS)
 
@@ -199,7 +199,8 @@ export function parseStatusRegisters({
       socPct: view.byteH(0x10d) * 0.5,
       sohPct: view.byteL(0x10d) * 1,
       cycleCount: view.u16(0x10e),
-      totalChargeCapacityRaw: view.u32(0x12b)
+      totalChargeCapacityRaw: view.u32(0x12b),
+      totalDischargeCapacityRaw: view.u32(0x12d)
     },
     timing: {
       maxChargeIntervalHours: view.u16(0x10f),

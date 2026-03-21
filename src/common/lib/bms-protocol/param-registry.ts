@@ -60,7 +60,7 @@ export const BMS_PARAM = Object.freeze({
   PACK_OV_ALARM_RELEASE_V: 'PACK_OV_ALARM_RELEASE_V',
   // 0x415 总压过压保护解除电压（单位 V，分辨率 0.01，偏移 1）
   PACK_OV_PROTECT_RELEASE_V: 'PACK_OV_PROTECT_RELEASE_V',
-  // 0x416(L) 总压过压解除延时（单位 S，分辨率 0.1，偏移 1）
+  // 0x416(L) 总压过压保护解除延时（单位 S，分辨率 0.1，偏移 1）
   PACK_OV_PROTECT_RELEASE_DELAY_S: 'PACK_OV_PROTECT_RELEASE_DELAY_S',
   // 0x416(H) 总压过压告警解除延时（单位 S，分辨率 0.1，偏移 1）
   PACK_OV_ALARM_RELEASE_DELAY_S: 'PACK_OV_ALARM_RELEASE_DELAY_S',
@@ -338,6 +338,7 @@ export const BMS_STATUS_PARAM = Object.freeze({
   BMS_TIMESTAMP: 'BMS_TIMESTAMP',
   POWER_ON_WORK_HOURS: 'POWER_ON_WORK_HOURS',
   TOTAL_CHARGE_CAPACITY_RAW: 'TOTAL_CHARGE_CAPACITY_RAW',
+  TOTAL_DISCHARGE_CAPACITY_RAW: 'TOTAL_DISCHARGE_CAPACITY_RAW',
 
   PACK_CELL_SUM_VOLTAGE_V: 'PACK_CELL_SUM_VOLTAGE_V',
   VBAT_VOLTAGE_V: 'VBAT_VOLTAGE_V',
@@ -591,6 +592,12 @@ export const PARAM_DEFS = Object.freeze([
     label: '总充容量',
     valueType: 'statusPath',
     path: 'energy.totalChargeCapacityRaw',
+    access: 'R'
+  }),
+  def(BMS_STATUS_PARAM.TOTAL_DISCHARGE_CAPACITY_RAW, PARAM_CATEGORIES.STATUS, {
+    label: '总放容量',
+    valueType: 'statusPath',
+    path: 'energy.totalDischargeCapacityRaw',
     access: 'R'
   }),
 
@@ -1036,7 +1043,7 @@ export const PARAM_DEFS = Object.freeze([
     unit: 'V'
   }),
   def(BMS_PARAM.PACK_OV_PROTECT_RELEASE_DELAY_S, PARAM_CATEGORIES.VOLTAGE, {
-    label: '总压过压解除延时',
+    label: '总压过压保护解除延时',
     access: 'RW',
     valueType: 'u8',
     address: 0x416,

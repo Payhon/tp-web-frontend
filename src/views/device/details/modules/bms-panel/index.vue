@@ -683,7 +683,7 @@ const protectionStatus = computed(() => displayStatus.value?.status?.protectionS
 const chargeSwitchOn = computed(() => Boolean(indicatorStatus.value.chargeFetOn))
 const dischargeSwitchOn = computed(() => Boolean(indicatorStatus.value.dischargeFetOn))
 const balancingOn = computed(() => Boolean((displayStatus.value?.cell?.balancing || []).some(item => item)))
-const protectOn = computed(() => Boolean(Object.values(protectionStatus.value).some(Boolean)))
+const protectPanelExpanded = ref(true)
 const packVoltageText = computed(() => {
   const v = displayStatus.value?.electrical?.packCellSumVoltageV ?? cloudCurrent.packCellSumVoltageV
   if (typeof v !== 'number' || !Number.isFinite(v)) return '-'
@@ -807,9 +807,19 @@ const protectStatusItems = computed(() =>
     .filter(key => protectionStatus.value[key])
     .map(labelForStatus)
 )
+const protectStatusRows = computed(() =>
+  Object.keys(protectionStatus.value).map(key => ({
+    key,
+    label: labelForStatus(key),
+    enabled: Boolean(protectionStatus.value[key])
+  }))
+)
 const protectSummaryText = computed(() =>
   protectStatusItems.value.length ? `${protectStatusItems.value.length}项保护` : '无'
 )
+function toggleProtectPanel() {
+  protectPanelExpanded.value = !protectPanelExpanded.value
+}
 
 const cellVoltageRows = computed(() => {
   const list = displayStatus.value?.cell?.voltagesMv || []
@@ -1495,10 +1505,6 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
                       <span class="switch-item__label">均衡状态</span>
                       <NSwitch :value="balancingOn" disabled />
                     </div>
-                    <div class="switch-item">
-                      <span class="switch-item__label">保护状态</span>
-                      <NSwitch :value="protectOn" disabled />
-                    </div>
                   </div>
                 </NCard>
               </NGridItem>
@@ -1547,11 +1553,23 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
 
               <NGridItem :span="12">
                 <NCard size="small" title="BMS保护状态" :bordered="false">
+                  <template #header-extra>
+                    <NButton text type="primary" @click="toggleProtectPanel">
+                      {{ protectPanelExpanded ? '收起' : '展开' }}
+                    </NButton>
+                  </template>
                   <div class="metric-sub mb-12px">{{ protectSummaryText }}</div>
-                  <NSpace v-if="protectStatusItems.length" size="small">
-                    <NTag v-for="item in protectStatusItems" :key="item" type="warning" round>{{ item }}</NTag>
-                  </NSpace>
-                  <NEmpty v-else description="无保护" size="small" />
+                  <div v-if="protectPanelExpanded" class="protect-list-web">
+                    <div v-for="item in protectStatusRows" :key="item.key" class="protect-row-web">
+                      <span class="protect-row-web__label">{{ item.label }}</span>
+                      <span
+                        class="protect-row-web__value"
+                        :class="{ 'protect-row-web__value--on': item.enabled }"
+                      >
+                        {{ item.enabled ? '开启' : '关闭' }}
+                      </span>
+                    </div>
+                  </div>
                 </NCard>
               </NGridItem>
 
@@ -1809,6 +1827,32 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
 .switch-item__label {
   color: rgba(55, 65, 81, 0.82);
   font-size: 14px;
+}
+.protect-list-web {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.protect-row-web {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.03);
+}
+.protect-row-web__label {
+  color: rgba(55, 65, 81, 0.82);
+  font-size: 14px;
+}
+.protect-row-web__value {
+  color: rgba(55, 65, 81, 0.55);
+  font-size: 13px;
+}
+.protect-row-web__value--on {
+  color: #d97706;
+  font-weight: 600;
 }
 .history-chart {
   width: 100%;
