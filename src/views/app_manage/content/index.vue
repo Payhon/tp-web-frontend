@@ -92,7 +92,8 @@ const currentLang = ref<'zh-CN' | 'en-US'>('zh-CN')
 
 const contentKeyOptions = computed(() => [
   { label: $t('page.appManage.content.pages.userPolicy'), value: 'user_policy' },
-  { label: $t('page.appManage.content.pages.privacyPolicy'), value: 'privacy_policy' }
+  { label: $t('page.appManage.content.pages.privacyPolicy'), value: 'privacy_policy' },
+  { label: $t('page.appManage.content.pages.contactService'), value: 'contact_service' }
 ])
 const currentContentKey = ref<ContentKey>('user_policy')
 

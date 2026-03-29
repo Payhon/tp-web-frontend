@@ -122,7 +122,7 @@ export const batchDeleteAppVersions = (ids: string[]) => {
 // APP内容管理（单页/FAQ/用户反馈）
 // ---------------------------------------------------------------------------
 
-export type ContentKey = 'user_policy' | 'privacy_policy'
+export type ContentKey = 'user_policy' | 'privacy_policy' | 'contact_service'
 
 export type AdminContentPageResp = {
   app_id: string

@@ -364,6 +364,7 @@
   "page.appManage.content.tabs.feedback": "Feedback",
   "page.appManage.content.pages.userPolicy": "User Policy",
   "page.appManage.content.pages.privacyPolicy": "Privacy Policy",
+  "page.appManage.content.pages.contactService": "Contact Us",
   "page.appManage.content.pages.form.title": "Title",
   "page.appManage.content.pages.form.titlePlaceholder": "Enter title",
   "page.appManage.content.pages.form.content": "Content (Markdown)",

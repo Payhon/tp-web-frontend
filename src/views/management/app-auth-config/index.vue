@@ -34,13 +34,13 @@ async function loadTenants() {
     const resp: any = await fetchUserList({ page: 1, page_size: 1000 })
     const list = resp?.data?.list || []
     tenantOptions.value = (list as any[])
-      .map(u => {
+      .map((u): { label: string; value: string } | null => {
         const tenantId = (u?.tenant_id as string) || (u?.tenantId as string) || ''
         const labelName = (u?.name as string) || (u?.email as string) || tenantId
         if (!tenantId) return null
         return { label: `${labelName} (${tenantId})`, value: tenantId }
       })
-      .filter(Boolean)
+      .filter((item): item is { label: string; value: string } => item !== null)
 
     if (!tenantIdInput.value && tenantOptions.value.length > 0) {
       tenantIdInput.value = tenantOptions.value[0].value
@@ -88,6 +88,29 @@ type TemplateForm = {
   remark: string
 }
 
+type RawAuthMessageTemplate = Partial<{
+  id: string
+  ID: string
+  tenant_id: string
+  TenantID: string
+  channel: AuthTemplateChannel
+  Channel: AuthTemplateChannel
+  scene: AuthTemplateScene
+  Scene: AuthTemplateScene
+  subject: string | null
+  Subject: string | null
+  content: string | null
+  Content: string | null
+  provider: string | null
+  Provider: string | null
+  provider_template_code: string | null
+  ProviderTemplateCode: string | null
+  status: 'OPEN' | 'CLOSE'
+  Status: 'OPEN' | 'CLOSE'
+  remark: string | null
+  Remark: string | null
+}>
+
 function createEmptyTemplate(channel: AuthTemplateChannel, scene: AuthTemplateScene): TemplateForm {
   return {
     channel,
@@ -98,6 +121,19 @@ function createEmptyTemplate(channel: AuthTemplateChannel, scene: AuthTemplateSc
     provider: channel === 'SMS' ? 'ALIYUN' : '',
     provider_template_code: '',
     remark: ''
+  }
+}
+
+function normalizeTemplateItem(item: RawAuthMessageTemplate) {
+  return {
+    channel: (item.channel || item.Channel) as AuthTemplateChannel | undefined,
+    scene: (item.scene || item.Scene) as AuthTemplateScene | undefined,
+    status: (item.status || item.Status || 'CLOSE') as 'OPEN' | 'CLOSE',
+    subject: item.subject ?? item.Subject ?? '',
+    content: item.content ?? item.Content ?? '',
+    provider: item.provider ?? item.Provider ?? '',
+    provider_template_code: item.provider_template_code ?? item.ProviderTemplateCode ?? '',
+    remark: item.remark ?? item.Remark ?? ''
   }
 }
 
@@ -140,18 +176,21 @@ async function loadTemplates() {
       }
     }
 
-    for (const item of templateList) {
-      const channel = item.channel
-      const scene = item.scene
+    for (const item of templateList as RawAuthMessageTemplate[]) {
+      const normalized = normalizeTemplateItem(item)
+      const channel = normalized.channel
+      const scene = normalized.scene
+      if (!channel || !scene) continue
+
       const form = templates[channel]?.[scene]
       if (!form) continue
 
-      form.status = item.status || 'CLOSE'
-      form.subject = item.subject || ''
-      form.content = item.content || ''
-      form.provider = item.provider || (channel === 'SMS' ? 'ALIYUN' : '')
-      form.provider_template_code = item.provider_template_code || ''
-      form.remark = item.remark || ''
+      form.status = normalized.status
+      form.subject = normalized.subject
+      form.content = normalized.content
+      form.provider = normalized.provider || (channel === 'SMS' ? 'ALIYUN' : '')
+      form.provider_template_code = normalized.provider_template_code
+      form.remark = normalized.remark
     }
   } finally {
     templateLoading.value = false
