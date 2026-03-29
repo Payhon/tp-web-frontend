@@ -31,28 +31,36 @@ const orgTypes = [
   { key: 'APP_USER', label: 'APP 用户' }
 ] as const
 type OrgTypeKey = (typeof orgTypes)[number]['key']
+type PermissionTreeOption = {
+  key: string
+  label: string
+  children?: PermissionTreeOption[]
+}
+type DeviceParamTreeOption = DeviceParamNode & { key: string; children?: DeviceParamTreeOption[] }
+
+const MOBILE_PERMISSION_ROOT = 'app_mobile_permissions'
 
 const activeOrgType = ref<OrgTypeKey>('PACK_FACTORY')
-const activeTab = ref<'menu' | 'device'>('menu')
+const activeTab = ref<'menu' | 'mobile' | 'device'>('menu')
 
 const loading = ref(false)
 const saving = ref(false)
 const tenantLoading = ref(false)
 
-const menuTreeData = ref<any[]>([])
-type DeviceParamTreeOption = DeviceParamNode & { key: string; children?: DeviceParamTreeOption[] }
-
+const menuTreeData = ref<PermissionTreeOption[]>([])
+const mobileTreeData = ref<PermissionTreeOption[]>([])
 const deviceParamTreeData = ref<DeviceParamTreeOption[]>([])
 const tenantOptions = ref<{ label: string; value: string }[]>([])
+const mobilePermissionCodeSet = ref<Set<string>>(new Set())
 
-const state = reactive<Record<OrgTypeKey, { uiCodes: string[]; deviceParams: string[] }>>({
-  PACK_FACTORY: { uiCodes: [], deviceParams: [] },
-  DEALER: { uiCodes: [], deviceParams: [] },
-  STORE: { uiCodes: [], deviceParams: [] },
-  APP_USER: { uiCodes: [], deviceParams: [] }
+const state = reactive<Record<OrgTypeKey, { menuUiCodes: string[]; mobileUiCodes: string[]; deviceParams: string[] }>>({
+  PACK_FACTORY: { menuUiCodes: [], mobileUiCodes: [], deviceParams: [] },
+  DEALER: { menuUiCodes: [], mobileUiCodes: [], deviceParams: [] },
+  STORE: { menuUiCodes: [], mobileUiCodes: [], deviceParams: [] },
+  APP_USER: { menuUiCodes: [], mobileUiCodes: [], deviceParams: [] }
 })
 
-function renderDeviceParamLabel({ option }: { option: DeviceParamTreeOption & Record<string, any> }) {
+function renderDeviceParamLabel({ option }: { option: Record<string, any> }) {
   const registerAddress = String(option.register_address || option.registerAddress || '').trim()
   const keyNames = (option.param_keys || option.paramKeys || []).filter(Boolean).join(' / ')
 
@@ -87,12 +95,62 @@ function toDeviceParamTreeData(nodes: DeviceParamNode[]): DeviceParamTreeOption[
   }))
 }
 
-function toTreeData(nodes: any[]): any[] {
+function toTreeData(nodes: any[]): PermissionTreeOption[] {
   return (nodes || []).map(n => ({
-    key: n.element_code,
+    key: String(n.element_code || '').trim(),
     label: n.description || n.element_code || n.id,
     children: n.children?.length ? toTreeData(n.children) : undefined
   }))
+}
+
+function collectTreeKeys(nodes: PermissionTreeOption[]): string[] {
+  const keys: string[] = []
+
+  const walk = (items: PermissionTreeOption[]) => {
+    for (const item of items || []) {
+      const key = String(item.key || '').trim()
+      if (key) keys.push(key)
+      if (item.children?.length) walk(item.children)
+    }
+  }
+
+  walk(nodes)
+  return normalizeCheckedUICodes(keys)
+}
+
+function findTreeNode(nodes: PermissionTreeOption[], targetKey: string): PermissionTreeOption | null {
+  for (const node of nodes || []) {
+    if (node.key === targetKey) return node
+    if (node.children?.length) {
+      const matched = findTreeNode(node.children, targetKey)
+      if (matched) return matched
+    }
+  }
+  return null
+}
+
+function removeTreeNode(nodes: PermissionTreeOption[], targetKey: string): PermissionTreeOption[] {
+  return (nodes || [])
+    .filter(node => node.key !== targetKey)
+    .map(node => ({
+      ...node,
+      children: node.children?.length ? removeTreeNode(node.children, targetKey) : undefined
+    }))
+}
+
+function splitUiCodes(codes: string[]): { menuUiCodes: string[]; mobileUiCodes: string[] } {
+  const menuUiCodes: string[] = []
+  const mobileUiCodes: string[] = []
+
+  for (const code of normalizeCheckedUICodes(codes)) {
+    if (mobilePermissionCodeSet.value.has(code)) {
+      mobileUiCodes.push(code)
+      continue
+    }
+    menuUiCodes.push(code)
+  }
+
+  return { menuUiCodes, mobileUiCodes }
 }
 
 function normalizeCheckedUICodes(codes: string[]): string[] {
@@ -140,8 +198,12 @@ async function loadAll() {
 
   loading.value = true
   try {
-    const ui = await fetchUIElementList()
-    menuTreeData.value = toTreeData(ui || [])
+    const ui = toTreeData((await fetchUIElementList()) || [])
+    const mobileRoot = findTreeNode(ui, MOBILE_PERMISSION_ROOT)
+    mobileTreeData.value = mobileRoot ? [mobileRoot] : []
+    menuTreeData.value = removeTreeNode(ui, MOBILE_PERMISSION_ROOT)
+    mobilePermissionCodeSet.value = new Set(collectTreeKeys(mobileTreeData.value))
+
     const deviceResp: any = await fetchDeviceParamPermissionOptions()
     deviceParamTreeData.value = toDeviceParamTreeData((deviceResp?.data || deviceResp || []) as DeviceParamNode[])
 
@@ -151,14 +213,17 @@ async function loadAll() {
     const list: OrgTypePermissionItem[] = (permResp as any)?.data || []
 
     for (const ot of orgTypes) {
-      state[ot.key].uiCodes = []
+      state[ot.key].menuUiCodes = []
+      state[ot.key].mobileUiCodes = []
       state[ot.key].deviceParams = []
     }
 
     for (const item of list) {
       const key = item.org_type as OrgTypeKey
       if (!(key in state)) continue
-      state[key].uiCodes = normalizeCheckedUICodes(item.ui_codes || [])
+      const { menuUiCodes, mobileUiCodes } = splitUiCodes(item.ui_codes || [])
+      state[key].menuUiCodes = menuUiCodes
+      state[key].mobileUiCodes = mobileUiCodes
       const raw = (item.device_param_permissions || '').trim()
       state[key].deviceParams = raw
         ? raw
@@ -182,7 +247,7 @@ async function saveCurrent() {
   try {
     const key = activeOrgType.value
     const payload = {
-      ui_codes: state[key].uiCodes || [],
+      ui_codes: normalizeCheckedUICodes([...(state[key].menuUiCodes || []), ...(state[key].mobileUiCodes || [])]),
       device_param_permissions: (state[key].deviceParams || []).join(',')
     }
     await upsertOrgTypePermission(key, payload, isSysAdmin.value ? { tenant_id: effectiveTenantId.value } : undefined)
@@ -253,8 +318,22 @@ watch(
                       checkable
                       default-expand-all
                       :data="menuTreeData"
-                      :checked-keys="state[activeOrgType].uiCodes"
-                      @update:checked-keys="keys => (state[activeOrgType].uiCodes = keys as string[])"
+                      :checked-keys="state[activeOrgType].menuUiCodes"
+                      @update:checked-keys="keys => (state[activeOrgType].menuUiCodes = keys as string[])"
+                    />
+                  </div>
+                </NScrollbar>
+              </NTabPane>
+              <NTabPane name="mobile" tab="移动端权限" class="flex-1" style="height: 580px">
+                <NScrollbar class="h-full">
+                  <div class="pr-12px">
+                    <NTree
+                      block-line
+                      checkable
+                      default-expand-all
+                      :data="mobileTreeData"
+                      :checked-keys="state[activeOrgType].mobileUiCodes"
+                      @update:checked-keys="keys => (state[activeOrgType].mobileUiCodes = keys as string[])"
                     />
                   </div>
                 </NScrollbar>
