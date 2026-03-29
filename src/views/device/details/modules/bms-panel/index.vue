@@ -829,13 +829,19 @@ const cellVoltageRows = computed(() => {
     return {
       index: i + 1,
       voltage: Number.isFinite(v) ? v : null,
-      voltageText: Number.isFinite(v) ? `${v.toFixed(2)}V` : '-',
+      voltageText: Number.isFinite(v) ? `${v.toFixed(3)}V` : '-',
+      voltageLabel: Number.isFinite(v) ? v.toFixed(3) : '-',
+      fillPercent: Number.isFinite(v) ? Math.max(0, Math.min(100, (v / 5) * 100)) : 0,
       isHighest: i + 1 === highestIdx.value,
       isLowest: i + 1 === lowestIdx.value,
       isBalancing: Boolean(balancingList[i])
     }
   })
 })
+
+const highestCellRow = computed(() => cellVoltageRows.value.find(item => item.isHighest) || null)
+const lowestCellRow = computed(() => cellVoltageRows.value.find(item => item.isLowest) || null)
+const balancingCellCount = computed(() => cellVoltageRows.value.filter(item => item.isBalancing).length)
 
 // 参数设置（与移动端对齐）
 type ParamEntry = string | { displayKey: string; actualKey: string }
@@ -1562,10 +1568,7 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
                   <div v-if="protectPanelExpanded" class="protect-list-web">
                     <div v-for="item in protectStatusRows" :key="item.key" class="protect-row-web">
                       <span class="protect-row-web__label">{{ item.label }}</span>
-                      <span
-                        class="protect-row-web__value"
-                        :class="{ 'protect-row-web__value--on': item.enabled }"
-                      >
+                      <span class="protect-row-web__value" :class="{ 'protect-row-web__value--on': item.enabled }">
                         {{ item.enabled ? '开启' : '关闭' }}
                       </span>
                     </div>
@@ -1590,28 +1593,54 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
 
           <NTabPane name="cells" tab="电芯">
             <NCard size="small" :bordered="false">
-              <NSpace align="center" justify="space-between" class="mb-10px">
-                <NTag type="info">Pack：{{ packVoltageText }}</NTag>
-                <NTag type="default">电芯串数：{{ cellCount || '-' }}</NTag>
-              </NSpace>
-              <div v-if="cellVoltageRows.length > 0" class="cell-grid">
-                <div
-                  v-for="item in cellVoltageRows"
-                  :key="item.index"
-                  class="cell-card"
-                  :class="{
-                    highest: item.isHighest,
-                    lowest: item.isLowest,
-                    balancing: item.isBalancing
-                  }"
-                >
-                  <div class="cell-card-head">
-                    <span class="cell-index">#{{ item.index }}</span>
-                    <NTag v-if="item.isHighest" size="small" type="error" round>最高</NTag>
-                    <NTag v-else-if="item.isLowest" size="small" type="info" round>最低</NTag>
-                    <NTag v-else-if="item.isBalancing" size="small" type="warning" round>均衡中</NTag>
+              <div v-if="cellVoltageRows.length > 0" class="cell-panel">
+                <div class="cell-panel-summary">
+                  <div class="cell-summary-list">
+                    <div class="cell-summary-item cell-summary-item--highest">
+                      <span class="cell-summary-dot"></span>
+                      <span>最大({{ highestCellRow?.index || '-' }}) {{ highestCellRow?.voltageText || '-' }}</span>
+                    </div>
+                    <div class="cell-summary-item cell-summary-item--lowest">
+                      <span class="cell-summary-dot"></span>
+                      <span>最小({{ lowestCellRow?.index || '-' }}) {{ lowestCellRow?.voltageText || '-' }}</span>
+                    </div>
+                    <div class="cell-summary-item cell-summary-item--balancing">
+                      <span class="cell-summary-dot"></span>
+                      <span>均衡 {{ balancingCellCount }}</span>
+                    </div>
                   </div>
-                  <div class="cell-voltage">{{ item.voltageText }}</div>
+
+                  <div class="cell-summary-meta">
+                    <span>Pack：{{ packVoltageText }}</span>
+                    <span>串数：{{ cellCount || '-' }}</span>
+                  </div>
+                </div>
+
+                <div class="cell-board-scroll">
+                  <div class="cell-board-axis">
+                    <span>5V</span>
+                    <span>0V</span>
+                  </div>
+
+                  <div class="cell-board-list">
+                    <div
+                      v-for="item in cellVoltageRows"
+                      :key="item.index"
+                      class="cell-battery-item"
+                      :class="{
+                        'cell-battery-item--highest': item.isHighest,
+                        'cell-battery-item--lowest': item.isLowest,
+                        'cell-battery-item--balancing': item.isBalancing
+                      }"
+                    >
+                      <div class="cell-battery-top"></div>
+                      <div class="cell-battery-body">
+                        <div class="cell-battery-fill" :style="{ height: `${item.fillPercent}%` }"></div>
+                        <div class="cell-battery-index">{{ item.index }}</div>
+                      </div>
+                      <div class="cell-battery-voltage">{{ item.voltageLabel }}</div>
+                    </div>
+                  </div>
                 </div>
               </div>
               <NEmpty v-else description="暂无电芯数据" />
@@ -1858,50 +1887,162 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
   width: 100%;
   height: 320px;
 }
-.cell-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-  gap: 10px;
-}
-.cell-card {
+.cell-panel {
   display: flex;
-  min-height: 82px;
   flex-direction: column;
-  justify-content: space-between;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  border-radius: 12px;
-  padding: 10px 12px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.98));
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  gap: 16px;
 }
-.cell-card.highest {
-  border-color: rgba(208, 48, 80, 0.3);
-  background: linear-gradient(180deg, rgba(254, 242, 242, 0.98), rgba(255, 255, 255, 0.98));
-}
-.cell-card.lowest {
-  border-color: rgba(59, 130, 246, 0.26);
-  background: linear-gradient(180deg, rgba(239, 246, 255, 0.98), rgba(255, 255, 255, 0.98));
-}
-.cell-card.balancing {
-  border-color: rgba(240, 160, 32, 0.26);
-  background: linear-gradient(180deg, rgba(255, 251, 235, 0.98), rgba(255, 255, 255, 0.98));
-}
-.cell-card-head {
+.cell-panel-summary {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 12px 20px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  padding-bottom: 10px;
 }
-.cell-index {
+.cell-summary-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 18px;
+  align-items: center;
+}
+.cell-summary-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #475569;
+  font-size: 14px;
+  font-weight: 600;
+}
+.cell-summary-dot {
+  width: 10px;
+  height: 18px;
+  border-radius: 999px;
+  background: #4ade80;
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.12);
+}
+.cell-summary-item--highest .cell-summary-dot {
+  background: #ec4899;
+  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.14);
+}
+.cell-summary-item--lowest .cell-summary-dot {
+  background: #facc15;
+  box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.18);
+}
+.cell-summary-item--balancing .cell-summary-dot {
+  background: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.14);
+}
+.cell-summary-meta {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  color: #475569;
+  font-size: 14px;
+  font-weight: 600;
+}
+.cell-board-scroll {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+}
+.cell-board-axis {
+  display: flex;
+  min-width: 34px;
+  flex-direction: column;
+  justify-content: space-between;
+  padding-top: 8px;
+  padding-bottom: 54px;
+  color: rgba(71, 85, 105, 0.72);
+  font-size: 14px;
+  font-weight: 600;
+}
+.cell-board-list {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  min-width: max-content;
+}
+.cell-battery-item {
+  width: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 0 0 auto;
+}
+.cell-battery-top {
+  width: 32px;
+  height: 8px;
+  margin-bottom: 6px;
+  border-radius: 4px 4px 0 0;
+  background: #4ade80;
+}
+.cell-battery-body {
+  position: relative;
+  width: 48px;
+  height: 176px;
+  overflow: hidden;
+  border: 3px solid #86efac;
+  border-radius: 8px 8px 4px 4px;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.55);
+}
+.cell-battery-fill {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(180deg, #7cf17f 0%, #58dd6a 100%);
+}
+.cell-battery-index {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(71, 85, 105, 0.9);
+  font-size: 14px;
+  font-weight: 700;
+}
+.cell-battery-voltage {
+  margin-top: 10px;
+  color: rgba(71, 85, 105, 0.88);
   font-size: 12px;
   font-weight: 600;
-  color: #64748b;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
 }
-.cell-voltage {
-  font-size: 18px;
-  font-weight: 700;
-  line-height: 1.1;
-  color: #111827;
+.cell-battery-item--highest .cell-battery-top {
+  background: #ec4899;
+}
+.cell-battery-item--highest .cell-battery-body {
+  border-color: #f472b6;
+}
+.cell-battery-item--highest .cell-battery-fill {
+  background: linear-gradient(180deg, #f472b6 0%, #ec4899 100%);
+}
+.cell-battery-item--lowest .cell-battery-top {
+  background: #facc15;
+}
+.cell-battery-item--lowest .cell-battery-body {
+  border-color: #fde047;
+}
+.cell-battery-item--lowest .cell-battery-fill {
+  background: linear-gradient(180deg, #fde047 0%, #facc15 100%);
+}
+.cell-battery-item--balancing .cell-battery-body::after {
+  content: '';
+  position: absolute;
+  top: 8px;
+  right: 6px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12);
 }
 .mb-10px {
   margin-bottom: 10px;

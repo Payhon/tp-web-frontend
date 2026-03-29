@@ -773,6 +773,30 @@ const transferTargetOptions = computed(() => {
   return dealerOrgOptions.value
 })
 
+const transferOrgTypeOptions = computed(() => {
+  const types: Array<'PACK_FACTORY' | 'DEALER' | 'STORE'> = []
+
+  if (
+    userAuthority.value === 'TENANT_ADMIN' ||
+    userAuthority.value === 'SYS_ADMIN' ||
+    userOrgType.value === 'BMS_FACTORY' ||
+    !userOrgType.value
+  ) {
+    types.push('PACK_FACTORY', 'DEALER')
+  } else if (userOrgType.value === 'PACK_FACTORY') {
+    types.push('DEALER', 'STORE')
+  } else if (userOrgType.value === 'DEALER') {
+    types.push('PACK_FACTORY', 'STORE')
+  } else if (userOrgType.value === 'STORE') {
+    types.push('DEALER')
+  }
+
+  return types.map(type => ({
+    label: type === 'PACK_FACTORY' ? 'PACK厂' : type === 'DEALER' ? '经销商' : '门店',
+    value: type
+  }))
+})
+
 async function ensureOrgOptions(type: 'PACK_FACTORY' | 'DEALER' | 'STORE') {
   const map: Record<string, typeof packOrgOptions> = {
     PACK_FACTORY: packOrgOptions,
@@ -813,17 +837,18 @@ async function openFactoryModal(row: BatteryItem) {
 }
 
 async function openTransferModal(row: BatteryItem) {
+  const defaultTargetType = (transferOrgTypeOptions.value[0]?.value || 'DEALER') as 'PACK_FACTORY' | 'DEALER' | 'STORE'
   transferForm.value = {
     device_id: row.device_id,
     device_number: row.device_number,
     from_org_name: row.owner_org_name || row.dealer_name || '厂家',
     from_org_type: row.owner_org_type || '',
-    to_org_type: 'DEALER',
+    to_org_type: defaultTargetType,
     to_org_id: null,
     remark: ''
   }
   showTransferModal.value = true
-  await ensureOrgOptions('DEALER')
+  await ensureOrgOptions(defaultTargetType)
 }
 
 function openActivateModal(row: BatteryItem) {
@@ -1650,9 +1675,9 @@ onMounted(async () => {
         </NFormItem>
         <NFormItem label="调拨到" path="to_org_type" required>
           <NRadioGroup v-model:value="transferForm.to_org_type" @update:value="handleTransferOrgTypeChange">
-            <NRadioButton value="PACK_FACTORY">PACK厂</NRadioButton>
-            <NRadioButton value="DEALER">经销商</NRadioButton>
-            <NRadioButton value="STORE">门店</NRadioButton>
+            <NRadioButton v-for="item in transferOrgTypeOptions" :key="item.value" :value="item.value">
+              {{ item.label }}
+            </NRadioButton>
           </NRadioGroup>
         </NFormItem>
         <NFormItem label="目标机构" path="to_org_id" required>
