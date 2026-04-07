@@ -16,6 +16,54 @@ export const ROOT_ROUTE: CustomRoute = {
 const customRoutes: ElegantRoute[] = [
   ROOT_ROUTE,
   {
+    name: 'public',
+    path: '/public',
+    component: 'layout.blank',
+    meta: {
+      title: 'public',
+      constant: true
+    },
+    children: [
+      {
+        name: 'public_app',
+        path: '/public/app',
+        meta: {
+          title: 'public_app',
+          constant: true
+        },
+        children: [
+          {
+            name: 'public_app_privacy',
+            path: '/public/app/privacy',
+            component: 'view.public_app_privacy',
+            meta: {
+              title: 'public_app_privacy',
+              constant: true
+            }
+          },
+          {
+            name: 'public_app_user-policy',
+            path: '/public/app/user-policy',
+            component: 'view.public_app_user-policy',
+            meta: {
+              title: 'public_app_user-policy',
+              constant: true
+            }
+          },
+          {
+            name: 'public_app_download',
+            path: '/public/app/download',
+            component: 'view.public_app_download',
+            meta: {
+              title: 'public_app_download',
+              constant: true
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
     name: 'not-found',
     path: '/:pathMatch(.*)*',
     component: 'layout.blank$view.404',

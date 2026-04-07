@@ -19,6 +19,7 @@ import {
 import type { DataTableColumns, DropdownOption } from 'naive-ui'
 import { useTable } from '@/hooks/common/table'
 import { $t } from '@/locales'
+import FilePicker from '@/components/business/file-picker/index.vue'
 import {
   batchDeleteAppVersions,
   createAppVersion,
@@ -192,7 +193,7 @@ const publishType = ref<'native_app' | 'wgt'>('native_app')
 const publishModel = ref({
   title: '',
   contents: '',
-  platform: [] as string[],
+  platform: [] as string[] | string,
   version: '',
   min_uni_version: '',
   url: '',
@@ -216,7 +217,7 @@ function openPublish(type: 'native_app' | 'wgt') {
   publishModel.value = {
     title: '',
     contents: '',
-    platform: [],
+    platform: type === 'native_app' ? '' : [],
     version: '',
     min_uni_version: '',
     url: '',
@@ -232,11 +233,16 @@ async function submitPublish() {
   if (!currentAppId.value) return
   publishLoading.value = true
   try {
+    const selectedPlatforms = Array.isArray(publishModel.value.platform)
+      ? publishModel.value.platform
+      : publishModel.value.platform
+        ? [publishModel.value.platform]
+        : []
     const payload = {
       app_id: currentAppId.value,
       title: publishModel.value.title || undefined,
       contents: publishModel.value.contents,
-      platform: publishModel.value.platform,
+      platform: selectedPlatforms,
       type: publishType.value,
       version: publishModel.value.version,
       min_uni_version: publishType.value === 'wgt' ? publishModel.value.min_uni_version || undefined : undefined,
@@ -332,6 +338,28 @@ const uniPlatformOptions = [
 ]
 
 const isNativeApp = computed(() => publishType.value === 'native_app')
+const selectedPublishPlatforms = computed(() =>
+  Array.isArray(publishModel.value.platform)
+    ? publishModel.value.platform
+    : publishModel.value.platform
+      ? [publishModel.value.platform]
+      : []
+)
+const useFilePickerForPublishUrl = computed(() => {
+  if (!isNativeApp.value) return true
+  return selectedPublishPlatforms.value.some(platform => platform === 'Android' || platform === 'Harmony')
+})
+const publishFileAccept = computed(() => {
+  if (!isNativeApp.value) return '.wgt'
+  if (selectedPublishPlatforms.value.includes('Harmony')) return '.hap,.app'
+  return '.apk,application/vnd.android.package-archive'
+})
+const publishFileExtensions = computed(() => {
+  if (!isNativeApp.value) return ['wgt']
+  if (selectedPublishPlatforms.value.includes('Harmony')) return ['hap', 'app']
+  return ['apk']
+})
+const publishFileBizType = computed(() => (!isNativeApp.value ? 'wgtPackage' : 'appPackage'))
 
 const yesNoOptions = computed(() => [
   { label: $t('common.yesOrNo.no'), value: false },
@@ -451,7 +479,15 @@ onMounted(async () => {
         </NFormItem>
 
         <NFormItem :label="$t('page.appManage.upgrade.publish.form.downloadUrl')" required>
+          <FilePicker
+            v-if="useFilePickerForPublishUrl"
+            v-model:model-value="publishModel.url"
+            :biz-type="publishFileBizType"
+            :accept="publishFileAccept"
+            :allowed-extensions="publishFileExtensions"
+          />
           <NInput
+            v-else
             v-model:value="publishModel.url"
             :placeholder="$t('page.appManage.upgrade.publish.form.downloadUrlPlaceholder')"
           />

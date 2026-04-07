@@ -24,6 +24,17 @@ export const sendTestEmail = async (params: any) => {
   return data
 }
 
+/** 发送测试短信验证码 */
+export const sendTestSMS = async (params: {
+  tenant_id?: string
+  phone_prefix?: string
+  phone_number: string
+  scene: 'LOGIN' | 'REGISTER' | 'RESET_PASSWORD' | 'BIND'
+}) => {
+  const data = await request.post<Api.NotificationServices.SMSTestResult>('/notification/services/config/sms/test', params)
+  return data
+}
+
 /** 推送服务配置 */
 export const fetchPushNotificationServices = async () => {
   const data = await request.get<Api.NotificationServices.PushNotification>(`/message_push/config `)

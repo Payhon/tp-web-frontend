@@ -1281,6 +1281,54 @@ export const generatedRoutes: GeneratedRoute[] = [
     ]
   },
   {
+    name: 'public',
+    path: '/public',
+    component: 'layout.base',
+    meta: {
+      title: 'public',
+      i18nKey: 'route.public'
+    },
+    children: [
+      {
+        name: 'public_app',
+        path: '/public/app',
+        meta: {
+          title: 'public_app',
+          i18nKey: 'route.public_app'
+        },
+        children: [
+          {
+            name: 'public_app_download',
+            path: '/public/app/download',
+            component: 'view.public_app_download',
+            meta: {
+              title: 'public_app_download',
+              i18nKey: 'route.public_app_download'
+            }
+          },
+          {
+            name: 'public_app_privacy',
+            path: '/public/app/privacy',
+            component: 'view.public_app_privacy',
+            meta: {
+              title: 'public_app_privacy',
+              i18nKey: 'route.public_app_privacy'
+            }
+          },
+          {
+            name: 'public_app_user-policy',
+            path: '/public/app/user-policy',
+            component: 'view.public_app_user-policy',
+            meta: {
+              title: 'public_app_user-policy',
+              i18nKey: 'route.public_app_user-policy'
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
     name: 'rule-engine',
     path: '/rule-engine',
     component: 'layout.base$view.rule-engine',

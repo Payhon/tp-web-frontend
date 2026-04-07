@@ -34,5 +34,7 @@ declare namespace StorageType {
     globalTabs: App.Global.Tab[]
     /** loading logo */
     logoLoading: string
+    /** cached system name for pre-mount loading screen */
+    systemName: string
   }
 }

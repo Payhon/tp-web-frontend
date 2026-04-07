@@ -518,6 +518,26 @@ declare namespace Api {
       remark: string
       status: string
     }
+    interface SMSTestStep {
+      name: string
+      ok: boolean
+      detail: string
+    }
+    interface SMSTestResult {
+      success: boolean
+      summary: string
+      phone: string
+      scene: string
+      provider?: string
+      template_code?: string
+      default_template_code?: string
+      sign_name?: string
+      endpoint?: string
+      request_id?: string
+      provider_code?: string
+      provider_message?: string
+      steps: SMSTestStep[]
+    }
     interface PushNotification {
       url: string
     }

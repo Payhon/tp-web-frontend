@@ -7,6 +7,7 @@ import {
   NDataTable,
   NForm,
   NFormItem,
+  NImage,
   NInput,
   NModal,
   NSelect,
@@ -18,7 +19,9 @@ import {
 import type { DataTableColumns } from 'naive-ui'
 import { useTable } from '@/hooks/common/table'
 import { $t } from '@/locales'
-import ImageUpload from '@/components/business/image-upload/index.vue'
+import FilePicker from '@/components/business/file-picker/index.vue'
+import FilePickerMultiple from '@/components/business/file-picker-multiple/index.vue'
+import { resolveFileUrl } from '@/utils/common/tool'
 import {
   batchDeleteApps,
   createApp,
@@ -200,6 +203,7 @@ type AppFormModel = {
   app_type: number
   name: string
   description: string
+  introduction: string
   remark: string
   icon_url: string
   screenshot: string[]
@@ -218,6 +222,7 @@ const formModel = ref<AppFormModel>({
   app_type: 0,
   name: '',
   description: '',
+  introduction: '',
   remark: '',
   icon_url: '',
   screenshot: [],
@@ -234,6 +239,7 @@ function openAdd() {
     app_type: 0,
     name: '',
     description: '',
+    introduction: '',
     remark: '',
     icon_url: '',
     screenshot: [],
@@ -258,6 +264,7 @@ async function openEdit(id: string) {
       app_type: d?.app_type ?? 0,
       name: d?.name || '',
       description: d?.description || '',
+      introduction: d?.introduction || '',
       remark: d?.remark || '',
       icon_url: d?.icon_url || '',
       screenshot: d?.screenshot || [],
@@ -282,6 +289,7 @@ async function handleSubmit() {
       app_type: formModel.value.app_type,
       name: formModel.value.name,
       description: formModel.value.description || undefined,
+      introduction: formModel.value.introduction || undefined,
       remark: formModel.value.remark || undefined,
       icon_url: formModel.value.icon_url || undefined,
       screenshot: formModel.value.screenshot || [],
@@ -312,6 +320,8 @@ const appTypeOptions = computed(() => [
   { label: $t('page.appManage.apps.appType.uniApp'), value: 0 },
   { label: $t('page.appManage.apps.appType.uniAppX'), value: 1 }
 ])
+
+const iconPreviewUrl = computed(() => (formModel.value.icon_url ? resolveFileUrl(formModel.value.icon_url) : ''))
 </script>
 
 <template>
@@ -384,6 +394,13 @@ const appTypeOptions = computed(() => [
             :placeholder="$t('page.appManage.apps.form.description')"
           />
         </NFormItem>
+        <NFormItem :label="$t('page.appManage.apps.form.introduction')">
+          <NInput
+            v-model:value="formModel.introduction"
+            type="textarea"
+            :placeholder="$t('page.appManage.apps.form.introduction')"
+          />
+        </NFormItem>
         <NFormItem :label="$t('page.appManage.apps.form.remark')">
           <NInput
             v-model:value="formModel.remark"
@@ -393,11 +410,28 @@ const appTypeOptions = computed(() => [
         </NFormItem>
 
         <NFormItem :label="$t('page.appManage.apps.form.icon')">
-          <ImageUpload v-model="formModel.icon_url" :max="1" />
+          <div class="flex items-start gap-12px">
+            <div class="flex flex-col gap-8px">
+              <FilePicker
+                v-model:model-value="formModel.icon_url"
+                biz-type="image"
+                accept="image/png,image/jpeg,image/jpg,image/gif,image/svg+xml,image/webp"
+                :allowed-extensions="['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp']"
+              />
+              <div class="text-12px opacity-70">png / jpg / jpeg / gif / svg / webp</div>
+            </div>
+            <NImage v-if="iconPreviewUrl" :src="iconPreviewUrl" width="120" height="120" object-fit="contain" />
+          </div>
         </NFormItem>
 
         <NFormItem :label="$t('page.appManage.apps.form.screenshots')">
-          <ImageUpload v-model="formModel.screenshot" :max="9" multiple />
+          <FilePickerMultiple
+            v-model="formModel.screenshot"
+            biz-type="image"
+            accept="image/png,image/jpeg,image/jpg,image/webp"
+            :allowed-extensions="['png', 'jpg', 'jpeg', 'webp']"
+            :max="9"
+          />
         </NFormItem>
 
         <NFormItem :label="$t('page.appManage.apps.form.ios')">
@@ -416,9 +450,11 @@ const appTypeOptions = computed(() => [
               v-model:value="formModel.app_android.name"
               :placeholder="$t('page.appManage.apps.form.quickAppName')"
             />
-            <NInput
-              v-model:value="formModel.app_android.url"
-              :placeholder="$t('page.appManage.apps.form.androidUrl')"
+            <FilePicker
+              v-model:model-value="formModel.app_android.url"
+              biz-type="appPackage"
+              accept=".apk,application/vnd.android.package-archive"
+              :allowed-extensions="['apk']"
             />
           </div>
         </NFormItem>
@@ -429,9 +465,11 @@ const appTypeOptions = computed(() => [
               v-model:value="formModel.app_harmony.name"
               :placeholder="$t('page.appManage.apps.form.harmonyName')"
             />
-            <NInput
-              v-model:value="formModel.app_harmony.url"
-              :placeholder="$t('page.appManage.apps.form.harmonyUrl')"
+            <FilePicker
+              v-model:model-value="formModel.app_harmony.url"
+              biz-type="appPackage"
+              accept=".hap,.app"
+              :allowed-extensions="['hap', 'app']"
             />
           </div>
         </NFormItem>

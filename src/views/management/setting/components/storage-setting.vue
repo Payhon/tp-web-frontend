@@ -3,6 +3,7 @@ import { reactive } from 'vue'
 import { useLoading } from '@sa/hooks'
 import { fetchFileStorageConfig, upsertFileStorageConfig } from '@/service/api/setting'
 import { $t } from '@/locales'
+import { deepClone } from '@/utils/common/tool'
 
 const { loading, startLoading, endLoading } = useLoading(false)
 
@@ -17,6 +18,7 @@ function createDefaultFormModel(): Api.FileStorage.UpsertReq {
     aliyun: {
       access_key_id: '',
       access_key_secret: '',
+      access_key_secret_set: false,
       endpoint: '',
       bucket: '',
       domain: '',
@@ -26,6 +28,7 @@ function createDefaultFormModel(): Api.FileStorage.UpsertReq {
     qiniu: {
       access_key: '',
       secret_key: '',
+      secret_key_set: false,
       bucket: '',
       domain: '',
       dir_prefix: 'uploads/',
@@ -38,6 +41,18 @@ function createDefaultFormModel(): Api.FileStorage.UpsertReq {
 }
 
 const formModel = reactive<Api.FileStorage.UpsertReq>(createDefaultFormModel())
+
+function applyFormModel(data: Api.FileStorage.Config | null) {
+  const defaults = createDefaultFormModel()
+
+  formModel.storage_type = data?.storage_type ?? defaults.storage_type
+  formModel.provider = data?.provider || defaults.provider
+  formModel.remark = data?.remark ?? defaults.remark
+
+  Object.assign(formModel.local, defaults.local, data?.local ?? {})
+  Object.assign(formModel.aliyun, defaults.aliyun, data?.aliyun ?? {})
+  Object.assign(formModel.qiniu, defaults.qiniu, data?.qiniu ?? {})
+}
 
 const providerOptions = [
   { label: '阿里云 OSS', value: 'aliyun' },
@@ -56,16 +71,7 @@ async function loadConfig() {
   startLoading()
   try {
     const { data } = await fetchFileStorageConfig()
-    if (data) {
-      Object.assign(formModel, {
-        storage_type: data.storage_type,
-        provider: data.provider || '',
-        local: data.local,
-        aliyun: data.aliyun,
-        qiniu: data.qiniu,
-        remark: data.remark ?? ''
-      })
-    }
+    applyFormModel(data)
   } finally {
     endLoading()
   }
@@ -74,7 +80,8 @@ async function loadConfig() {
 async function handleSubmit() {
   startLoading()
   try {
-    const res = await upsertFileStorageConfig(formModel)
+    const formData = deepClone(formModel) as Api.FileStorage.UpsertReq
+    const res = await upsertFileStorageConfig(formData)
     if (!res.error) {
       window.$message?.success(res.msg)
       await loadConfig()

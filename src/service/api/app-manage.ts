@@ -118,6 +118,37 @@ export const batchDeleteAppVersions = (ids: string[]) => {
   return request.post('/app_versions/batch_delete', { ids })
 }
 
+const PUBLIC_APP_HEADERS = {
+  'X-TenantID': 'd616bcbb'
+}
+
+export type PublicAppInfo = {
+  appid: string
+  name: string
+  description?: string | null
+  introduction?: string | null
+  icon_url?: string | null
+  screenshot?: string[]
+  app_android?: any
+  app_ios?: any
+  app_harmony?: any
+  h5?: any
+}
+
+export const fetchPublicAppInfo = (params: { appid: string }) => {
+  return request.get<PublicAppInfo>('/app/public/info', {
+    params,
+    headers: PUBLIC_APP_HEADERS
+  })
+}
+
+export const fetchPublicContentPage = (contentKey: ContentKey, params: { appid?: string; lang?: string }) => {
+  return request.get<AppContentPageResp>(`/app/content/pages/${contentKey}`, {
+    params,
+    headers: PUBLIC_APP_HEADERS
+  })
+}
+
 // ---------------------------------------------------------------------------
 // APP内容管理（单页/FAQ/用户反馈）
 // ---------------------------------------------------------------------------

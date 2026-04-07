@@ -39,6 +39,7 @@ export const useSysSettingStore = defineStore('sys-setting', {
           setting.wxmp_qrcode = toAbsoluteFileUrl(setting.wxmp_qrcode)
           setting.app_download_qrcode = toAbsoluteFileUrl(setting.app_download_qrcode)
           localStg.set('logoLoading', setting.logo_loading)
+          localStg.set('systemName', setting.system_name || '')
           Object.assign(this.$state, setting)
         }
       }

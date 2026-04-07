@@ -15,6 +15,8 @@ export function setupLoading() {
 
   const themeColor = localStg.get('themeColor') || '#646cff'
   const logoLoading = localStg.get('logoLoading') || ''
+  const systemName = (localStg.get('systemName') || '').trim()
+  const loadingTitle = systemName || $t('title')
 
   const { r, g, b } = getRgbOfColor(themeColor)
 
@@ -45,7 +47,7 @@ export function setupLoading() {
       ${dot}
     </div>
   </div>
-  <h2 class="text-28px text-center font-500 text-#646464">${$t('system.title')}</h2>
+  <h2 class="text-28px text-center font-500 text-#646464">${loadingTitle}</h2>
 </div>`
 
   const app = document.getElementById('app')
