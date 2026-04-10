@@ -25,6 +25,7 @@ import {
 
 interface EndUserItem {
   user_id: string
+  username?: string | null
   user_name?: string | null
   user_phone: string
   device_count: number
@@ -67,12 +68,12 @@ const devices = ref<DeviceItem[]>([])
 
 const deviceColumns = computed<DataTableColumns<DeviceItem>>(() => [
   { key: 'device_number', title: '设备编号', minWidth: 140 },
-  { key: 'device_name', title: '设备名称', minWidth: 140, render: r => r.device_name || '--' },
+  { key: 'device_name', title: '设备名称', minWidth: 140, render: (r) => r.device_name || '--' },
   {
     key: 'is_owner',
     title: '主用户',
     width: 90,
-    render: r => <NTag type={r.is_owner ? 'success' : 'default'}>{r.is_owner ? '是' : '否'}</NTag>
+    render: (r) => <NTag type={r.is_owner ? 'success' : 'default'}>{r.is_owner ? '是' : '否'}</NTag>
   },
   { key: 'binding_time', title: '绑定时间', minWidth: 160 },
   {
@@ -80,7 +81,7 @@ const deviceColumns = computed<DataTableColumns<DeviceItem>>(() => [
     title: '操作',
     width: 120,
     fixed: 'right',
-    render: row => (
+    render: (row) => (
       <NButton size="small" type="error" onClick={() => confirmForceUnbind(row)}>
         强制解绑
       </NButton>
@@ -90,16 +91,17 @@ const deviceColumns = computed<DataTableColumns<DeviceItem>>(() => [
 
 const createColumns = (): DataTableColumns<EndUserItem> => [
   { key: 'user_phone', title: '手机号', minWidth: 140 },
-  { key: 'user_name', title: '姓名', minWidth: 120, render: r => r.user_name || '--' },
+  { key: 'username', title: '用户名', minWidth: 160, render: (r) => r.username || '--' },
+  { key: 'user_name', title: '姓名', minWidth: 120, render: (r) => r.user_name || '--' },
   { key: 'device_count', title: '绑定设备数', width: 110 },
-  { key: 'last_bind_at', title: '最近绑定', minWidth: 160, render: r => r.last_bind_at || '--' },
-  { key: 'dealer_name', title: '经销商', minWidth: 140, render: r => r.dealer_name || '--' },
+  { key: 'last_bind_at', title: '最近绑定', minWidth: 160, render: (r) => r.last_bind_at || '--' },
+  { key: 'dealer_name', title: '经销商', minWidth: 140, render: (r) => r.dealer_name || '--' },
   {
     key: 'actions',
     title: '操作',
     width: 220,
     fixed: 'right',
-    render: row => (
+    render: (row) => (
       <NSpace>
         <NButton size="small" type="primary" onClick={() => openDevices(row)}>
           查看绑定设备
@@ -150,7 +152,7 @@ async function initDealerOptions() {
   try {
     const res: any = await getDealerList({ page: 1, page_size: 1000 })
     const list = (res?.data?.list || []) as Array<{ id: string; name: string }>
-    dealerOptions.value = list.map(i => ({ label: i.name, value: i.id }))
+    dealerOptions.value = list.map((i) => ({ label: i.name, value: i.id }))
   } catch {
     dealerOptions.value = []
   }
@@ -241,22 +243,24 @@ onMounted(() => {
         :data="data"
         :loading="loading"
         :pagination="pagination"
-        :row-key="row => row.user_id"
-        :scroll-x="960"
+        :row-key="(row) => row.user_id"
+        :scroll-x="1120"
       />
     </NCard>
 
     <NModal v-model:show="showDevicesModal" preset="card" style="width: 860px" title="绑定设备">
       <NSpace vertical :size="12">
         <div class="text-13px text-gray-500">
-          用户：{{ currentUser?.user_phone }} {{ currentUser?.user_name ? `(${currentUser?.user_name})` : '' }}
+          用户：{{ currentUser?.user_phone }}
+          {{ currentUser?.username ? `[${currentUser?.username}]` : '' }}
+          {{ currentUser?.user_name ? `(${currentUser?.user_name})` : '' }}
         </div>
         <NDataTable
           :columns="deviceColumns"
           :data="devices"
           :loading="devicesLoading"
           :pagination="false"
-          :row-key="row => row.binding_id"
+          :row-key="(row) => row.binding_id"
         >
           <template #empty>暂无绑定设备</template>
         </NDataTable>

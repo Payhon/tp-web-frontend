@@ -86,6 +86,8 @@ declare namespace Api {
       userId?: string
       /** 用户名 */
       userName: string
+      username?: string | null
+      phone_number?: string | null
       /** 用户角色类型 */
       roles?: string[]
       authority: string
@@ -548,6 +550,8 @@ declare namespace Api {
       id: string
       /** 用户邮箱 */
       email: string | null
+      /** 账号用户名 */
+      username?: string | null
       /** 用户名 */
       name: string | null
       description: string | null
