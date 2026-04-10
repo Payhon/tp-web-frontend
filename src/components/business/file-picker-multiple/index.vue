@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import type { DataTableColumns, UploadFileInfo } from 'naive-ui'
+import type { DataTableColumns, UploadCustomRequestOptions, UploadFileInfo } from 'naive-ui'
 import { $t } from '@/locales'
 import { formatDateTime } from '@/utils/common/datetime'
 import { getDemoServerUrl, getFileName, resolveFileUrl } from '@/utils/common/tool'
-import { localStg } from '@/utils/storage'
 import { getFileListByPage } from '@/service/api/file'
+import { uploadFileWithStorageStrategy, type UploadStage } from '../upload/shared'
 
 defineOptions({ name: 'FilePickerMultiple' })
 
@@ -44,15 +44,26 @@ const pageSize = ref(20)
 const total = ref(0)
 const fileList = ref<Api.File.ListItem[]>([])
 const selectedIds = ref<string[]>([])
+const uploading = ref(false)
+const uploadProgress = ref(0)
+const uploadStage = ref<UploadStage>('preparing')
+const uploadError = ref('')
 
 const serverBaseUrl = computed(() => getDemoServerUrl())
-const uploadAction = computed(() => `${serverBaseUrl.value}/file/up`)
+const effectiveValueMode = computed(() => (props.valueMode === 'path' && props.bizType === 'image' ? 'url' : props.valueMode))
 
 const selectedCount = computed(() => props.modelValue.length)
 const selectedValueSet = computed(() => new Set(props.modelValue.filter(Boolean)))
+const uploadStatusText = computed(() => {
+  if (uploadError.value) return uploadError.value
+  if (!uploading.value) return ''
+  if (uploadStage.value === 'preparing') return '正在准备上传...'
+  if (uploadStage.value === 'registering') return '上传完成，正在登记文件...'
+  return `上传中 ${uploadProgress.value}%`
+})
 
 function toFileValue(item: Api.File.ListItem): string {
-  return props.valueMode === 'url' ? item.url : item.path
+  return effectiveValueMode.value === 'url' ? item.url : item.path
 }
 
 function formatSize(bytes: number) {
@@ -93,15 +104,18 @@ async function loadFiles() {
 }
 
 function open() {
+  if (uploading.value) return
   selectedIds.value = []
   show.value = true
 }
 
 function clear() {
+  if (uploading.value) return
   emit('update:modelValue', [])
 }
 
 function removeOne(path: string) {
+  if (uploading.value) return
   emit(
     'update:modelValue',
     props.modelValue.filter(item => item !== path)
@@ -109,8 +123,16 @@ function removeOne(path: string) {
 }
 
 async function refresh() {
+  if (uploading.value) return
   page.value = 1
   await loadFiles()
+}
+
+function resetUploadState() {
+  uploading.value = false
+  uploadProgress.value = 0
+  uploadStage.value = 'preparing'
+  uploadError.value = ''
 }
 
 function beforeUpload(data: { file: UploadFileInfo }) {
@@ -139,21 +161,45 @@ function beforeUpload(data: { file: UploadFileInfo }) {
   return true
 }
 
-async function handleFinish({ event }: { file: UploadFileInfo; event?: ProgressEvent }) {
+async function handleUploadRequest(options: UploadCustomRequestOptions) {
+  const rawFile = options.file.file as File | null
+  if (!rawFile) {
+    options.onError()
+    return
+  }
+
+  uploading.value = true
+  uploadProgress.value = 0
+  uploadStage.value = 'preparing'
+  uploadError.value = ''
+
   try {
-    const response = JSON.parse((event?.target as XMLHttpRequest).response)
-    if (response?.data) {
-      const uploaded = response.data as Api.File.UploadRsp
-      emit('uploaded', uploaded)
-      await refresh()
-      if (uploaded?.id) {
-        selectedIds.value = Array.from(new Set([...selectedIds.value, uploaded.id]))
+    const uploaded = await uploadFileWithStorageStrategy({
+      file: rawFile,
+      bizType: props.bizType,
+      onProgress: percentage => {
+        uploadProgress.value = percentage
+        options.onProgress({ percent: percentage })
+      },
+      onStageChange: stage => {
+        uploadStage.value = stage
       }
+    })
+
+    emit('uploaded', uploaded)
+    await loadFiles()
+    if (uploaded?.id) {
+      selectedIds.value = Array.from(new Set([...selectedIds.value, uploaded.id]))
     }
-    window.$message?.success(response?.message || '上传成功')
-  } catch {
+    uploadProgress.value = 100
+    options.onFinish()
     window.$message?.success('上传成功')
-    await refresh()
+    resetUploadState()
+  } catch (error: any) {
+    uploadError.value = error?.message || '上传失败'
+    uploading.value = false
+    options.onError()
+    window.$message?.error(uploadError.value)
   }
 }
 
@@ -163,6 +209,7 @@ function buildSelectedFiles() {
 }
 
 function handleConfirm() {
+  if (uploading.value) return
   const files = buildSelectedFiles()
   if (!files.length) {
     window.$message?.warning('请选择文件')
@@ -176,10 +223,12 @@ function handleConfirm() {
 }
 
 function handleUpdateCheckedRowKeys(keys: Array<string | number>) {
+  if (uploading.value) return
   selectedIds.value = keys.map(String).slice(0, props.max)
 }
 
 function toggleThumbSelection(id: string) {
+  if (uploading.value) return
   const exists = selectedIds.value.includes(id)
   if (exists) {
     selectedIds.value = selectedIds.value.filter(item => item !== id)
@@ -241,8 +290,8 @@ watch(
   <div class="flex flex-col gap-8px">
     <div class="flex items-center gap-8px">
       <NInput :value="selectedCount ? `已选择 ${selectedCount} 个文件` : ''" readonly placeholder="未选择文件" class="w-260px" />
-      <NButton type="primary" secondary @click="open">选择文件</NButton>
-      <NButton v-if="modelValue.length" tertiary @click="clear">{{ $t('common.clear') }}</NButton>
+      <NButton type="primary" secondary :disabled="uploading" @click="open">选择文件</NButton>
+      <NButton v-if="modelValue.length" tertiary :disabled="uploading" @click="clear">{{ $t('common.clear') }}</NButton>
     </div>
 
     <div v-if="modelValue.length" class="file-picker-multiple-preview">
@@ -279,6 +328,7 @@ watch(
           tooltip-content="刷新"
           size="medium"
           class="h-34px w-34px"
+          :disabled="uploading"
           @click="refresh"
         />
         <NButtonGroup size="medium">
@@ -307,14 +357,12 @@ watch(
     </NAlert>
 
     <NUpload
-      :action="uploadAction"
-      :headers="{ 'x-token': localStg.get('token') || '' }"
-      :data="{ type: bizType }"
       :accept="accept"
       :show-file-list="false"
+      :disabled="uploading"
       multiple
       @before-upload="beforeUpload"
-      @finish="handleFinish"
+      :custom-request="handleUploadRequest"
     >
       <NUploadDragger>
         <div class="py-12px">点击或拖拽上传</div>
@@ -325,6 +373,18 @@ watch(
         </div>
       </NUploadDragger>
     </NUpload>
+
+    <div v-if="uploading || uploadError" class="mt-12px">
+      <NProgress
+        type="line"
+        :percentage="uploadError ? uploadProgress : Math.max(uploadProgress, uploading ? 1 : 0)"
+        :status="uploadError ? 'error' : undefined"
+        :show-indicator="true"
+      />
+      <div class="mt-6px text-12px opacity-80" :class="{ 'text-red-500': uploadError }">
+        {{ uploadStatusText }}
+      </div>
+    </div>
 
     <div class="mt-12px">
       <NSpin :show="loading">
@@ -382,8 +442,8 @@ watch(
       <div class="flex items-center justify-between">
         <div class="text-12px opacity-70">已选：{{ selectedIds.length }} / {{ max }}</div>
         <NSpace>
-          <NButton @click="show = false">{{ $t('common.cancel') }}</NButton>
-          <NButton type="primary" @click="handleConfirm">{{ $t('common.confirm') }}</NButton>
+          <NButton :disabled="uploading" @click="show = false">{{ $t('common.cancel') }}</NButton>
+          <NButton type="primary" :disabled="uploading" @click="handleConfirm">{{ $t('common.confirm') }}</NButton>
         </NSpace>
       </div>
     </template>

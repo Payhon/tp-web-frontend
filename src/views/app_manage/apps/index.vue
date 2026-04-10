@@ -453,6 +453,7 @@ const iconPreviewUrl = computed(() => (formModel.value.icon_url ? resolveFileUrl
             <FilePicker
               v-model:model-value="formModel.app_android.url"
               biz-type="appPackage"
+              value-mode="url"
               accept=".apk,application/vnd.android.package-archive"
               :allowed-extensions="['apk']"
             />
@@ -468,6 +469,7 @@ const iconPreviewUrl = computed(() => (formModel.value.icon_url ? resolveFileUrl
             <FilePicker
               v-model:model-value="formModel.app_harmony.url"
               biz-type="appPackage"
+              value-mode="url"
               accept=".hap,.app"
               :allowed-extensions="['hap', 'app']"
             />

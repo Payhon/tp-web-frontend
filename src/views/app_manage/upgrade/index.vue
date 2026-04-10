@@ -483,6 +483,7 @@ onMounted(async () => {
             v-if="useFilePickerForPublishUrl"
             v-model:model-value="publishModel.url"
             :biz-type="publishFileBizType"
+            value-mode="url"
             :accept="publishFileAccept"
             :allowed-extensions="publishFileExtensions"
           />

@@ -326,7 +326,7 @@ getData()
             biz-type="upgradePackage"
             :allowed-extensions="['bin', 'tar', 'gz', 'zip', 'gzip', 'apk', 'dav', 'pack']"
             accept=".bin,.tar,.gz,.zip,.gzip,.apk,.dav,.pack"
-            value-mode="path"
+            value-mode="url"
           />
           <div style="color: #999; font-size: 12px; margin-top: 6px">
             支持扩展名：.bin/.tar/.gz/.zip/.gzip/.apk/.dav/.pack

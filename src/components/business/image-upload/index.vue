@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import type { UploadFileInfo } from 'naive-ui'
+import type { UploadCustomRequestOptions, UploadFileInfo } from 'naive-ui'
 import { getDemoServerUrl, resolveFileUrl } from '@/utils/common/tool'
-import { localStg } from '@/utils/storage'
+import { uploadFileWithStorageStrategy, type UploadStage } from '../upload/shared'
 
 type ModelValue = string | string[]
 
@@ -41,10 +41,21 @@ interface Emits {
 const emit = defineEmits<Emits>()
 
 const serverBaseUrl = computed(() => getDemoServerUrl())
-const uploadAction = computed(() => `${serverBaseUrl.value}/file/up`)
+const effectiveValueMode = computed(() => (props.valueMode === 'path' ? 'url' : props.valueMode))
 
 const isMultiple = computed(() => props.multiple || props.max > 1 || Array.isArray(props.modelValue))
 const fileList = ref<UploadFileInfo[]>([])
+const uploading = ref(false)
+const uploadProgress = ref(0)
+const uploadStage = ref<UploadStage>('preparing')
+const uploadError = ref('')
+const uploadStatusText = computed(() => {
+  if (uploadError.value) return uploadError.value
+  if (!uploading.value) return ''
+  if (uploadStage.value === 'preparing') return '正在准备上传...'
+  if (uploadStage.value === 'registering') return '上传完成，正在登记文件...'
+  return `上传中 ${uploadProgress.value}%`
+})
 
 function normalizeValue(value: ModelValue): string[] {
   if (Array.isArray(value)) return value.filter(Boolean)
@@ -77,22 +88,52 @@ watch(
   { immediate: true, deep: true }
 )
 
-function handleFinish({ event }: { file: UploadFileInfo; event?: ProgressEvent }) {
+async function handleUploadRequest(options: UploadCustomRequestOptions) {
+  const rawFile = options.file.file as File | null
+  if (!rawFile) {
+    options.onError()
+    return
+  }
+
+  uploading.value = true
+  uploadProgress.value = 0
+  uploadStage.value = 'preparing'
+  uploadError.value = ''
+
   try {
-    const response = JSON.parse((event?.target as XMLHttpRequest).response)
-    const uploaded = response?.data as Api.File.UploadRsp | undefined
-    const value = props.valueMode === 'url' ? uploaded?.url || uploaded?.path : uploaded?.path || uploaded?.url
+    const uploaded = await uploadFileWithStorageStrategy({
+      file: rawFile,
+      bizType: props.bizType,
+      onProgress: percentage => {
+        uploadProgress.value = percentage
+        options.onProgress({ percent: percentage })
+      },
+      onStageChange: stage => {
+        uploadStage.value = stage
+      }
+    })
+
+    const value = effectiveValueMode.value === 'url' ? uploaded?.url || uploaded?.path : uploaded?.path || uploaded?.url
     if (!value) return
     const current = normalizeValue(props.modelValue)
     const next = isMultiple.value ? [...current, value] : [value]
     updateModelValue(Array.from(new Set(next)))
     if (uploaded) emit('uploaded', uploaded)
-  } catch {
-    // ignore parse errors; keep upload state as-is
+    uploadProgress.value = 100
+    options.onFinish()
+    uploading.value = false
+    uploadProgress.value = 0
+    uploadStage.value = 'preparing'
+  } catch (error: any) {
+    uploadError.value = error?.message || '上传失败'
+    uploading.value = false
+    options.onError()
+    window.$message?.error(uploadError.value)
   }
 }
 
 function handleRemove({ file }: { file: UploadFileInfo }) {
+  if (uploading.value) return false
   const id = String(file.id || '')
   const next = normalizeValue(props.modelValue).filter(item => item !== id)
   updateModelValue(next)
@@ -104,14 +145,23 @@ function handleRemove({ file }: { file: UploadFileInfo }) {
 <template>
   <NUpload
     v-model:file-list="fileList"
-    :action="uploadAction"
-    :headers="{ 'x-token': localStg.get('token') || '' }"
-    :data="{ type: bizType }"
     :max="max"
     :multiple="isMultiple"
     :accept="accept"
     :list-type="listType"
-    @finish="handleFinish"
+    :disabled="uploading"
+    :custom-request="handleUploadRequest"
     @remove="handleRemove"
   />
+  <div v-if="uploading || uploadError" class="mt-8px">
+    <NProgress
+      type="line"
+      :percentage="uploadError ? uploadProgress : Math.max(uploadProgress, uploading ? 1 : 0)"
+      :status="uploadError ? 'error' : undefined"
+      :show-indicator="true"
+    />
+    <div class="mt-6px text-12px opacity-80" :class="{ 'text-red-500': uploadError }">
+      {{ uploadStatusText }}
+    </div>
+  </div>
 </template>

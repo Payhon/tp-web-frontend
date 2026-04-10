@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { reactive } from 'vue'
+import { reactive, ref } from 'vue'
 import { useLoading } from '@sa/hooks'
 import { fetchFileStorageConfig, upsertFileStorageConfig } from '@/service/api/setting'
 import { $t } from '@/locales'
 import { deepClone } from '@/utils/common/tool'
 
 const { loading, startLoading, endLoading } = useLoading(false)
+const initialized = ref(false)
 
 function createDefaultFormModel(): Api.FileStorage.UpsertReq {
   return {
@@ -73,6 +74,7 @@ async function loadConfig() {
     const { data } = await fetchFileStorageConfig()
     applyFormModel(data)
   } finally {
+    initialized.value = true
     endLoading()
   }
 }
@@ -96,7 +98,7 @@ loadConfig()
 
 <template>
   <NSpin :show="loading">
-    <NForm label-placement="left" :label-width="140" :model="formModel">
+    <NForm v-if="initialized" label-placement="left" :label-width="140" :model="formModel">
       <NGrid :cols="24" :x-gap="18">
         <NFormItemGridItem :span="24" label="存储类型" path="storage_type">
           <NRadioGroup v-model:value="formModel.storage_type">
@@ -108,24 +110,39 @@ loadConfig()
         </NFormItemGridItem>
 
         <template v-if="formModel.storage_type === 'cloud'">
-          <NFormItemGridItem :span="24" label="存储服务商" path="provider">
-            <NSelect v-model:value="formModel.provider" :options="providerOptions" clearable />
+          <NFormItemGridItem key="cloud-provider" :span="24" label="存储服务商" path="provider">
+            <NRadioGroup v-model:value="formModel.provider">
+              <NSpace>
+                <NRadio
+                  v-for="option in providerOptions"
+                  :key="option.value"
+                  :value="option.value"
+                >
+                  {{ option.label }}
+                </NRadio>
+              </NSpace>
+            </NRadioGroup>
           </NFormItemGridItem>
 
           <template v-if="formModel.provider === 'aliyun'">
-            <NFormItemGridItem :span="24" label="访问域名 / CDN域名" path="aliyun.domain">
+            <NFormItemGridItem key="aliyun-domain" :span="24" label="访问域名 / CDN域名" path="aliyun.domain">
               <NInput v-model:value="formModel.aliyun.domain" placeholder="例如：https://cdn.example.com" />
             </NFormItemGridItem>
-            <NFormItemGridItem :span="24" label="Endpoint" path="aliyun.endpoint">
+            <NFormItemGridItem key="aliyun-endpoint" :span="24" label="Endpoint" path="aliyun.endpoint">
               <NInput v-model:value="formModel.aliyun.endpoint" placeholder="例如：oss-cn-hangzhou.aliyuncs.com" />
             </NFormItemGridItem>
-            <NFormItemGridItem :span="24" label="Bucket" path="aliyun.bucket">
+            <NFormItemGridItem key="aliyun-bucket" :span="24" label="Bucket" path="aliyun.bucket">
               <NInput v-model:value="formModel.aliyun.bucket" />
             </NFormItemGridItem>
-            <NFormItemGridItem :span="24" label="AccessKeyId" path="aliyun.access_key_id">
+            <NFormItemGridItem key="aliyun-access-key-id" :span="24" label="AccessKeyId" path="aliyun.access_key_id">
               <NInput v-model:value="formModel.aliyun.access_key_id" />
             </NFormItemGridItem>
-            <NFormItemGridItem :span="24" label="AccessKeySecret" path="aliyun.access_key_secret">
+            <NFormItemGridItem
+              key="aliyun-access-key-secret"
+              :span="24"
+              label="AccessKeySecret"
+              path="aliyun.access_key_secret"
+            >
               <NInput
                 v-model:value="formModel.aliyun.access_key_secret"
                 type="password"
@@ -133,25 +150,25 @@ loadConfig()
                 :placeholder="formModel.aliyun.access_key_secret_set ? '已设置，留空/保持 ******** 则不修改' : ''"
               />
             </NFormItemGridItem>
-            <NFormItemGridItem :span="24" label="DirPrefix" path="aliyun.dir_prefix">
+            <NFormItemGridItem key="aliyun-dir-prefix" :span="24" label="DirPrefix" path="aliyun.dir_prefix">
               <NInput v-model:value="formModel.aliyun.dir_prefix" placeholder="例如：uploads/" />
             </NFormItemGridItem>
-            <NFormItemGridItem :span="24" label="HTTPS" path="aliyun.use_https">
+            <NFormItemGridItem key="aliyun-use-https" :span="24" label="HTTPS" path="aliyun.use_https">
               <NSwitch v-model:value="formModel.aliyun.use_https" />
             </NFormItemGridItem>
           </template>
 
           <template v-else-if="formModel.provider === 'qiniu'">
-            <NFormItemGridItem :span="24" label="访问域名" path="qiniu.domain">
+            <NFormItemGridItem key="qiniu-domain" :span="24" label="访问域名" path="qiniu.domain">
               <NInput v-model:value="formModel.qiniu.domain" placeholder="例如：https://cdn.example.com" />
             </NFormItemGridItem>
-            <NFormItemGridItem :span="24" label="Bucket" path="qiniu.bucket">
+            <NFormItemGridItem key="qiniu-bucket" :span="24" label="Bucket" path="qiniu.bucket">
               <NInput v-model:value="formModel.qiniu.bucket" />
             </NFormItemGridItem>
-            <NFormItemGridItem :span="24" label="AccessKey" path="qiniu.access_key">
+            <NFormItemGridItem key="qiniu-access-key" :span="24" label="AccessKey" path="qiniu.access_key">
               <NInput v-model:value="formModel.qiniu.access_key" />
             </NFormItemGridItem>
-            <NFormItemGridItem :span="24" label="SecretKey" path="qiniu.secret_key">
+            <NFormItemGridItem key="qiniu-secret-key" :span="24" label="SecretKey" path="qiniu.secret_key">
               <NInput
                 v-model:value="formModel.qiniu.secret_key"
                 type="password"
@@ -159,26 +176,36 @@ loadConfig()
                 :placeholder="formModel.qiniu.secret_key_set ? '已设置，留空/保持 ******** 则不修改' : ''"
               />
             </NFormItemGridItem>
-            <NFormItemGridItem :span="24" label="Region" path="qiniu.region">
+            <NFormItemGridItem key="qiniu-region" :span="24" label="Region" path="qiniu.region">
               <NSelect v-model:value="formModel.qiniu.region" :options="qiniuRegionOptions" />
             </NFormItemGridItem>
-            <NFormItemGridItem :span="24" label="DirPrefix" path="qiniu.dir_prefix">
+            <NFormItemGridItem key="qiniu-dir-prefix" :span="24" label="DirPrefix" path="qiniu.dir_prefix">
               <NInput v-model:value="formModel.qiniu.dir_prefix" placeholder="例如：uploads/" />
             </NFormItemGridItem>
-            <NFormItemGridItem :span="24" label="直传上传域名(可选)" path="qiniu.upload_base_url">
+            <NFormItemGridItem
+              key="qiniu-upload-base-url"
+              :span="24"
+              label="直传上传域名(可选)"
+              path="qiniu.upload_base_url"
+            >
               <NInput v-model:value="formModel.qiniu.upload_base_url" placeholder="默认：https://up.qiniup.com" />
             </NFormItemGridItem>
-            <NFormItemGridItem :span="24" label="HTTPS" path="qiniu.use_https">
+            <NFormItemGridItem key="qiniu-use-https" :span="24" label="HTTPS" path="qiniu.use_https">
               <NSwitch v-model:value="formModel.qiniu.use_https" />
             </NFormItemGridItem>
           </template>
         </template>
 
         <template v-else>
-          <NFormItemGridItem :span="24" label="本地存储目录(高级)" path="local.base_dir">
+          <NFormItemGridItem key="local-base-dir" :span="24" label="本地存储目录(高级)" path="local.base_dir">
             <NInput v-model:value="formModel.local.base_dir" placeholder="./files" />
           </NFormItemGridItem>
-          <NFormItemGridItem :span="24" label="公开访问前缀(高级)" path="local.public_path_prefix">
+          <NFormItemGridItem
+            key="local-public-path-prefix"
+            :span="24"
+            label="公开访问前缀(高级)"
+            path="local.public_path_prefix"
+          >
             <NInput v-model:value="formModel.local.public_path_prefix" placeholder="/files" />
           </NFormItemGridItem>
         </template>
