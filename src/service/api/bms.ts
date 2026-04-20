@@ -293,6 +293,10 @@ export const factoryOutBattery = (data: { device_id: string; to_org_id: string; 
   return request.post('/battery/factory_out', data)
 }
 
+export const batchFactoryOutBattery = (data: { device_ids: string[]; to_org_id: string; remark?: string }) => {
+  return request.post('/battery/batch-factory-out', data)
+}
+
 export const transferBattery = (data: { device_id: string; to_org_id: string; remark?: string }) => {
   return request.post('/battery/transfer', data)
 }

@@ -1,5 +1,5 @@
 <script setup lang="tsx">
-import { computed, h, onMounted, ref } from 'vue'
+import { computed, h, onMounted, ref, watch } from 'vue'
 import {
   NButton,
   NCard,
@@ -41,6 +41,7 @@ import {
   createSingleBattery,
   deleteBattery,
   factoryOutBattery,
+  batchFactoryOutBattery,
   transferBattery,
   activateBattery,
   completeBatteryInfo,
@@ -129,6 +130,7 @@ const ownerOrgOptions = ref<Array<{ label: string; value: string }>>([])
 
 // 批量选择
 const selectedRowKeys = ref<string[]>([])
+const selectedRowsMap = ref<Record<string, BatteryItem>>({})
 const showBatchAssignModal = ref(false)
 const batchAssignForm = ref({
   dealer_id: null as string | null
@@ -150,8 +152,10 @@ const factoryLoading = ref(false)
 const transferLoading = ref(false)
 const activateLoading = ref(false)
 const completeInfoLoading = ref(false)
+const factoryMode = ref<'single' | 'batch'>('single')
 
 const factoryForm = ref({
+  device_ids: [] as string[],
   device_id: '',
   device_number: '',
   to_org_type: 'PACK_FACTORY' as 'PACK_FACTORY' | 'DEALER',
@@ -245,6 +249,10 @@ const batchOtaForm = ref({
   name: '' as string
 })
 const lastOtaTaskId = ref<string>('')
+const selectedRows = computed(
+  () => selectedRowKeys.value.map((id) => selectedRowsMap.value[id]).filter(Boolean) as BatteryItem[]
+)
+const selectedCount = computed(() => selectedRowKeys.value.length)
 
 // OTA 任务详情
 const showOtaTaskDetailModal = ref(false)
@@ -314,14 +322,44 @@ function currentStatusLabel(row: BatteryItem) {
   return parts.join(' / ')
 }
 
+function clearSelection() {
+  selectedRowKeys.value = []
+  selectedRowsMap.value = {}
+}
+
+function syncSelectedRowsFromCurrentPage(rows: BatteryItem[]) {
+  const nextMap = { ...selectedRowsMap.value }
+  const selectedKeySet = new Set(selectedRowKeys.value)
+  const currentPageKeySet = new Set(rows.map((item) => item.device_id))
+
+  rows.forEach((item) => {
+    if (selectedKeySet.has(item.device_id)) {
+      nextMap[item.device_id] = item
+    }
+  })
+
+  currentPageKeySet.forEach((deviceID) => {
+    if (!selectedKeySet.has(deviceID)) {
+      delete nextMap[deviceID]
+    }
+  })
+
+  selectedRowsMap.value = nextMap
+}
+
+function handleSelectionChange(keys: Array<string | number>) {
+  selectedRowKeys.value = keys.map((key) => String(key))
+  syncSelectedRowsFromCurrentPage(data.value)
+}
+
 function renderIcon(icon: any) {
   return () => h(NIcon, null, { default: () => h(icon) })
 }
 
 function filterMenuOptions(options: any[]): any[] {
   const filtered = options
-    .filter(option => !option.permissionKey || hasUiPermission(option.permissionKey))
-    .map(option => {
+    .filter((option) => !option.permissionKey || hasUiPermission(option.permissionKey))
+    .map((option) => {
       if (option.children?.length) {
         const children = filterMenuOptions(option.children)
         if (!children.length) return null
@@ -411,31 +449,37 @@ function getActionOptions() {
 function getBatchActionOptions() {
   return filterMenuOptions([
     {
-      label: `电池信息补全(${selectedRowKeys.value.length})`,
+      label: `批量出厂(${selectedCount.value})`,
+      key: 'batch.factory',
+      icon: renderIcon(CubeOutline),
+      permissionKey: 'bms_battery_list_batch_factory_out'
+    },
+    {
+      label: `电池信息补全(${selectedCount.value})`,
       key: 'batch.infoComplete',
       icon: renderIcon(ListOutline),
       permissionKey: 'bms_battery_list_batch_info_complete'
     },
     {
-      label: `批量分配经销商(${selectedRowKeys.value.length})`,
+      label: `批量分配经销商(${selectedCount.value})`,
       key: 'batch.assignDealer',
       icon: renderIcon(StorefrontOutline),
       permissionKey: 'bms_battery_list_batch_assign_dealer'
     },
     {
-      label: `批量设置标签(${selectedRowKeys.value.length})`,
+      label: `批量设置标签(${selectedCount.value})`,
       key: 'batch.tag',
       icon: renderIcon(PricetagsOutline),
       permissionKey: 'bms_battery_list_batch_tag'
     },
     {
-      label: `批量下发指令(${selectedRowKeys.value.length})`,
+      label: `批量下发指令(${selectedCount.value})`,
       key: 'batch.command',
       icon: renderIcon(FlashOutline),
       permissionKey: 'bms_battery_list_batch_command'
     },
     {
-      label: `批量OTA推送(${selectedRowKeys.value.length})`,
+      label: `批量OTA推送(${selectedCount.value})`,
       key: 'batch.ota',
       icon: renderIcon(CloudUploadOutline),
       permissionKey: 'bms_battery_list_batch_ota'
@@ -456,6 +500,7 @@ function handleActionSelect(key: string, row: BatteryItem) {
 }
 
 function handleBatchActionSelect(key: string) {
+  if (key === 'batch.factory') handleBatchFactory()
   if (key === 'batch.infoComplete') handleBatchCompleteInfo()
   if (key === 'batch.assignDealer') handleBatchAssign()
   if (key === 'batch.tag') handleBatchTag()
@@ -502,7 +547,7 @@ const textSearchFieldOptions = [
 ] as const
 
 const textSearchPlaceholder = computed(() => {
-  const current = textSearchFieldOptions.find(item => item.value === searchForm.value.search_field)
+  const current = textSearchFieldOptions.find((item) => item.value === searchForm.value.search_field)
   return current ? `请输入${current.label}` : '请输入搜索内容'
 })
 
@@ -523,7 +568,7 @@ const ownerOrgTypeOptions = computed(() => {
   } else if (userOrgType.value === 'DEALER') {
     types.push('STORE')
   }
-  return types.map(type => ({
+  return types.map((type) => ({
     label: type === 'PACK_FACTORY' ? 'PACK厂' : type === 'DEALER' ? '经销商' : '门店',
     value: type
   }))
@@ -537,7 +582,7 @@ async function loadOwnerOrgOptions(type: string | null) {
   try {
     const res: any = await getOrgScopeOptions({ org_type: type })
     const list = (res?.data || []) as Array<{ id: string; name: string }>
-    ownerOrgOptions.value = list.map(i => ({ label: i.name, value: i.id }))
+    ownerOrgOptions.value = list.map((i) => ({ label: i.name, value: i.id }))
   } catch {
     ownerOrgOptions.value = []
   }
@@ -555,49 +600,51 @@ const createColumns = (): DataTableColumns<BatteryItem> => [
     fixed: 'left'
   },
   { key: 'device_number', title: '序列号', minWidth: 150, fixed: 'left' },
-  { key: 'batch_number', title: '批号', minWidth: 140, render: row => row.batch_number || '--' },
-  { key: 'battery_model_name', title: 'BMS型号', minWidth: 140, render: row => row.battery_model_name || '--' },
-  { key: 'product_spec', title: '产品规格', minWidth: 140, render: row => row.product_spec || '--' },
-  { key: 'cell_brand_name', title: '电芯品牌', minWidth: 140, render: row => row.cell_brand_name || '--' },
+  { key: 'batch_number', title: '批号', minWidth: 140, render: (row) => row.batch_number || '--' },
+  { key: 'battery_model_name', title: 'BMS型号', minWidth: 140, render: (row) => row.battery_model_name || '--' },
+  { key: 'product_spec', title: '产品规格', minWidth: 140, render: (row) => row.product_spec || '--' },
+  { key: 'cell_brand_name', title: '电芯品牌', minWidth: 140, render: (row) => row.cell_brand_name || '--' },
   {
     key: 'pack_battery_model_name',
     title: '电池型号',
     minWidth: 160,
-    render: row => row.pack_battery_model_name || '--'
+    render: (row) => row.pack_battery_model_name || '--'
   },
-  { key: 'ble_mac', title: '蓝牙Mac', minWidth: 160, render: row => row.ble_mac || '--' },
-  { key: 'comm_chip_id', title: '4G卡ID', minWidth: 160, render: row => row.comm_chip_id || '--' },
-  { key: 'production_date', title: '出厂日期', minWidth: 120, render: row => row.production_date || '--' },
+  { key: 'ble_mac', title: '蓝牙Mac', minWidth: 160, render: (row) => row.ble_mac || '--' },
+  { key: 'comm_chip_id', title: '4G卡ID', minWidth: 160, render: (row) => row.comm_chip_id || '--' },
+  { key: 'production_date', title: '出厂日期', minWidth: 120, render: (row) => row.production_date || '--' },
   {
     key: 'owner_org_name',
     title: '归属机构',
     minWidth: 160,
-    render: row => row.owner_org_name || row.dealer_name || <NTag type="info">厂家库存</NTag>
+    render: (row) => row.owner_org_name || row.dealer_name || <NTag type="info">厂家库存</NTag>
   },
-  { key: 'user_phone', title: '终端用户', minWidth: 140, render: row => row.user_phone || '--' },
+  { key: 'user_phone', title: '终端用户', minWidth: 140, render: (row) => row.user_phone || '--' },
   {
     key: 'activation_status',
     title: '激活状态',
     minWidth: 110,
-    render: row => <NTag type={activationTagType(row.activation_status)}>{activationLabel(row.activation_status)}</NTag>
+    render: (row) => (
+      <NTag type={activationTagType(row.activation_status)}>{activationLabel(row.activation_status)}</NTag>
+    )
   },
-  { key: 'activation_date', title: '激活时间', minWidth: 160, render: row => row.activation_date || '--' },
+  { key: 'activation_date', title: '激活时间', minWidth: 160, render: (row) => row.activation_date || '--' },
   {
     key: 'is_online',
     title: '在线状态',
     minWidth: 110,
-    render: row => <NTag type={onlineTagType(row.is_online)}>{row.is_online === 1 ? '在线' : '离线'}</NTag>
+    render: (row) => <NTag type={onlineTagType(row.is_online)}>{row.is_online === 1 ? '在线' : '离线'}</NTag>
   },
-  { key: 'soc', title: 'SOC(%)', minWidth: 100, render: row => row.soc ?? '--' },
-  { key: 'soh', title: 'SOH(%)', minWidth: 100, render: row => row.soh ?? '--' },
-  { key: 'warranty_expire_date', title: '质保到期', minWidth: 120, render: row => row.warranty_expire_date || '--' },
-  { key: 'current_version', title: '固件版本', minWidth: 120, render: row => row.current_version || '--' },
+  { key: 'soc', title: 'SOC(%)', minWidth: 100, render: (row) => row.soc ?? '--' },
+  { key: 'soh', title: 'SOH(%)', minWidth: 100, render: (row) => row.soh ?? '--' },
+  { key: 'warranty_expire_date', title: '质保到期', minWidth: 120, render: (row) => row.warranty_expire_date || '--' },
+  { key: 'current_version', title: '固件版本', minWidth: 120, render: (row) => row.current_version || '--' },
   {
     key: 'actions',
     title: '操作',
     minWidth: 140,
     fixed: 'right',
-    render: row => {
+    render: (row) => {
       const options = getActionOptions() as any[]
       if (!options.length) return null
 
@@ -753,7 +800,8 @@ function handleDeleteBattery(row: BatteryItem) {
         await deleteBattery(row.device_id)
         message.success('删除成功')
         if (selectedRowKeys.value.includes(row.device_id)) {
-          selectedRowKeys.value = selectedRowKeys.value.filter(id => id !== row.device_id)
+          selectedRowKeys.value = selectedRowKeys.value.filter((id) => id !== row.device_id)
+          delete selectedRowsMap.value[row.device_id]
         }
         getData()
       } catch (e: any) {
@@ -791,7 +839,7 @@ const transferOrgTypeOptions = computed(() => {
     types.push('DEALER')
   }
 
-  return types.map(type => ({
+  return types.map((type) => ({
     label: type === 'PACK_FACTORY' ? 'PACK厂' : type === 'DEALER' ? '经销商' : '门店',
     value: type
   }))
@@ -808,7 +856,7 @@ async function ensureOrgOptions(type: 'PACK_FACTORY' | 'DEALER' | 'STORE') {
   try {
     const res: any = await getOrgScopeOptions({ org_type: type })
     const list = (res?.data || []) as Array<{ id: string; name: string }>
-    target.value = list.map(i => ({ label: i.name, value: i.id }))
+    target.value = list.map((i) => ({ label: i.name, value: i.id }))
   } catch {
     target.value = []
   }
@@ -825,9 +873,29 @@ async function handleTransferOrgTypeChange(v: 'PACK_FACTORY' | 'DEALER' | 'STORE
 }
 
 async function openFactoryModal(row: BatteryItem) {
+  factoryMode.value = 'single'
   factoryForm.value = {
+    device_ids: [row.device_id],
     device_id: row.device_id,
     device_number: row.device_number,
+    to_org_type: 'PACK_FACTORY',
+    to_org_id: null,
+    remark: ''
+  }
+  showFactoryModal.value = true
+  await ensureOrgOptions('PACK_FACTORY')
+}
+
+async function handleBatchFactory() {
+  if (selectedCount.value === 0) {
+    message.warning('请先选择要出厂的电池')
+    return
+  }
+  factoryMode.value = 'batch'
+  factoryForm.value = {
+    device_ids: [...selectedRowKeys.value],
+    device_id: '',
+    device_number: '',
     to_org_type: 'PACK_FACTORY',
     to_org_id: null,
     remark: ''
@@ -874,7 +942,7 @@ function openCompleteInfoModal(rows: BatteryItem[]) {
   }
   completeInfoRows.value = rows
   completeInfoForm.value = {
-    device_ids: rows.map(item => item.device_id),
+    device_ids: rows.map((item) => item.device_id),
     cell_brand_seq_no: null,
     battery_model_seq_no: null
   }
@@ -888,16 +956,38 @@ async function confirmFactoryOut() {
   }
   factoryLoading.value = true
   try {
-    await factoryOutBattery({
-      device_id: factoryForm.value.device_id,
-      to_org_id: factoryForm.value.to_org_id,
-      remark: factoryForm.value.remark?.trim() ? factoryForm.value.remark.trim() : undefined
-    })
-    message.success('出厂成功')
+    const remark = factoryForm.value.remark?.trim() ? factoryForm.value.remark.trim() : undefined
+    if (factoryMode.value === 'batch') {
+      const res: any = await batchFactoryOutBattery({
+        device_ids: factoryForm.value.device_ids,
+        to_org_id: factoryForm.value.to_org_id,
+        remark
+      })
+      const r = res?.data
+      if (r) {
+        const msg = `批量出厂完成：总计 ${r.total} 台，成功 ${r.success} 台，失败 ${r.failed} 台`
+        if (r.failed > 0 && r.failures?.length) {
+          const failures = r.failures.map((f: any) => `${f.device_number || f.device_id}：${f.message}`).join('\n')
+          message.warning(msg + '\n失败明细：\n' + failures, { duration: 10000 })
+        } else {
+          message.success(msg)
+        }
+      } else {
+        message.success('批量出厂成功')
+      }
+      clearSelection()
+    } else {
+      await factoryOutBattery({
+        device_id: factoryForm.value.device_id,
+        to_org_id: factoryForm.value.to_org_id,
+        remark
+      })
+      message.success('出厂成功')
+    }
     showFactoryModal.value = false
     getData()
   } catch (e: any) {
-    message.error(e?.message || '出厂失败')
+    message.error(e?.message || (factoryMode.value === 'batch' ? '批量出厂失败' : '出厂失败'))
   } finally {
     factoryLoading.value = false
   }
@@ -948,12 +1038,11 @@ async function confirmActivate() {
 }
 
 function handleBatchCompleteInfo() {
-  if (selectedRowKeys.value.length === 0) {
+  if (selectedCount.value === 0) {
     message.warning('请先选择要补全的电池')
     return
   }
-  const rows = data.value.filter(item => selectedRowKeys.value.includes(item.device_id))
-  openCompleteInfoModal(rows)
+  openCompleteInfoModal(selectedRows.value)
 }
 
 async function confirmCompleteInfo() {
@@ -975,7 +1064,7 @@ async function confirmCompleteInfo() {
     })
     message.success('电池信息补全成功')
     showCompleteInfoModal.value = false
-    selectedRowKeys.value = []
+    clearSelection()
     getData()
   } catch (error: any) {
     message.error(error?.message || '电池信息补全失败')
@@ -986,7 +1075,7 @@ async function confirmCompleteInfo() {
 
 // 批量分配经销商
 function handleBatchAssign() {
-  if (selectedRowKeys.value.length === 0) {
+  if (selectedCount.value === 0) {
     message.warning('请先选择要分配的电池')
     return
   }
@@ -994,7 +1083,7 @@ function handleBatchAssign() {
 }
 
 async function handleBatchTag() {
-  if (selectedRowKeys.value.length === 0) {
+  if (selectedCount.value === 0) {
     message.warning('请先选择要设置标签的电池')
     return
   }
@@ -1003,7 +1092,7 @@ async function handleBatchTag() {
     try {
       const res: any = await getBatteryTagList({ page: 1, page_size: 1000 })
       const list = (res?.data?.list || []) as Array<{ id: string; name: string }>
-      tagOptions.value = list.map(i => ({ label: i.name, value: i.id }))
+      tagOptions.value = list.map((i) => ({ label: i.name, value: i.id }))
     } catch {
       tagOptions.value = []
     }
@@ -1012,7 +1101,7 @@ async function handleBatchTag() {
 }
 
 async function handleBatchCommand() {
-  if (selectedRowKeys.value.length === 0) {
+  if (selectedCount.value === 0) {
     message.warning('请先选择要下发指令的电池')
     return
   }
@@ -1029,7 +1118,7 @@ async function handleBatchCommand() {
       params: string
       description: string
     }>
-    batchCmdOptions.value = list.map(i => ({
+    batchCmdOptions.value = list.map((i) => ({
       label: i.data_name,
       value: i.data_identifier,
       params: i.params,
@@ -1043,7 +1132,7 @@ async function handleBatchCommand() {
 }
 
 async function handleBatchOta() {
-  if (selectedRowKeys.value.length === 0) {
+  if (selectedCount.value === 0) {
     message.warning('请先选择要推送OTA的电池')
     return
   }
@@ -1054,7 +1143,7 @@ async function handleBatchOta() {
   try {
     const res: any = await getOtaUpgradePackageList({ page: 1, page_size: 1000 })
     const list = (res?.data?.list || []) as any[]
-    otaPkgOptions.value = list.map(i => ({
+    otaPkgOptions.value = list.map((i) => ({
       label: `${i.name} / ${i.version}${i.target_version ? ` → ${i.target_version}` : ''}${i.device_config_name ? `（${i.device_config_name}）` : ''}`,
       value: i.id,
       version: i.version,
@@ -1096,7 +1185,7 @@ async function confirmBatchOta() {
     }
     showBatchOtaModal.value = false
     // 不清空选择，方便继续操作；但多数情况下推送后清空更合理
-    selectedRowKeys.value = []
+    clearSelection()
     if (lastOtaTaskId.value) {
       openOtaTaskDetail(lastOtaTaskId.value)
     }
@@ -1109,7 +1198,7 @@ async function confirmBatchOta() {
 
 function handleBatchCmdSelect(v: string) {
   batchCmdForm.value.identify = v
-  const opt = batchCmdOptions.value.find(i => i.value === v)
+  const opt = batchCmdOptions.value.find((i) => i.value === v)
   batchCmdForm.value.command_type = opt?.label || v
   batchCmdHint.value = opt?.params || opt?.description || ''
 }
@@ -1140,7 +1229,7 @@ async function confirmBatchCommand() {
       message.success('批量下发成功')
     }
     showBatchCmdModal.value = false
-    selectedRowKeys.value = []
+    clearSelection()
   } catch (e: any) {
     message.error(e?.message || '批量下发失败')
   } finally {
@@ -1162,7 +1251,7 @@ async function confirmBatchAssign() {
     })
     message.success('批量分配成功')
     showBatchAssignModal.value = false
-    selectedRowKeys.value = []
+    clearSelection()
     batchAssignForm.value.dealer_id = null
     getData()
   } catch (error: any) {
@@ -1182,7 +1271,7 @@ async function confirmBatchTag() {
     })
     message.success('标签设置成功')
     showBatchTagModal.value = false
-    selectedRowKeys.value = []
+    clearSelection()
     batchTagForm.value.tag_ids = []
     batchTagForm.value.mode = 'REPLACE'
     getData()
@@ -1212,7 +1301,7 @@ async function openOfflineCmd(row: BatteryItem) {
       params: string
       description: string
     }>
-    offlineCmdOptions.value = list.map(i => ({
+    offlineCmdOptions.value = list.map((i) => ({
       label: i.data_name,
       value: i.data_identifier,
       params: i.params,
@@ -1227,7 +1316,7 @@ async function openOfflineCmd(row: BatteryItem) {
 
 function handleOfflineCmdSelect(v: string) {
   offlineCmdForm.value.identify = v
-  const opt = offlineCmdOptions.value.find(i => i.value === v)
+  const opt = offlineCmdOptions.value.find((i) => i.value === v)
   offlineCmdForm.value.command_type = opt?.label || v
   offlineCmdHint.value = opt?.params || opt?.description || ''
 }
@@ -1257,6 +1346,7 @@ async function confirmOfflineCmd() {
 
 function handleSearch() {
   const [start, end] = searchForm.value.production_range || []
+  clearSelection()
 
   updateSearchParams({
     page: 1,
@@ -1298,6 +1388,7 @@ function handlePageSizeChange(pageSize: number) {
 }
 
 function handleReset() {
+  clearSelection()
   searchForm.value = {
     search_field: 'device_number',
     search_value: '',
@@ -1335,7 +1426,7 @@ async function initSelectOptions() {
   try {
     const dealerRes: any = await getDealerList({ page: 1, page_size: 1000 })
     const list = (dealerRes?.data?.list || []) as Array<{ id: string; name: string }>
-    dealerOptions.value = list.map(i => ({ label: i.name, value: i.id }))
+    dealerOptions.value = list.map((i) => ({ label: i.name, value: i.id }))
   } catch {
     dealerOptions.value = []
   }
@@ -1343,7 +1434,7 @@ async function initSelectOptions() {
   try {
     const brandRes: any = await getCellBrandList()
     const list = (brandRes?.data?.list || []) as Array<{ seq_no: number; name: string }>
-    cellBrandOptions.value = list.map(i => ({ label: i.name, value: i.seq_no }))
+    cellBrandOptions.value = list.map((i) => ({ label: i.name, value: i.seq_no }))
   } catch {
     cellBrandOptions.value = []
   }
@@ -1351,13 +1442,21 @@ async function initSelectOptions() {
   try {
     const bmsModelRes: any = await getBatteryBmsModelList({ page: 1, page_size: 1000 })
     const list = (bmsModelRes?.data?.list || []) as Array<{ id: string; name: string }>
-    bmsModelOptions.value = list.map(i => ({ label: i.name, value: i.id }))
+    bmsModelOptions.value = list.map((i) => ({ label: i.name, value: i.id }))
   } catch {
     bmsModelOptions.value = []
   }
 }
 
 const scrollX = computed(() => 2200)
+
+watch(
+  data,
+  (rows) => {
+    syncSelectedRowsFromCurrentPage(rows)
+  },
+  { deep: true }
+)
 
 onMounted(async () => {
   // 等待权限加载后刷新列，确保“操作”菜单按权限过滤
@@ -1520,11 +1619,11 @@ onMounted(async () => {
               trigger="click"
               @select="handleBatchActionSelect"
             >
-              <NButton :disabled="selectedRowKeys.length === 0">
+              <NButton :disabled="selectedCount === 0">
                 <template #icon>
                   <NIcon><ListOutline /></NIcon>
                 </template>
-                {{ `批量操作${selectedRowKeys.length ? `(${selectedRowKeys.length})` : ''}` }}
+                {{ `批量操作${selectedCount ? `(${selectedCount})` : ''}` }}
               </NButton>
             </NDropdown>
           </NSpace>
@@ -1533,15 +1632,16 @@ onMounted(async () => {
         <div class="battery-table-shell">
           <div class="battery-table-scroll">
             <NDataTable
-              v-model:checked-row-keys="selectedRowKeys"
+              :checked-row-keys="selectedRowKeys"
               :columns="columns"
               :data="data"
               class="battery-data-table"
               flex-height
               :loading="loading"
               :pagination="false"
-              :row-key="row => row.device_id"
+              :row-key="(row) => row.device_id"
               :scroll-x="scrollX"
+              @update:checked-row-keys="handleSelectionChange"
             />
           </div>
 
@@ -1580,9 +1680,7 @@ onMounted(async () => {
           />
         </NFormItem>
         <NFormItem>
-          <div style="color: #999; font-size: 12px">
-            已选择 {{ selectedRowKeys.length }} 个电池，将分配给选中的经销商
-          </div>
+          <div style="color: #999; font-size: 12px">已选择 {{ selectedCount }} 个电池，将分配给选中的经销商</div>
         </NFormItem>
       </NForm>
     </NModal>
@@ -1618,7 +1716,7 @@ onMounted(async () => {
           />
         </NFormItem>
         <NFormItem>
-          <div style="color: #999; font-size: 12px">已选择 {{ selectedRowKeys.length }} 个电池</div>
+          <div style="color: #999; font-size: 12px">已选择 {{ selectedCount }} 个电池</div>
         </NFormItem>
       </NForm>
     </NModal>
@@ -1626,14 +1724,29 @@ onMounted(async () => {
     <NModal
       v-model:show="showFactoryModal"
       preset="dialog"
-      title="电池出厂"
+      :title="factoryMode === 'batch' ? '批量出厂' : '电池出厂'"
       positive-text="确认出厂"
       negative-text="取消"
       :loading="factoryLoading"
       @positive-click="confirmFactoryOut"
     >
       <NForm :model="factoryForm" label-placement="left" label-width="100px">
-        <NFormItem label="电池编号">
+        <template v-if="factoryMode === 'batch'">
+          <NFormItem label="已选电池">
+            <div style="color: #666">{{ factoryForm.device_ids.length }} 台</div>
+          </NFormItem>
+          <NFormItem label="基础信息">
+            <div class="complete-info-summary">
+              <div v-for="item in selectedRows" :key="item.device_id" class="complete-info-row">
+                <div>序列号：{{ item.device_number }}</div>
+                <div>归属机构：{{ item.owner_org_name || item.dealer_name || '厂家库存' }}</div>
+                <div>出厂日期：{{ item.production_date || '--' }}</div>
+                <div>当前状态：{{ currentStatusLabel(item) }}</div>
+              </div>
+            </div>
+          </NFormItem>
+        </template>
+        <NFormItem v-else label="电池编号">
           <NInput v-model:value="factoryForm.device_number" disabled />
         </NFormItem>
         <NFormItem label="出厂到" path="to_org_type" required>
@@ -1907,7 +2020,7 @@ onMounted(async () => {
             { key: 'updated_at', title: '更新时间', minWidth: 160 }
           ]"
           :data="otaTaskDetailList"
-          :row-key="row => row.id"
+          :row-key="(row) => row.id"
           :scroll-x="920"
         />
       </template>
