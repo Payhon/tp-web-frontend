@@ -20,15 +20,15 @@ const plugList = ref([{ name: $t('generate.unbind'), id: '' }])
 
 const selectValue = ref()
 
-const getTableData = async name => {
+const getTableData = async (name) => {
   const res = await deviceConfigMenu({ device_config_name: name })
   plugList.value = plugList.value.concat(res.data)
 }
-const searchPlug = v => {
+const searchPlug = (v) => {
   getTableData(v)
 }
 
-const choseTemp = async v => {
+const choseTemp = async (v) => {
   const res = await deviceConfigEdit({ device_template_id: v, id: props.configInfo.id })
   if (!res.error) {
     emit('upDateConfig')
@@ -58,7 +58,7 @@ onMounted(async () => {
         filterable
         @update:value="choseTemp"
         @search="
-          v => {
+          (v) => {
             searchPlug(v)
           }
         "
@@ -79,7 +79,7 @@ onMounted(async () => {
   .to-create:hover {
     cursor: pointer;
     text-decoration: underline;
-    color: #646cff;
+    color: #0d60aa;
   }
 
   .m-b-10 {

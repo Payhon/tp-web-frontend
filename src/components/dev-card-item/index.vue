@@ -217,7 +217,7 @@ const handleTopRightIconClick = () => {
 
 /* 悬停效果 - 调整为与用户提供的HTML示例一致 (无特定transform, box-shadow, border-color变化) */
 .item-card:hover {
-  border-color: #646cff;
+  border-color: #0d60aa;
 }
 
 /* 点击时的动画 - kept subtle, can be removed if not desired */

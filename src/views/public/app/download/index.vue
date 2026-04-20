@@ -2,7 +2,14 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { fetchPublicAppInfo, type PublicAppInfo } from '@/service/api/app-manage'
-import { getNestedName, getNestedUrl, isAndroidUserAgent, isIOSUserAgent, normalizePublicLang, toPublicFileUrl } from '../shared'
+import {
+  getNestedName,
+  getNestedUrl,
+  isAndroidUserAgent,
+  isIOSUserAgent,
+  normalizePublicLang,
+  toPublicFileUrl
+} from '../shared'
 
 defineOptions({ name: 'PublicAppDownloadPage' })
 
@@ -37,7 +44,18 @@ const previewArtwork = computed(() => screenshots.value[0] || iconUrl.value)
 const heroText = computed(() => appInfo.value?.introduction || appInfo.value?.description || '')
 const descriptionText = computed(() => appInfo.value?.description || '')
 const introductionText = computed(() => appInfo.value?.introduction || '')
-const appDisplayName = computed(() => appInfo.value?.name || dictionary.value.titleFallback)
+const localizedBrandName = computed(() => (lang.value === 'en-US' ? 'FUJIA BMS' : '富嘉 BMS'))
+
+function resolveLocalizedAppName(name?: string | null) {
+  const resolved = typeof name === 'string' ? name.trim() : ''
+  if (!resolved) return localizedBrandName.value
+  if (/^fjia\s*bms$/i.test(resolved) || /^fjbms(?:\s+app)?$/i.test(resolved)) {
+    return localizedBrandName.value
+  }
+  return resolved
+}
+
+const appDisplayName = computed(() => resolveLocalizedAppName(appInfo.value?.name || dictionary.value.titleFallback))
 
 const privacyUrl = computed(() => {
   const params = new URLSearchParams()
@@ -56,7 +74,7 @@ const userPolicyUrl = computed(() => {
 const dictionary = computed(() => {
   if (lang.value === 'en-US') {
     return {
-      titleFallback: 'FJBMS App',
+      titleFallback: 'FUJIA BMS',
       subtitle: 'Battery management and field diagnostics for professional teams.',
       category: 'Utilities',
       primaryLabel: 'Get',
@@ -81,13 +99,13 @@ const dictionary = computed(() => {
       builtFor: 'Built for operations teams',
       galleryHint: 'Swipe through the actual product screens.',
       ctaHint: 'Choose the channel that fits your device today.',
-      stickyTitle: 'Install FJiaBMS',
+      stickyTitle: 'Install FUJIA BMS',
       stickySubtitle: 'Open the best channel for your current device.'
     }
   }
 
   return {
-    titleFallback: 'FJBMS App',
+    titleFallback: '富嘉 BMS',
     subtitle: '面向电池运维与现场调试团队的专业 BMS 管理工具。',
     category: '工具',
     primaryLabel: '获取',
@@ -112,7 +130,7 @@ const dictionary = computed(() => {
     builtFor: '为现场运维场景打造',
     galleryHint: '左右滑动查看真实应用截图。',
     ctaHint: '根据你的设备环境选择最合适的安装方式。',
-    stickyTitle: '立即获取 FJiaBMS',
+    stickyTitle: '立即获取 富嘉 BMS',
     stickySubtitle: '下载按钮会按当前设备优先展示。'
   }
 })
@@ -222,7 +240,8 @@ const featureHighlights = computed<FeatureItem[]>(() => {
       },
       {
         title: 'Multi-device collaboration',
-        description: 'Switch between multiple BMS assets smoothly while keeping public policy and download access clear.'
+        description:
+          'Switch between multiple BMS assets smoothly while keeping public policy and download access clear.'
       }
     ]
   }
@@ -254,11 +273,11 @@ async function loadAppInfo() {
     const response: any = await fetchPublicAppInfo({ appid: appid.value })
     const data = response?.data || response
     appInfo.value = data || null
-    document.title = data?.name || dictionary.value.titleFallback
+    document.title = resolveLocalizedAppName(data?.name || dictionary.value.titleFallback)
   } catch (error: any) {
     appInfo.value = null
     errorMessage.value = error?.message || dictionary.value.unavailable
-    document.title = dictionary.value.titleFallback
+    document.title = resolveLocalizedAppName(dictionary.value.titleFallback)
   } finally {
     loading.value = false
   }
@@ -410,11 +429,15 @@ watch(() => route.fullPath, loadAppInfo, { immediate: true })
         <div class="legal-grid">
           <a class="glass-card legal-card" :href="privacyUrl" target="_blank" rel="noreferrer">
             <span class="legal-card__label">{{ dictionary.privacy }}</span>
-            <strong>{{ lang === 'en-US' ? 'Review privacy practices and permissions.' : '查看隐私说明与权限使用范围。' }}</strong>
+            <strong>
+              {{ lang === 'en-US' ? 'Review privacy practices and permissions.' : '查看隐私说明与权限使用范围。' }}
+            </strong>
           </a>
           <a class="glass-card legal-card" :href="userPolicyUrl" target="_blank" rel="noreferrer">
             <span class="legal-card__label">{{ dictionary.userPolicy }}</span>
-            <strong>{{ lang === 'en-US' ? 'Read service terms before installation.' : '安装前查看服务条款与责任说明。' }}</strong>
+            <strong>
+              {{ lang === 'en-US' ? 'Read service terms before installation.' : '安装前查看服务条款与责任说明。' }}
+            </strong>
           </a>
         </div>
       </section>
@@ -458,12 +481,7 @@ watch(() => route.fullPath, loadAppInfo, { immediate: true })
     radial-gradient(circle at 85% 16%, rgba(8, 145, 178, 0.18), transparent 18%),
     linear-gradient(180deg, #f4feff 0%, var(--page-bg) 48%, #f7fbff 100%);
   color: var(--text-primary);
-  font-family:
-    'DM Sans',
-    'PingFang SC',
-    'Hiragino Sans GB',
-    'Microsoft YaHei',
-    sans-serif;
+  font-family: 'DM Sans', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
 }
 
 .appstore-page__ambient {

@@ -69,7 +69,7 @@
           }"
           :style="{
             borderColor: 'var(--n-border-color)',
-            borderLeftColor: index === 0 ? '#646cff' : 'var(--n-border-color)'
+            borderLeftColor: index === 0 ? '#0d60aa' : 'var(--n-border-color)'
           }"
         >
           <!-- Device Header -->

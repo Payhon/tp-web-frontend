@@ -13,7 +13,7 @@ export function lockLoadingScreen() {
 export function setupLoading() {
   if (loadingLocked) return
 
-  const themeColor = localStg.get('themeColor') || '#646cff'
+  const themeColor = localStg.get('themeColor') || '#0d60aa'
   const logoLoading = localStg.get('logoLoading') || ''
   const systemName = (localStg.get('systemName') || '').trim()
   const loadingTitle = systemName || $t('title')
@@ -34,7 +34,7 @@ export function setupLoading() {
     : systemLogo.replace('<svg', `<svg class="size-128px text-primary"`)
 
   const dot = loadingClasses
-    .map(item => {
+    .map((item) => {
       return `<div class="absolute w-10px h-10px bg-primary rounded-8px animate-pulse ${item}"></div>`
     })
     .join('\n')
