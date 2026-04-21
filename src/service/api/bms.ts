@@ -301,6 +301,14 @@ export const transferBattery = (data: { device_id: string; to_org_id: string; re
   return request.post('/battery/transfer', data)
 }
 
+export const getBatteryRollbackPreview = (params: { device_id: string }) => {
+  return request.get('/battery/rollback/preview', { params })
+}
+
+export const rollbackBattery = (data: { device_id: string; remark?: string }) => {
+  return request.post('/battery/rollback', data)
+}
+
 export const activateBattery = (data: { device_id: string; user_id: string; remark?: string }) => {
   return request.post('/battery/activate', data)
 }

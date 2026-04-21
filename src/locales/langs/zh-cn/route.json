@@ -189,6 +189,7 @@
   "perm.bms_battery_list_action_lifecycle_factory": "生命周期-出厂",
   "perm.bms_battery_list_action_lifecycle_activate": "生命周期-激活",
   "perm.bms_battery_list_action_lifecycle_transfer": "生命周期-调拨",
+  "perm.bms_battery_list_action_lifecycle_rollback": "生命周期-回退",
   "perm.bms_battery_list_batch_info_complete": "批量电池信息补全",
   "perm.bms_battery_list_batch_factory_out": "批量出厂",
   "perm.bms_battery_list_batch_assign_dealer": "批量分配经销商",

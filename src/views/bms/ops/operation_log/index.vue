@@ -14,6 +14,7 @@ const opTypeOptions = [
   { label: '导入', value: 'IMPORT' },
   { label: '出厂', value: 'FACTORY_OUT' },
   { label: '转移/调拨', value: 'TRANSFER' },
+  { label: '回退', value: 'ROLLBACK' },
   { label: '激活', value: 'ACTIVATE' },
   { label: '信息补全', value: 'INFO_COMPLETE' },
   { label: '编辑BMS信息', value: 'EDIT_INFO' },

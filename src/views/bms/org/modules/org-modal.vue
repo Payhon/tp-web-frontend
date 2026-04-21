@@ -14,6 +14,7 @@ import {
   NTreeSelect
 } from 'naive-ui'
 import { OrgTypeLabels, getOrgTree } from '@/service/api/bms'
+import { useAuthStore } from '@/store/modules/auth'
 import pwData from '@/views/management/user/components/pw.json'
 
 interface Props {
@@ -25,10 +26,24 @@ interface Props {
 
 const props = defineProps<Props>()
 const emit = defineEmits(['update:visible', 'submit'])
+const authStore = useAuthStore()
 
 const formRef = ref()
 const parentOptions = ref<any[]>([])
 const loading = ref(false)
+const currentOrgId = computed(() => String((authStore.userInfo as any)?.org_id || '').trim())
+const currentOrgType = computed(() => String((authStore.userInfo as any)?.org_type || '').toUpperCase())
+const currentOrgName = computed(() => {
+  const info: any = authStore.userInfo || {}
+  return String(info.organization || info.org_name || info.orgName || '').trim()
+})
+const isDealerCreateStoreScene = computed(
+  () => props.fixedOrgType === 'STORE' && currentOrgType.value === 'DEALER' && currentOrgId.value !== ''
+)
+const dealerParentDisplay = computed(() => {
+  if (currentOrgName.value) return currentOrgName.value
+  return currentOrgId.value ? `当前机构 (${currentOrgId.value})` : '当前机构'
+})
 
 // 转换 pw.json 数据为级联选择器格式
 const convertPwDataToCascader = (data: any): any[] => {
@@ -97,6 +112,11 @@ const title = computed(() => {
 
 // 加载上级组织选项
 const loadParentOptions = async () => {
+  if (isDealerCreateStoreScene.value) {
+    parentOptions.value = []
+    loading.value = false
+    return
+  }
   loading.value = true
   try {
     const res: any = await getOrgTree()
@@ -164,10 +184,11 @@ watch(
           }
         }
       } else {
+        const defaultParentID = isDealerCreateStoreScene.value ? currentOrgId.value : null
         formData.value = {
           name: '',
           org_type: props.fixedOrgType || '',
-          parent_id: null,
+          parent_id: defaultParentID,
           contact_person: '',
           phone: '',
           email: '',
@@ -231,7 +252,9 @@ const handleSubmit = () => {
         </NFormItemGi>
 
         <NFormItemGi :span="24" label="上级组织" path="parent_id">
+          <NInput v-if="isDealerCreateStoreScene" :value="dealerParentDisplay" disabled />
           <NTreeSelect
+            v-else
             v-model:value="formData.parent_id"
             :options="parentOptions"
             placeholder="请选择上级组织（可选）"

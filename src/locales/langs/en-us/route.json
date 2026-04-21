@@ -155,6 +155,7 @@
   "perm.bms_battery_list_action_lifecycle_factory": "Lifecycle - Factory Out",
   "perm.bms_battery_list_action_lifecycle_activate": "Lifecycle - Activate",
   "perm.bms_battery_list_action_lifecycle_transfer": "Lifecycle - Transfer",
+  "perm.bms_battery_list_action_lifecycle_rollback": "Lifecycle - Rollback",
   "perm.bms_battery_list_batch_info_complete": "Batch Battery Info Completion",
   "perm.bms_battery_list_batch_factory_out": "Batch Factory Out",
   "perm.bms_battery_list_batch_assign_dealer": "Batch Assign Dealer",

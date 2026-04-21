@@ -43,6 +43,8 @@ import {
   factoryOutBattery,
   batchFactoryOutBattery,
   transferBattery,
+  getBatteryRollbackPreview,
+  rollbackBattery,
   activateBattery,
   completeBatteryInfo,
   getOrgScopeOptions,
@@ -69,6 +71,7 @@ import {
   FlashOutline,
   ListOutline,
   SwapHorizontalOutline,
+  ReturnUpBackOutline,
   SettingsOutline,
   PricetagsOutline,
   StorefrontOutline,
@@ -146,10 +149,12 @@ const singleEditData = ref<Record<string, any> | null>(null)
 // 生命周期操作：出厂/调拨/激活
 const showFactoryModal = ref(false)
 const showTransferModal = ref(false)
+const showRollbackModal = ref(false)
 const showActivateModal = ref(false)
 const showCompleteInfoModal = ref(false)
 const factoryLoading = ref(false)
 const transferLoading = ref(false)
+const rollbackLoading = ref(false)
 const activateLoading = ref(false)
 const completeInfoLoading = ref(false)
 const factoryMode = ref<'single' | 'batch'>('single')
@@ -169,6 +174,14 @@ const transferForm = ref({
   from_org_type: '',
   to_org_type: 'DEALER' as 'PACK_FACTORY' | 'DEALER' | 'STORE',
   to_org_id: null as string | null,
+  remark: ''
+})
+const rollbackForm = ref({
+  device_id: '',
+  device_number: '',
+  current_org_name: '',
+  rollback_to_org_id: null as string | null,
+  rollback_to_org_name: '',
   remark: ''
 })
 const activateForm = ref({
@@ -250,7 +263,7 @@ const batchOtaForm = ref({
 })
 const lastOtaTaskId = ref<string>('')
 const selectedRows = computed(
-  () => selectedRowKeys.value.map((id) => selectedRowsMap.value[id]).filter(Boolean) as BatteryItem[]
+  () => selectedRowKeys.value.map(id => selectedRowsMap.value[id]).filter(Boolean) as BatteryItem[]
 )
 const selectedCount = computed(() => selectedRowKeys.value.length)
 
@@ -330,15 +343,15 @@ function clearSelection() {
 function syncSelectedRowsFromCurrentPage(rows: BatteryItem[]) {
   const nextMap = { ...selectedRowsMap.value }
   const selectedKeySet = new Set(selectedRowKeys.value)
-  const currentPageKeySet = new Set(rows.map((item) => item.device_id))
+  const currentPageKeySet = new Set(rows.map(item => item.device_id))
 
-  rows.forEach((item) => {
+  rows.forEach(item => {
     if (selectedKeySet.has(item.device_id)) {
       nextMap[item.device_id] = item
     }
   })
 
-  currentPageKeySet.forEach((deviceID) => {
+  currentPageKeySet.forEach(deviceID => {
     if (!selectedKeySet.has(deviceID)) {
       delete nextMap[deviceID]
     }
@@ -348,7 +361,7 @@ function syncSelectedRowsFromCurrentPage(rows: BatteryItem[]) {
 }
 
 function handleSelectionChange(keys: Array<string | number>) {
-  selectedRowKeys.value = keys.map((key) => String(key))
+  selectedRowKeys.value = keys.map(key => String(key))
   syncSelectedRowsFromCurrentPage(data.value)
 }
 
@@ -358,8 +371,8 @@ function renderIcon(icon: any) {
 
 function filterMenuOptions(options: any[]): any[] {
   const filtered = options
-    .filter((option) => !option.permissionKey || hasUiPermission(option.permissionKey))
-    .map((option) => {
+    .filter(option => !option.permissionKey || hasUiPermission(option.permissionKey))
+    .map(option => {
       if (option.children?.length) {
         const children = filterMenuOptions(option.children)
         if (!children.length) return null
@@ -376,7 +389,12 @@ function filterMenuOptions(options: any[]): any[] {
   })
 }
 
-function getActionOptions() {
+function canShowRollbackAction(row: BatteryItem) {
+  const ownerOrgType = String(row.owner_org_type || '').toUpperCase()
+  return (userOrgType.value === 'DEALER' || userOrgType.value === 'STORE') && ownerOrgType === userOrgType.value
+}
+
+function getActionOptions(row: BatteryItem) {
   return filterMenuOptions([
     {
       label: '查看详情',
@@ -439,8 +457,19 @@ function getActionOptions() {
           label: '调拨',
           key: 'lifecycle.transfer',
           icon: renderIcon(SwapHorizontalOutline),
-          permissionKey: 'bms_battery_list_action_lifecycle_transfer'
-        }
+          permissionKey: 'bms_battery_list_action_lifecycle_transfer',
+          disabled: isStoreOrgUser.value
+        },
+        ...(canShowRollbackAction(row)
+          ? [
+              {
+                label: '回退',
+                key: 'lifecycle.rollback',
+                icon: renderIcon(ReturnUpBackOutline),
+                permissionKey: 'bms_battery_list_action_lifecycle_rollback'
+              }
+            ]
+          : [])
       ]
     }
   ])
@@ -495,7 +524,14 @@ function handleActionSelect(key: string, row: BatteryItem) {
   if (key === 'delete') handleDeleteBattery(row)
   if (key === 'lifecycle.factory') openFactoryModal(row)
   if (key === 'lifecycle.infoComplete') openCompleteInfoModal([row])
-  if (key === 'lifecycle.transfer') openTransferModal(row)
+  if (key === 'lifecycle.transfer') {
+    if (isStoreOrgUser.value) {
+      message.warning('当前机构无可调拨下级机构')
+      return
+    }
+    openTransferModal(row)
+  }
+  if (key === 'lifecycle.rollback') openRollbackModal(row)
   if (key === 'lifecycle.activate') openActivateModal(row)
 }
 
@@ -547,12 +583,13 @@ const textSearchFieldOptions = [
 ] as const
 
 const textSearchPlaceholder = computed(() => {
-  const current = textSearchFieldOptions.find((item) => item.value === searchForm.value.search_field)
+  const current = textSearchFieldOptions.find(item => item.value === searchForm.value.search_field)
   return current ? `请输入${current.label}` : '请输入搜索内容'
 })
 
 const userOrgType = computed(() => String((authStore.userInfo as any)?.org_type || '').toUpperCase())
 const userAuthority = computed(() => String((authStore.userInfo as any)?.authority || '').toUpperCase())
+const isStoreOrgUser = computed(() => userOrgType.value === 'STORE' && userAuthority.value === 'TENANT_USER')
 
 const ownerOrgTypeOptions = computed(() => {
   const types: string[] = []
@@ -568,7 +605,7 @@ const ownerOrgTypeOptions = computed(() => {
   } else if (userOrgType.value === 'DEALER') {
     types.push('STORE')
   }
-  return types.map((type) => ({
+  return types.map(type => ({
     label: type === 'PACK_FACTORY' ? 'PACK厂' : type === 'DEALER' ? '经销商' : '门店',
     value: type
   }))
@@ -582,7 +619,7 @@ async function loadOwnerOrgOptions(type: string | null) {
   try {
     const res: any = await getOrgScopeOptions({ org_type: type })
     const list = (res?.data || []) as Array<{ id: string; name: string }>
-    ownerOrgOptions.value = list.map((i) => ({ label: i.name, value: i.id }))
+    ownerOrgOptions.value = list.map(i => ({ label: i.name, value: i.id }))
   } catch {
     ownerOrgOptions.value = []
   }
@@ -600,52 +637,50 @@ const createColumns = (): DataTableColumns<BatteryItem> => [
     fixed: 'left'
   },
   { key: 'device_number', title: '序列号', minWidth: 150, fixed: 'left' },
-  { key: 'batch_number', title: '批号', minWidth: 140, render: (row) => row.batch_number || '--' },
-  { key: 'battery_model_name', title: 'BMS型号', minWidth: 140, render: (row) => row.battery_model_name || '--' },
-  { key: 'product_spec', title: '产品规格', minWidth: 140, render: (row) => row.product_spec || '--' },
-  { key: 'cell_brand_name', title: '电芯品牌', minWidth: 140, render: (row) => row.cell_brand_name || '--' },
+  { key: 'batch_number', title: '批号', minWidth: 140, render: row => row.batch_number || '--' },
+  { key: 'battery_model_name', title: 'BMS型号', minWidth: 140, render: row => row.battery_model_name || '--' },
+  { key: 'product_spec', title: '产品规格', minWidth: 140, render: row => row.product_spec || '--' },
+  { key: 'cell_brand_name', title: '电芯品牌', minWidth: 140, render: row => row.cell_brand_name || '--' },
   {
     key: 'pack_battery_model_name',
     title: '电池型号',
     minWidth: 160,
-    render: (row) => row.pack_battery_model_name || '--'
+    render: row => row.pack_battery_model_name || '--'
   },
-  { key: 'ble_mac', title: '蓝牙Mac', minWidth: 160, render: (row) => row.ble_mac || '--' },
-  { key: 'comm_chip_id', title: '4G卡ID', minWidth: 160, render: (row) => row.comm_chip_id || '--' },
-  { key: 'production_date', title: '出厂日期', minWidth: 120, render: (row) => row.production_date || '--' },
+  { key: 'ble_mac', title: '蓝牙Mac', minWidth: 160, render: row => row.ble_mac || '--' },
+  { key: 'comm_chip_id', title: '4G卡ID', minWidth: 160, render: row => row.comm_chip_id || '--' },
+  { key: 'production_date', title: '出厂日期', minWidth: 120, render: row => row.production_date || '--' },
   {
     key: 'owner_org_name',
     title: '归属机构',
     minWidth: 160,
-    render: (row) => row.owner_org_name || row.dealer_name || <NTag type="info">厂家库存</NTag>
+    render: row => row.owner_org_name || row.dealer_name || <NTag type="info">厂家库存</NTag>
   },
-  { key: 'user_phone', title: '终端用户', minWidth: 140, render: (row) => row.user_phone || '--' },
+  { key: 'user_phone', title: '终端用户', minWidth: 140, render: row => row.user_phone || '--' },
   {
     key: 'activation_status',
     title: '激活状态',
     minWidth: 110,
-    render: (row) => (
-      <NTag type={activationTagType(row.activation_status)}>{activationLabel(row.activation_status)}</NTag>
-    )
+    render: row => <NTag type={activationTagType(row.activation_status)}>{activationLabel(row.activation_status)}</NTag>
   },
-  { key: 'activation_date', title: '激活时间', minWidth: 160, render: (row) => row.activation_date || '--' },
+  { key: 'activation_date', title: '激活时间', minWidth: 160, render: row => row.activation_date || '--' },
   {
     key: 'is_online',
     title: '在线状态',
     minWidth: 110,
-    render: (row) => <NTag type={onlineTagType(row.is_online)}>{row.is_online === 1 ? '在线' : '离线'}</NTag>
+    render: row => <NTag type={onlineTagType(row.is_online)}>{row.is_online === 1 ? '在线' : '离线'}</NTag>
   },
-  { key: 'soc', title: 'SOC(%)', minWidth: 100, render: (row) => row.soc ?? '--' },
-  { key: 'soh', title: 'SOH(%)', minWidth: 100, render: (row) => row.soh ?? '--' },
-  { key: 'warranty_expire_date', title: '质保到期', minWidth: 120, render: (row) => row.warranty_expire_date || '--' },
-  { key: 'current_version', title: '固件版本', minWidth: 120, render: (row) => row.current_version || '--' },
+  { key: 'soc', title: 'SOC(%)', minWidth: 100, render: row => row.soc ?? '--' },
+  { key: 'soh', title: 'SOH(%)', minWidth: 100, render: row => row.soh ?? '--' },
+  { key: 'warranty_expire_date', title: '质保到期', minWidth: 120, render: row => row.warranty_expire_date || '--' },
+  { key: 'current_version', title: '固件版本', minWidth: 120, render: row => row.current_version || '--' },
   {
     key: 'actions',
     title: '操作',
     minWidth: 140,
     fixed: 'right',
-    render: (row) => {
-      const options = getActionOptions() as any[]
+    render: row => {
+      const options = getActionOptions(row) as any[]
       if (!options.length) return null
 
       return (
@@ -800,7 +835,7 @@ function handleDeleteBattery(row: BatteryItem) {
         await deleteBattery(row.device_id)
         message.success('删除成功')
         if (selectedRowKeys.value.includes(row.device_id)) {
-          selectedRowKeys.value = selectedRowKeys.value.filter((id) => id !== row.device_id)
+          selectedRowKeys.value = selectedRowKeys.value.filter(id => id !== row.device_id)
           delete selectedRowsMap.value[row.device_id]
         }
         getData()
@@ -834,12 +869,10 @@ const transferOrgTypeOptions = computed(() => {
   } else if (userOrgType.value === 'PACK_FACTORY') {
     types.push('DEALER', 'STORE')
   } else if (userOrgType.value === 'DEALER') {
-    types.push('PACK_FACTORY', 'STORE')
-  } else if (userOrgType.value === 'STORE') {
-    types.push('DEALER')
+    types.push('STORE')
   }
 
-  return types.map((type) => ({
+  return types.map(type => ({
     label: type === 'PACK_FACTORY' ? 'PACK厂' : type === 'DEALER' ? '经销商' : '门店',
     value: type
   }))
@@ -856,7 +889,7 @@ async function ensureOrgOptions(type: 'PACK_FACTORY' | 'DEALER' | 'STORE') {
   try {
     const res: any = await getOrgScopeOptions({ org_type: type })
     const list = (res?.data || []) as Array<{ id: string; name: string }>
-    target.value = list.map((i) => ({ label: i.name, value: i.id }))
+    target.value = list.map(i => ({ label: i.name, value: i.id }))
   } catch {
     target.value = []
   }
@@ -905,7 +938,11 @@ async function handleBatchFactory() {
 }
 
 async function openTransferModal(row: BatteryItem) {
-  const defaultTargetType = (transferOrgTypeOptions.value[0]?.value || 'DEALER') as 'PACK_FACTORY' | 'DEALER' | 'STORE'
+  const defaultTargetType = transferOrgTypeOptions.value[0]?.value as 'PACK_FACTORY' | 'DEALER' | 'STORE' | undefined
+  if (!defaultTargetType) {
+    message.warning('当前机构无可调拨下级机构')
+    return
+  }
   transferForm.value = {
     device_id: row.device_id,
     device_number: row.device_number,
@@ -917,6 +954,31 @@ async function openTransferModal(row: BatteryItem) {
   }
   showTransferModal.value = true
   await ensureOrgOptions(defaultTargetType)
+}
+
+async function openRollbackModal(row: BatteryItem) {
+  rollbackLoading.value = true
+  try {
+    const res: any = await getBatteryRollbackPreview({ device_id: row.device_id })
+    const preview = res?.data || {}
+    if (!preview?.can_rollback) {
+      message.warning(preview?.reason || '当前电池不支持回退')
+      return
+    }
+    rollbackForm.value = {
+      device_id: preview.device_id || row.device_id,
+      device_number: preview.device_number || row.device_number,
+      current_org_name: preview.current_org_name || row.owner_org_name || row.dealer_name || '当前机构',
+      rollback_to_org_id: preview.rollback_to_org_id || null,
+      rollback_to_org_name: preview.rollback_to_org_name || '',
+      remark: ''
+    }
+    showRollbackModal.value = true
+  } catch (e: any) {
+    message.error(e?.message || '加载回退目标失败')
+  } finally {
+    rollbackLoading.value = false
+  }
 }
 
 function openActivateModal(row: BatteryItem) {
@@ -942,7 +1004,7 @@ function openCompleteInfoModal(rows: BatteryItem[]) {
   }
   completeInfoRows.value = rows
   completeInfoForm.value = {
-    device_ids: rows.map((item) => item.device_id),
+    device_ids: rows.map(item => item.device_id),
     cell_brand_seq_no: null,
     battery_model_seq_no: null
   }
@@ -1012,6 +1074,27 @@ async function confirmTransfer() {
     message.error(e?.message || '调拨失败')
   } finally {
     transferLoading.value = false
+  }
+}
+
+async function confirmRollback() {
+  if (!rollbackForm.value.rollback_to_org_id) {
+    message.warning('当前电池没有可回退的目标机构')
+    return
+  }
+  rollbackLoading.value = true
+  try {
+    await rollbackBattery({
+      device_id: rollbackForm.value.device_id,
+      remark: rollbackForm.value.remark?.trim() ? rollbackForm.value.remark.trim() : undefined
+    })
+    message.success('回退成功')
+    showRollbackModal.value = false
+    getData()
+  } catch (e: any) {
+    message.error(e?.message || '回退失败')
+  } finally {
+    rollbackLoading.value = false
   }
 }
 
@@ -1092,7 +1175,7 @@ async function handleBatchTag() {
     try {
       const res: any = await getBatteryTagList({ page: 1, page_size: 1000 })
       const list = (res?.data?.list || []) as Array<{ id: string; name: string }>
-      tagOptions.value = list.map((i) => ({ label: i.name, value: i.id }))
+      tagOptions.value = list.map(i => ({ label: i.name, value: i.id }))
     } catch {
       tagOptions.value = []
     }
@@ -1118,7 +1201,7 @@ async function handleBatchCommand() {
       params: string
       description: string
     }>
-    batchCmdOptions.value = list.map((i) => ({
+    batchCmdOptions.value = list.map(i => ({
       label: i.data_name,
       value: i.data_identifier,
       params: i.params,
@@ -1143,7 +1226,7 @@ async function handleBatchOta() {
   try {
     const res: any = await getOtaUpgradePackageList({ page: 1, page_size: 1000 })
     const list = (res?.data?.list || []) as any[]
-    otaPkgOptions.value = list.map((i) => ({
+    otaPkgOptions.value = list.map(i => ({
       label: `${i.name} / ${i.version}${i.target_version ? ` → ${i.target_version}` : ''}${i.device_config_name ? `（${i.device_config_name}）` : ''}`,
       value: i.id,
       version: i.version,
@@ -1198,7 +1281,7 @@ async function confirmBatchOta() {
 
 function handleBatchCmdSelect(v: string) {
   batchCmdForm.value.identify = v
-  const opt = batchCmdOptions.value.find((i) => i.value === v)
+  const opt = batchCmdOptions.value.find(i => i.value === v)
   batchCmdForm.value.command_type = opt?.label || v
   batchCmdHint.value = opt?.params || opt?.description || ''
 }
@@ -1301,7 +1384,7 @@ async function openOfflineCmd(row: BatteryItem) {
       params: string
       description: string
     }>
-    offlineCmdOptions.value = list.map((i) => ({
+    offlineCmdOptions.value = list.map(i => ({
       label: i.data_name,
       value: i.data_identifier,
       params: i.params,
@@ -1316,7 +1399,7 @@ async function openOfflineCmd(row: BatteryItem) {
 
 function handleOfflineCmdSelect(v: string) {
   offlineCmdForm.value.identify = v
-  const opt = offlineCmdOptions.value.find((i) => i.value === v)
+  const opt = offlineCmdOptions.value.find(i => i.value === v)
   offlineCmdForm.value.command_type = opt?.label || v
   offlineCmdHint.value = opt?.params || opt?.description || ''
 }
@@ -1426,7 +1509,7 @@ async function initSelectOptions() {
   try {
     const dealerRes: any = await getDealerList({ page: 1, page_size: 1000 })
     const list = (dealerRes?.data?.list || []) as Array<{ id: string; name: string }>
-    dealerOptions.value = list.map((i) => ({ label: i.name, value: i.id }))
+    dealerOptions.value = list.map(i => ({ label: i.name, value: i.id }))
   } catch {
     dealerOptions.value = []
   }
@@ -1434,7 +1517,7 @@ async function initSelectOptions() {
   try {
     const brandRes: any = await getCellBrandList()
     const list = (brandRes?.data?.list || []) as Array<{ seq_no: number; name: string }>
-    cellBrandOptions.value = list.map((i) => ({ label: i.name, value: i.seq_no }))
+    cellBrandOptions.value = list.map(i => ({ label: i.name, value: i.seq_no }))
   } catch {
     cellBrandOptions.value = []
   }
@@ -1442,7 +1525,7 @@ async function initSelectOptions() {
   try {
     const bmsModelRes: any = await getBatteryBmsModelList({ page: 1, page_size: 1000 })
     const list = (bmsModelRes?.data?.list || []) as Array<{ id: string; name: string }>
-    bmsModelOptions.value = list.map((i) => ({ label: i.name, value: i.id }))
+    bmsModelOptions.value = list.map(i => ({ label: i.name, value: i.id }))
   } catch {
     bmsModelOptions.value = []
   }
@@ -1452,7 +1535,7 @@ const scrollX = computed(() => 2200)
 
 watch(
   data,
-  (rows) => {
+  rows => {
     syncSelectedRowsFromCurrentPage(rows)
   },
   { deep: true }
@@ -1639,7 +1722,7 @@ onMounted(async () => {
               flex-height
               :loading="loading"
               :pagination="false"
-              :row-key="(row) => row.device_id"
+              :row-key="row => row.device_id"
               :scroll-x="scrollX"
               @update:checked-row-keys="handleSelectionChange"
             />
@@ -1804,6 +1887,34 @@ onMounted(async () => {
         </NFormItem>
         <NFormItem label="备注">
           <NInput v-model:value="transferForm.remark" placeholder="可选" />
+        </NFormItem>
+      </NForm>
+    </NModal>
+
+    <NModal
+      v-model:show="showRollbackModal"
+      preset="dialog"
+      title="电池回退"
+      positive-text="确认回退"
+      negative-text="取消"
+      :loading="rollbackLoading"
+      @positive-click="confirmRollback"
+    >
+      <NForm :model="rollbackForm" label-placement="left" label-width="100px">
+        <NFormItem label="电池编号">
+          <NInput v-model:value="rollbackForm.device_number" disabled />
+        </NFormItem>
+        <NFormItem label="当前机构">
+          <NInput v-model:value="rollbackForm.current_org_name" disabled />
+        </NFormItem>
+        <NFormItem label="回退给">
+          <NInput v-model:value="rollbackForm.rollback_to_org_name" disabled />
+        </NFormItem>
+        <NFormItem>
+          <div style="color: #666">当前电池将回退给最近一次调拨来源机构，确认后会写入新的调拨记录和电池操作日志。</div>
+        </NFormItem>
+        <NFormItem label="备注">
+          <NInput v-model:value="rollbackForm.remark" placeholder="可选" />
         </NFormItem>
       </NForm>
     </NModal>
@@ -2020,7 +2131,7 @@ onMounted(async () => {
             { key: 'updated_at', title: '更新时间', minWidth: 160 }
           ]"
           :data="otaTaskDetailList"
-          :row-key="(row) => row.id"
+          :row-key="row => row.id"
           :scroll-x="920"
         />
       </template>
