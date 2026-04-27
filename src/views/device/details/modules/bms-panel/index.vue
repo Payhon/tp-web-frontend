@@ -105,6 +105,17 @@ const CLOUD_KEYS = [
   'protectCount',
   'faultCount',
   'seriesCount',
+  'meta.seriesCount',
+  'cell.voltagesMv',
+  'cellVoltagesMv',
+  'temperature.cellTempsC',
+  'cellTempsC',
+  'electrical.cellVoltageIndex.highest',
+  'electrical.cellVoltageIndex.lowest',
+  'cellVoltageHighestIndex',
+  'cellVoltageLowestIndex',
+  'electrical.packCellSumVoltageV',
+  'electrical.avgCellVoltageMv',
   'bms.snapshot'
 ]
 
@@ -211,6 +222,33 @@ const cloudSnapshot = computed<BmsStatus | null>(() => {
 })
 
 const displayStatus = computed(() => cloudSnapshot.value || status.value)
+
+function parseJsonArray(raw: unknown): unknown[] {
+  if (Array.isArray(raw)) return raw
+  if (typeof raw !== 'string') return []
+  const text = raw.trim()
+  if (!text.startsWith('[')) return []
+  try {
+    const parsed = JSON.parse(text)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+function numberArray(raw: unknown): number[] {
+  return parseJsonArray(raw)
+    .map(item => Number(item))
+    .filter(item => Number.isFinite(item))
+}
+
+function nullableNumberArray(raw: unknown): Array<number | null> {
+  return parseJsonArray(raw).map(item => {
+    if (item == null) return null
+    const n = Number(item)
+    return Number.isFinite(n) ? n : null
+  })
+}
 
 const buildWsUrl = (path: string) => {
   const origin = window.location.origin
@@ -677,7 +715,11 @@ const sohPct = computed(() => {
   return Math.max(0, Math.min(100, Math.round(n)))
 })
 
-const cellCount = computed(() => Number(displayStatus.value?.meta?.seriesCount || cloudCurrent.seriesCount || 0))
+const cloudCellVoltagesMv = computed(() => numberArray(cloudCurrent['cell.voltagesMv'] ?? cloudCurrent.cellVoltagesMv))
+const cloudCellTempsC = computed(() => nullableNumberArray(cloudCurrent['temperature.cellTempsC'] ?? cloudCurrent.cellTempsC))
+const cellCount = computed(() =>
+  Number(displayStatus.value?.meta?.seriesCount || cloudCurrent.seriesCount || cloudCurrent['meta.seriesCount'] || cloudCellVoltagesMv.value.length || 0)
+)
 const indicatorStatus = computed(() => displayStatus.value?.status?.indicatorStatus || {})
 const protectionStatus = computed(() => displayStatus.value?.status?.protectionStatus || {})
 const chargeSwitchOn = computed(() => Boolean(indicatorStatus.value.chargeFetOn))
@@ -737,7 +779,7 @@ const ambientTempText = computed(() =>
   cToFText(displayStatus.value?.temperature?.ambientC ?? (cloudCurrent.ambientC as number | null | undefined))
 )
 const cellTempText = computed(() => {
-  const cellTemps = displayStatus.value?.temperature?.cellTempsC || []
+  const cellTemps = displayStatus.value?.temperature?.cellTempsC || cloudCellTempsC.value
   const v =
     cellTemps.length > 0
       ? cellTemps[0]
@@ -769,8 +811,12 @@ const diffVoltageText = computed(() => {
   return `${formatDisplayNumber(n, 0)}mV`
 })
 
-const highestIdx = computed(() => Number(displayStatus.value?.electrical?.cellVoltageIndex?.highest || 0))
-const lowestIdx = computed(() => Number(displayStatus.value?.electrical?.cellVoltageIndex?.lowest || 0))
+const highestIdx = computed(() =>
+  Number(displayStatus.value?.electrical?.cellVoltageIndex?.highest || cloudCurrent['electrical.cellVoltageIndex.highest'] || cloudCurrent.cellVoltageHighestIndex || 0)
+)
+const lowestIdx = computed(() =>
+  Number(displayStatus.value?.electrical?.cellVoltageIndex?.lowest || cloudCurrent['electrical.cellVoltageIndex.lowest'] || cloudCurrent.cellVoltageLowestIndex || 0)
+)
 
 const STATUS_LABELS: Record<string, string> = {
   chargeMosFault: '充电MOS故障',
@@ -822,7 +868,7 @@ function toggleProtectPanel() {
 }
 
 const cellVoltageRows = computed(() => {
-  const list = displayStatus.value?.cell?.voltagesMv || []
+  const list = displayStatus.value?.cell?.voltagesMv || cloudCellVoltagesMv.value
   const balancingList = displayStatus.value?.cell?.balancing || []
   return list.map((mv, i) => {
     const v = Number(mv || 0) / 1000
