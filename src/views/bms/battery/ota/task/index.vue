@@ -27,7 +27,7 @@ const searchForm = ref({
 
 async function loadPackages() {
   try {
-    const res: any = await getOtaUpgradePackageList({ page: 1, page_size: 1000 })
+    const res: any = await getOtaUpgradePackageList({ page: 1, page_size: 1000, device_kind: 1 })
     const list = (res?.data?.list || []) as Array<{
       id: string
       name: string
