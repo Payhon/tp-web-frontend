@@ -5,6 +5,7 @@ import { useLoading } from '@sa/hooks'
 import { useWebSocket } from '@vueuse/core'
 import BmsPanel from '@/views/device/details/modules/bms-panel/index.vue'
 import BatteryBasicInfo from '@/views/device/details/modules/battery-basic-info.vue'
+import BatteryOperationLog from '@/views/device/details/modules/battery-operation-log.vue'
 import Telemetry from '@/views/device/details/modules/telemetry/telemetry.vue'
 import TelemetryChart from '@/views/device/details/modules/telemetry-chart.vue'
 import Join from '@/views/device/details/modules/join.vue'
@@ -27,6 +28,7 @@ import { useRouterPush } from '@/hooks/common/router'
 import { getWebsocketServerUrl } from '@/utils/common/tool'
 import { createLogger } from '@/utils/logger'
 import { message } from '@/utils/common/discrete'
+import { ensureUiPermissionState, hasUiPermission } from '@/utils/common/ui-permission'
 const logger = createLogger('Detail')
 const route = useRoute()
 const { query } = useRoute()
@@ -47,6 +49,13 @@ const batteryBasicInfoTab = {
   key: 'battery-basic-info',
   name: () => '基本信息',
   component: BatteryBasicInfo,
+  refreshKey: 0
+}
+
+const batteryOperationLogTab = {
+  key: 'battery-operation-log',
+  name: () => '操作记录',
+  component: BatteryOperationLog,
   refreshKey: 0
 }
 
@@ -187,7 +196,13 @@ function rebuildComponents(data: any) {
 
   if (enableBmsBatteryDetailMode.value) {
     const connectionTab = baseComponents.find(item => item.key === 'join')
-    list = connectionTab ? [bmsPanelTab, batteryBasicInfoTab, connectionTab] : [bmsPanelTab, batteryBasicInfoTab]
+    const detailTabs = [bmsPanelTab, batteryBasicInfoTab]
+
+    if (hasUiPermission('bms_battery_detail_operation_log')) {
+      detailTabs.push(batteryOperationLogTab)
+    }
+
+    list = connectionTab ? [...detailTabs, connectionTab] : detailTabs
 
     if (!list.some(item => item.key === tabValue.value)) {
       tabValue.value = 'bms-panel'
@@ -254,6 +269,10 @@ const getDeviceDetail = async () => {
     }
   }
   if (!error) {
+    if (enableBmsBatteryDetailMode.value) {
+      await ensureUiPermissionState()
+    }
+
     device_number.value = data.device_number
     device_is_online.value = data.is_online
     name.value = data.name

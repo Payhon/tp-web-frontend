@@ -209,6 +209,8 @@ const routeMap: RouteMap = {
   "bms_ops": "/bms/ops",
   "bms_ops_activation": "/bms/ops/activation",
   "bms_ops_activation_log": "/bms/ops/activation/log",
+  "bms_ops_comm": "/bms/ops/comm",
+  "bms_ops_comm_debug": "/bms/ops/comm/debug",
   "bms_ops_operation": "/bms/ops/operation",
   "bms_ops_operation_log": "/bms/ops/operation/log",
   "bms_org": "/bms/org",

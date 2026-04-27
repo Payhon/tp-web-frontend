@@ -158,6 +158,7 @@
   "route.bms_ops": "运营管理",
   "route.bms_ops_activation": "激活",
   "route.bms_ops_activation_log": "激活日志",
+  "route.bms_ops_comm_debug": "通讯调试管理",
   "route.bms_ops_operation": "操作",
   "route.bms_ops_operation_log": "操作记录",
   "route.bms_system": "系统管理",
@@ -199,5 +200,6 @@
   "perm.bms_battery_list_action_lifecycle_info_complete": "生命周期-信息补全",
   "perm.bms_battery_list_action_edit_bms_info": "编辑BMS信息",
   "perm.bms_battery_list_action_delete": "删除",
+  "perm.bms_battery_detail_operation_log": "操作记录",
   "perm.bms_battery_history_export": "导出历史数据"
 }

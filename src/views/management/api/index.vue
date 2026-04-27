@@ -485,6 +485,7 @@ if (isSysAdmin.value) {
         </NSpace>
 
         <NDataTable
+          remote
           :columns="columns"
           :data="tableData"
           :loading="loading"

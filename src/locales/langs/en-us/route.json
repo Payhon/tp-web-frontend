@@ -147,6 +147,7 @@
   "route.bms_battery_bms_model": "BMS Model Management",
   "route.bms_battery_history": "History Data",
   "route.bms_battery_cell_brand": "Cell Brand Management",
+  "route.bms_ops_comm_debug": "Communication Debug",
   "perm.bms_battery_list_export": "Export",
   "perm.bms_battery_list_add": "Add BMS",
   "perm.bms_battery_list_import": "Import",
@@ -165,5 +166,6 @@
   "perm.bms_battery_list_action_lifecycle_info_complete": "Lifecycle - Info Completion",
   "perm.bms_battery_list_action_edit_bms_info": "Edit BMS Info",
   "perm.bms_battery_list_action_delete": "Delete",
+  "perm.bms_battery_detail_operation_log": "Operation Logs",
   "perm.bms_battery_history_export": "Export History Data"
 }

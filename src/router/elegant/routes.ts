@@ -436,6 +436,25 @@ export const generatedRoutes: GeneratedRoute[] = [
             ]
           },
           {
+            name: 'bms_ops_comm',
+            path: '/bms/ops/comm',
+            meta: {
+              title: 'bms_ops_comm',
+              i18nKey: 'route.bms_ops_comm'
+            },
+            children: [
+              {
+                name: 'bms_ops_comm_debug',
+                path: '/bms/ops/comm/debug',
+                component: 'view.bms_ops_comm_debug',
+                meta: {
+                  title: 'bms_ops_comm_debug',
+                  i18nKey: 'route.bms_ops_comm_debug'
+                }
+              }
+            ]
+          },
+          {
             name: 'bms_ops_operation',
             path: '/bms/ops/operation',
             meta: {

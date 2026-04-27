@@ -50,6 +50,7 @@ export const views: Record<LastLevelRouteKey, RouteComponent | (() => Promise<Ro
   bms_dealer: () => import("@/views/bms/dealer/index.vue"),
   bms_end_user: () => import("@/views/bms/end_user/index.vue"),
   bms_ops_activation_log: () => import("@/views/bms/ops/activation_log/index.vue"),
+  bms_ops_comm_debug: () => import("@/views/bms/ops/comm_debug/index.vue"),
   bms_ops_operation_log: () => import("@/views/bms/ops/operation_log/index.vue"),
   bms_org_dealer: () => import("@/views/bms/org/dealer/index.vue"),
   bms_org: () => import("@/views/bms/org/index.vue"),

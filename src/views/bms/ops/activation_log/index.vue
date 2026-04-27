@@ -157,6 +157,7 @@ getTableData()
     </NForm>
 
     <NDataTable
+      remote
       :columns="columns"
       :data="tableData"
       :pagination="{ ...pagination, itemCount: total }"

@@ -193,6 +193,7 @@ onMounted(() => {
       </div>
 
       <NDataTable
+        remote
         :columns="columns"
         :data="data"
         :loading="loading"

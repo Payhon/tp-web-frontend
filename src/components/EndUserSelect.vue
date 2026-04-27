@@ -191,6 +191,7 @@ watch(
     </NForm>
 
     <NDataTable
+      remote
       :columns="columns"
       :data="tableData"
       :loading="loading"

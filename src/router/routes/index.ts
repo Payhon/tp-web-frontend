@@ -368,6 +368,15 @@ const customRoutes: ElegantRoute[] = [
               title: '激活日志',
               icon: 'mdi:history'
             }
+          },
+          {
+            name: 'bms_ops_comm_debug',
+            path: '/bms/ops/comm-debug',
+            component: 'view.bms_ops_comm_debug',
+            meta: {
+              title: '通讯调试管理',
+              icon: 'mdi:list-box-outline'
+            }
           }
         ]
       },

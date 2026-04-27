@@ -284,7 +284,15 @@ export const deleteBattery = (deviceId: string) => {
 }
 
 // 运营管理：电池运营日志
-export const getBatteryOperationLogList = (params: any) => {
+export const getBatteryOperationLogList = (params: {
+  page: number
+  page_size: number
+  device_id?: string
+  device_number?: string
+  operation_type?: string
+  start_time?: string
+  end_time?: string
+}) => {
   return request.get('/battery/operation_logs', { params })
 }
 
