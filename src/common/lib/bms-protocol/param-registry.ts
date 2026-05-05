@@ -363,6 +363,7 @@ export const BMS_STATUS_PARAM = Object.freeze({
   LOWEST_TEMP: 'LOWEST_TEMP',
 
   PROTECTION_STATUS: 'PROTECTION_STATUS',
+  FAILURE_STATUS: 'FAILURE_STATUS',
   INDICATOR_STATUS: 'INDICATOR_STATUS',
   ALARM_STATUS: 'ALARM_STATUS',
   CUSTOM_STATUS_U32: 'CUSTOM_STATUS_U32',
@@ -722,6 +723,12 @@ export const PARAM_DEFS = Object.freeze([
     label: '保护状态',
     valueType: 'statusPath',
     path: 'status.protectionStatus',
+    access: 'R'
+  }),
+  def(BMS_STATUS_PARAM.FAILURE_STATUS, PARAM_CATEGORIES.STATUS, {
+    label: '失效状态',
+    valueType: 'statusPath',
+    path: 'status.failureStatus',
     access: 'R'
   }),
   def(BMS_STATUS_PARAM.INDICATOR_STATUS, PARAM_CATEGORIES.STATUS, {

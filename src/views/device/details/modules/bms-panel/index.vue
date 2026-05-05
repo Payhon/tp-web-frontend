@@ -61,6 +61,7 @@ type AppBatteryDetail = {
   device_id: string
   device_number: string
   device_name?: string | null
+  bms_comm_type?: number | null
   battery_model_id?: string | null
   battery_model_name?: string | null
   item_uuid?: string | null
@@ -168,18 +169,39 @@ let client: BmsClient | null = null
 
 let cloudWs: WebSocket | null = null
 let cloudHeartbeatTimer: number | null = null
+let cloudReconnectTimer: number | null = null
+let cloudWsShouldReconnect = false
 let relayStatusTimer: number | null = null
 
 const canUse4G = computed(() => {
   const v = String(battery.value?.comm_chip_id || '').trim()
-  return v.length > 0
+  return Number(battery.value?.bms_comm_type || 0) === 2 || v.length > 0
 })
 const canUseRelay = computed(() => !canUse4G.value)
 const relayReady = computed(() => canUseRelay.value && relayState.ownerOnline)
 
-const connText = computed(() => (connType.value === 'mqtt' ? '直连透传已连接' : '直连透传未连接'))
+const hasCloudTelemetry = computed(() => !!cloudLastUpdateAt.value)
+const mqttReportOnline = computed(() => Number(battery.value?.is_online || 0) === 1 || hasCloudTelemetry.value)
+const mqttReportText = computed(() => {
+  if (!canUse4G.value) return '非4G上报设备'
+  return mqttReportOnline.value ? 'MQTT上报在线' : 'MQTT上报离线'
+})
+const mqttReportType = computed(() => {
+  if (!canUse4G.value) return 'default'
+  return mqttReportOnline.value ? 'success' : 'default'
+})
+const connText = computed(() => {
+  if (connType.value === 'mqtt' && status.value) return 'MQTT透传实时'
+  if (hasCloudTelemetry.value) return '主动上报兜底'
+  return '离线/无数据'
+})
+const connTagType = computed(() => {
+  if (connType.value === 'mqtt' && status.value) return 'success'
+  if (hasCloudTelemetry.value) return 'warning'
+  return 'default'
+})
 const paramLinkText = computed(() => {
-  if (connType.value === 'mqtt') return '参数通道：直连透传可用'
+  if (connType.value === 'mqtt') return '参数通道：MQTT透传可用'
   if (relayReady.value) return '参数通道：APP蓝牙中继可用'
   if (canUseRelay.value) return '参数通道：等待APP蓝牙连接设备'
   return '参数通道：未连接'
@@ -195,7 +217,7 @@ const cloudStatusText = computed(() => {
   if (cloudWsState.value === 'open' && cloudLastUpdateAt.value) return '云端订阅已连接（有实时数据）'
   if (cloudWsState.value === 'open') return '云端订阅已连接（暂无实时数据）'
   if (cloudWsState.value === 'connecting') return '云端实时连接中'
-  if (cloudWsState.value === 'error') return '云端实时连接失败'
+  if (cloudWsState.value === 'error') return '云端实时连接异常，正在重连'
   return '云端订阅未连接'
 })
 
@@ -208,6 +230,7 @@ const cloudStatusType = computed(() => {
 })
 
 const cloudUpdateText = computed(() => formatTime(cloudLastUpdateAt.value))
+const paramConnectButtonText = computed(() => (canUse4G.value ? '重新连接MQTT透传' : '连接APP中继'))
 
 const cloudSnapshot = computed<BmsStatus | null>(() => {
   const raw = cloudCurrent['bms.snapshot']
@@ -221,7 +244,7 @@ const cloudSnapshot = computed<BmsStatus | null>(() => {
   }
 })
 
-const displayStatus = computed(() => cloudSnapshot.value || status.value)
+const displayStatus = computed(() => status.value || cloudSnapshot.value)
 
 function parseJsonArray(raw: unknown): unknown[] {
   if (Array.isArray(raw)) return raw
@@ -264,7 +287,24 @@ function stopPolling() {
   }
 }
 
-function closeCloudWs() {
+function clearCloudReconnectTimer() {
+  if (cloudReconnectTimer != null) {
+    window.clearTimeout(cloudReconnectTimer)
+    cloudReconnectTimer = null
+  }
+}
+
+function scheduleCloudReconnect() {
+  if (!cloudWsShouldReconnect || cloudReconnectTimer != null || !props.id) return
+  cloudReconnectTimer = window.setTimeout(() => {
+    cloudReconnectTimer = null
+    if (cloudWsShouldReconnect) openCloudWs()
+  }, 3000)
+}
+
+function closeCloudWs({ reconnect = false }: { reconnect?: boolean } = {}) {
+  cloudWsShouldReconnect = reconnect
+  if (!reconnect) clearCloudReconnectTimer()
   if (cloudHeartbeatTimer != null) {
     window.clearInterval(cloudHeartbeatTimer)
     cloudHeartbeatTimer = null
@@ -416,6 +456,8 @@ function openCloudWs() {
   const token = String(localStg.get('token') || '').trim()
   if (!token) return
 
+  cloudWsShouldReconnect = true
+  clearCloudReconnectTimer()
   cloudWsState.value = 'connecting'
   const ws = new WebSocket(buildWsUrl('/api/v1/telemetry/datas/current/keys/ws'))
   cloudWs = ws
@@ -448,6 +490,7 @@ function openCloudWs() {
 
   ws.onerror = () => {
     cloudWsState.value = 'error'
+    scheduleCloudReconnect()
   }
 
   ws.onclose = () => {
@@ -458,6 +501,7 @@ function openCloudWs() {
         window.clearInterval(cloudHeartbeatTimer)
         cloudHeartbeatTimer = null
       }
+      scheduleCloudReconnect()
     }
   }
 }
@@ -598,8 +642,12 @@ async function disconnectAllConnections() {
 }
 
 async function handleDisconnect() {
-  await disconnectAllConnections()
-  message.success('已断开连接')
+  await disconnectMqtt()
+  if (canUseRelay.value) {
+    stopRelayStatusTimer()
+    applyRelayStatus(null)
+  }
+  message.success('已断开参数通道')
 }
 
 async function connectRealtime() {
@@ -618,7 +666,7 @@ async function connectRealtime() {
   }
 }
 
-async function connectMqtt() {
+async function connectMqtt(options: { silent?: boolean } = {}) {
   if (!props.id || connecting.value) return
   if (!canUse4G.value) return
   connecting.value = true
@@ -637,7 +685,9 @@ async function connectMqtt() {
     startPolling()
   } catch (e: any) {
     await disconnectMqtt()
-    message.error(e?.message || '连接失败')
+    if (!options.silent) {
+      message.error(e?.message || '连接失败')
+    }
   } finally {
     connecting.value = false
   }
@@ -649,10 +699,7 @@ async function load() {
   try {
     const res: any = await getAppBatteryDetail(props.id)
     battery.value = res?.data || res || null
-    // 仅对具备 4G 的电池尝试连接
-    if (canUse4G.value) {
-      void connectMqtt()
-    } else {
+    if (!canUse4G.value) {
       await loadRelayStatus({ silent: true })
       startRelayStatusTimer()
     }
@@ -664,6 +711,19 @@ async function load() {
   }
 
   await Promise.all([loadCloudCurrent(), loadHistory()])
+  openCloudWs()
+  if (canUse4G.value) {
+    void connectMqtt({ silent: true })
+  }
+}
+
+async function refreshCloudData() {
+  if (!props.id) return
+  const [detailRes] = await Promise.allSettled([getAppBatteryDetail(props.id), loadCloudCurrent(), loadHistory()])
+  if (detailRes.status === 'fulfilled') {
+    const res: any = detailRes.value
+    battery.value = res?.data || res || battery.value
+  }
   openCloudWs()
 }
 
@@ -688,6 +748,7 @@ watch(
     cloudLastUpdateAt.value = null
     stopRelayStatusTimer()
     applyRelayStatus(null)
+    void disconnectMqtt()
     load()
   }
 )
@@ -722,6 +783,8 @@ const cellCount = computed(() =>
 )
 const indicatorStatus = computed(() => displayStatus.value?.status?.indicatorStatus || {})
 const protectionStatus = computed(() => displayStatus.value?.status?.protectionStatus || {})
+const failureStatus = computed(() => displayStatus.value?.status?.failureStatus || {})
+const alarmStatusBits = computed(() => displayStatus.value?.status?.alarmStatus || {})
 const chargeSwitchOn = computed(() => Boolean(indicatorStatus.value.chargeFetOn))
 const dischargeSwitchOn = computed(() => Boolean(indicatorStatus.value.dischargeFetOn))
 const balancingOn = computed(() => Boolean((displayStatus.value?.cell?.balancing || []).some(item => item)))
@@ -819,6 +882,9 @@ const lowestIdx = computed(() =>
 )
 
 const STATUS_LABELS: Record<string, string> = {
+  cellOverVoltageProtectionLv1: '单体过压一级保护',
+  cellUnderVoltageProtectionLv1: '单体过放一级保护',
+  preDischargeShortCircuitProtection: '预放电短路保护',
   chargeMosFault: '充电MOS故障',
   dischargeMosFault: '放电MOS故障',
   poleTempOverTempProtection: '极柱过温保护',
@@ -829,7 +895,25 @@ const STATUS_LABELS: Record<string, string> = {
   insulationProtection: '绝缘保护',
   cellOverVoltageProtectionLv2: '电芯过压保护',
   cellUnderVoltageProtectionLv2: '电芯欠压保护',
+  chargeOverCurrentProtectionLv2: '充电过流二级保护',
+  dischargeOverCurrentProtectionLv2: '放电过流二级保护',
+  afeOverTempProtection: 'AFE高温保护',
+  ambientUnderTempProtection: '环境低温保护',
+  ambientOverTempProtection: '环境高温保护',
+  chargeHighTempProtectionCell: '充电高温保护',
+  dischargeHighTempProtectionCell: '放电高温保护',
+  prechargeMosFault: '预充MOS故障',
+  heatingMosFault: '加热MOS故障',
+  cellSamplingOpenCircuitFault: '电芯采样断线故障',
+  rtcOrCellUltraLowVoltageChargeDisableFault: 'RTC失效/电芯超低压禁充失效',
+  fuseBlownFault: 'FUSE熔断故障',
+  voltageSamplingFault: '电压采样故障',
+  currentSamplingFault: '电流采样故障',
+  cellAbnormalOverTempFault: '电芯异常高温故障',
+  afeCommunicationFault: 'AFE通讯故障',
+  cellNtcInvalid: '电芯NTC异常',
   ambientNtcInvalid: '环境温度NTC异常',
+  mosNtcInvalid: 'MOS NTC异常',
   chargeLowTempProtectionCell: '充电低温保护',
   dischargeLowTempProtectionCell: '放电低温保护',
   cellUnderTempProtection: '电芯低温保护',
@@ -841,18 +925,77 @@ const STATUS_LABELS: Record<string, string> = {
   tempDiffProtection: '温差保护',
   heatingFilmTempProtection: '加热膜温度保护',
   packUnderVoltageProtection: '电池包欠压保护',
-  packOverVoltageProtection: '电池包过压保护'
+  packOverVoltageProtection: '电池包过压保护',
+  chargeHighTempAlarmCell: '充电高温告警',
+  dischargeOrIdleHighTempAlarmCell: '放电/静置高温告警',
+  chargeLowTempAlarmCell: '充电低温告警',
+  dischargeOrIdleLowTempAlarmCell: '放电/静置低温告警',
+  thermalRunawayAlarm: '热失控告警',
+  ambientHighTempAlarm: '环境高温告警',
+  ambientLowTempAlarm: '环境低温告警',
+  dischargeMosHighTempAlarm: '放电MOS高温告警',
+  chargeMosHighTempAlarm: '充电MOS高温告警',
+  lowSocAlarm: 'SOC低告警',
+  cellOverVoltageAlarm: '电芯过压告警',
+  cellUnderVoltageAlarm: '电芯欠压告警',
+  packOverVoltageAlarm: '电池包过压告警',
+  packUnderVoltageAlarm: '电池包欠压告警',
+  chargeOverCurrentAlarm: '充电过流告警',
+  dischargeOverCurrentAlarm: '放电过流告警',
+  deltaVAlarm: '压差告警',
+  tempDiffAlarm: '温差告警',
+  insulationAlarm: '绝缘告警'
 }
 
 function labelForStatus(key: string) {
   return STATUS_LABELS[key] || key
 }
 
-const protectStatusItems = computed(() =>
-  Object.keys(protectionStatus.value)
-    .filter(key => protectionStatus.value[key])
+function activeStatusItems(obj: Record<string, boolean>) {
+  return Object.keys(obj)
+    .filter(key => obj[key])
     .map(labelForStatus)
-)
+}
+
+type StatusFlagType = 'fault' | 'alarm' | 'protect'
+
+const faultStatusItems = computed(() => activeStatusItems(failureStatus.value))
+const alarmStatusItems = computed(() => activeStatusItems(alarmStatusBits.value))
+const protectStatusItems = computed(() => activeStatusItems(protectionStatus.value))
+
+const statusFlags = computed(() => {
+  const items: Array<{ type: StatusFlagType; label: string; count: number; className: string }> = []
+  if (faultStatusItems.value.length) {
+    items.push({ type: 'fault', label: '故障', count: faultStatusItems.value.length, className: 'status-flag-web--danger' })
+  }
+  if (alarmStatusItems.value.length) {
+    items.push({ type: 'alarm', label: '告警', count: alarmStatusItems.value.length, className: 'status-flag-web--warn' })
+  }
+  if (protectStatusItems.value.length) {
+    items.push({ type: 'protect', label: '保护', count: protectStatusItems.value.length, className: 'status-flag-web--guard' })
+  }
+  return items
+})
+const hasStatusFlags = computed(() => statusFlags.value.length > 0)
+
+const statusFlagModal = reactive({
+  show: false,
+  title: '',
+  items: [] as string[]
+})
+
+function openStatusFlag(type: StatusFlagType) {
+  const config = {
+    fault: { title: '故障', items: faultStatusItems.value },
+    alarm: { title: '告警', items: alarmStatusItems.value },
+    protect: { title: '保护', items: protectStatusItems.value }
+  }[type]
+  if (!config.items.length) return
+  statusFlagModal.title = config.title
+  statusFlagModal.items = config.items
+  statusFlagModal.show = true
+}
+
 const protectStatusRows = computed(() =>
   Object.keys(protectionStatus.value).map(key => ({
     key,
@@ -1226,20 +1369,24 @@ async function loadKeys(entries: ParamEntry[]) {
   const useRelay = !useDirect && relayReady.value
   if (!useDirect && !useRelay) return
   const allowedEntries = filterParamEntries(entries)
+  if (useDirect && client) {
+    const actualKeys = allowedEntries.map(entry => resolveParamEntry(entry).actualKey)
+    if (!actualKeys.length) return
+    const values = await client.readParamsByKeys(actualKeys)
+    for (const actualKey of actualKeys) {
+      paramValues[actualKey] = Object.prototype.hasOwnProperty.call(values, actualKey) ? values[actualKey] : null
+    }
+    return
+  }
   for (const entry of allowedEntries) {
     const { actualKey } = resolveParamEntry(entry)
     try {
-      if (useDirect && client) {
-        // eslint-disable-next-line no-await-in-loop
-        paramValues[actualKey] = await client.readParam(actualKey)
-      } else {
-        // eslint-disable-next-line no-await-in-loop
-        const resp = await runRelayCommand({
-          command_type: 'read_param',
-          param_key: actualKey
-        })
-        paramValues[actualKey] = (resp?.result as any)?.value
-      }
+      // eslint-disable-next-line no-await-in-loop
+      const resp = await runRelayCommand({
+        command_type: 'read_param',
+        param_key: actualKey
+      })
+      paramValues[actualKey] = (resp?.result as any)?.value
     } catch {
       paramValues[actualKey] = null
     }
@@ -1486,29 +1633,50 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
       <NCard size="small" :bordered="false">
         <NSpace align="center" justify="space-between">
           <NSpace align="center">
-            <NText strong>连接：</NText>
-            <NTag :type="connType === 'mqtt' ? 'success' : 'default'">{{ connText }}</NTag>
+            <NText strong>通讯：</NText>
+            <NTag :type="mqttReportType">{{ mqttReportText }}</NTag>
+            <NTag :type="connTagType">{{ connText }}</NTag>
             <NTag v-if="battery?.comm_chip_id" type="info">4G卡ID：{{ battery.comm_chip_id }}</NTag>
             <NTag :type="cloudStatusType">{{ cloudStatusText }}</NTag>
             <NTag type="default">最近云端数据时间：{{ cloudUpdateText }}</NTag>
             <NTag :type="paramLinkType">{{ paramLinkText }}</NTag>
           </NSpace>
           <NSpace>
-            <NButton size="small" :disabled="connecting" @click="connectRealtime">连接</NButton>
-            <NButton size="small" :disabled="connecting" @click="handleDisconnect">断开</NButton>
-            <NButton size="small" @click="loadCloudCurrent">刷新云端</NButton>
+            <NButton size="small" :disabled="connecting" @click="connectRealtime">{{ paramConnectButtonText }}</NButton>
+            <NButton size="small" :disabled="connecting" @click="handleDisconnect">断开参数通道</NButton>
+            <NButton size="small" @click="refreshCloudData">刷新云端</NButton>
           </NSpace>
         </NSpace>
       </NCard>
 
       <div class="panel-body">
+        <NAlert v-if="canUse4G" class="mb-12px" type="info" :show-icon="false" title="4G设备数据链路">
+          仪表和电芯数据默认使用 MQTT Socket 透传实时读取；透传失败时保留云端主动上报数据作为兜底。
+        </NAlert>
         <NAlert v-if="!canUse4G" class="mb-12px" type="warning" :show-icon="false" title="当前设备未配置4G通讯卡ID">
-          已切换为云端数据展示模式；参数透传读写需设备具备 MQTT 通道能力。
+          已切换为云端数据展示模式；参数读写需手机 APP 蓝牙连接设备后通过中继通道完成。
         </NAlert>
 
         <NTabs type="line" animated>
           <NTabPane name="dashboard" tab="仪表">
             <NGrid :cols="24" :x-gap="12" :y-gap="12">
+              <NGridItem v-if="hasStatusFlags" :span="24">
+                <div class="status-flags-web">
+                  <button
+                    v-for="item in statusFlags"
+                    :key="item.type"
+                    type="button"
+                    class="status-flag-web"
+                    :class="item.className"
+                    @click="openStatusFlag(item.type)"
+                  >
+                    <span class="status-flag-web__dot"></span>
+                    <span class="status-flag-web__text">{{ item.label }}</span>
+                    <span class="status-flag-web__count">{{ item.count }}</span>
+                  </button>
+                </div>
+              </NGridItem>
+
               <NGridItem :span="8">
                 <NCard size="small" title="SOC" :bordered="false">
                   <NProgress type="circle" :percentage="socPct" :height="120" />
@@ -1719,7 +1887,7 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
 
           <NTabPane name="params" tab="参数设置">
             <NAlert class="mb-12px" type="info" :show-icon="false">
-              参数读写支持两种通道：4G设备走 MQTT 直连，BLE设备走“APP蓝牙中继”；写入参数请谨慎操作。
+              参数读写支持两种通道：4G设备可手动连接 MQTT 参数直连，BLE设备走“APP蓝牙中继”；该通道状态不影响仪表/电芯云端数据显示。
             </NAlert>
             <NSpace v-if="hasAdvancedSections" class="mb-12px" justify="end">
               <NButton size="small" :disabled="connType === 'offline' && !relayReady" @click="openAdvancedSettings">
@@ -1788,6 +1956,15 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
         </NTabs>
       </div>
     </NSpin>
+
+    <NModal v-model:show="statusFlagModal.show" preset="card" :title="statusFlagModal.title" style="width: 420px">
+      <div class="status-modal-list">
+        <div v-for="(item, idx) in statusFlagModal.items" :key="`${statusFlagModal.title}-${idx}`" class="status-modal-row">
+          <span class="status-modal-row__idx">{{ idx + 1 }}.</span>
+          <span>{{ item }}</span>
+        </div>
+      </div>
+    </NModal>
 
     <NModal v-model:show="editState.show" preset="card" style="width: 520px" :title="`设置：${editState.title}`">
       <NSpace vertical size="large">
@@ -1884,6 +2061,72 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
 }
 .temp-label {
   color: rgba(55, 65, 81, 0.7);
+}
+.status-flags-web {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.status-flag-web {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.04);
+  color: rgba(55, 65, 81, 0.84);
+  cursor: pointer;
+}
+.status-flag-web__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.status-flag-web__text {
+  font-size: 14px;
+}
+.status-flag-web__count {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.72);
+  font-size: 12px;
+  line-height: 20px;
+  text-align: center;
+}
+.status-flag-web--danger {
+  border-color: rgba(220, 38, 38, 0.18);
+  background: rgba(220, 38, 38, 0.08);
+  color: #dc2626;
+}
+.status-flag-web--warn {
+  border-color: rgba(217, 119, 6, 0.2);
+  background: rgba(217, 119, 6, 0.1);
+  color: #d97706;
+}
+.status-flag-web--guard {
+  border-color: rgba(37, 99, 235, 0.18);
+  background: rgba(37, 99, 235, 0.08);
+  color: #2563eb;
+}
+.status-modal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.status-modal-row {
+  display: flex;
+  gap: 8px;
+  color: rgba(55, 65, 81, 0.9);
+  font-size: 14px;
+}
+.status-modal-row__idx {
+  color: rgba(55, 65, 81, 0.45);
 }
 .switch-grid {
   display: grid;

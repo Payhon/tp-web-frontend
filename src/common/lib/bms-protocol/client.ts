@@ -5,6 +5,7 @@ import {
   buildReadFrame,
   buildWriteMultipleRegistersFrame,
   parseFrame,
+  parseSocketReadPayload,
   splitIntoRegistersBE
 } from './frame'
 import {
@@ -20,6 +21,12 @@ import type { BmsParsedFrame } from './frame'
 import type { BmsParamDef, BmsRequestTransport, BmsStatus, LoggerLike } from './types'
 
 type AddressRange = { startAddress: number; quantity: number }
+const SOCKET_READ_CACHE_TTL_MS = 30_000
+const STATUS_REG_START = 0x100
+const STATUS_FIXED_READ_END = 0x134
+const STATUS_LEGACY_GAP_START = 0x135
+const STATUS_LEGACY_GAP_END = 0x140
+const STATUS_DYNAMIC_START = 0x141
 
 function chunkRanges(startAddress: number, quantity: number, maxChunk: number): AddressRange[] {
   const ranges: AddressRange[] = []
@@ -51,6 +58,28 @@ function groupContiguousAddresses(addresses: number[]): AddressRange[] {
   return ranges
 }
 
+function buildStatusRegisterView({
+  headRegisters,
+  legacyGapRegisters,
+  tailRegisters,
+  lastAddress
+}: {
+  headRegisters: Uint16Array
+  legacyGapRegisters?: Uint16Array
+  tailRegisters: Uint16Array
+  lastAddress: number
+}): Uint16Array {
+  const totalRegs = lastAddress - STATUS_REG_START + 1
+  const legacyGapRegs = STATUS_LEGACY_GAP_END - STATUS_LEGACY_GAP_START + 1
+  const out = new Uint16Array(totalRegs)
+  out.set(headRegisters, 0)
+  if (legacyGapRegisters && legacyGapRegisters.length > 0) {
+    out.set(legacyGapRegisters.slice(0, legacyGapRegs), headRegisters.length)
+  }
+  out.set(tailRegisters, headRegisters.length + legacyGapRegs)
+  return out
+}
+
 function u16FromBytes(hi: number, lo: number): number {
   return ((hi & 0xff) << 8) | (lo & 0xff)
 }
@@ -67,6 +96,13 @@ function allSame(bytes: Uint8Array, v: number): boolean {
 }
 
 type DecodableParamDef = Extract<BmsParamDef, { valueType: 'u8' | 'u16' | 'u32' | 'str' }>
+type DecodableParamRange = {
+  key: string
+  def: DecodableParamDef
+  startAddress: number
+  endAddress: number
+  functionCode?: number
+}
 
 function decodeParam(def: DecodableParamDef, view: RegisterView): number | string | null {
   if (def.valueType === 'u16') {
@@ -109,6 +145,27 @@ function encodeStringToRegisterWrites(startAddress: number, byteLength: number, 
   return { startAddress, registerValues: regs }
 }
 
+function getDecodableParamRange(key: string, def: DecodableParamDef): DecodableParamRange {
+  if (def.valueType === 'str') {
+    const startAddress = def.startAddress
+    return {
+      key,
+      def,
+      startAddress,
+      endAddress: startAddress + Math.ceil(def.byteLength / 2) - 1,
+      functionCode: (def as any).functionCode
+    }
+  }
+  const startAddress = def.address
+  return {
+    key,
+    def,
+    startAddress,
+    endAddress: startAddress + (def.valueType === 'u32' ? 1 : 0),
+    functionCode: (def as any).functionCode
+  }
+}
+
 export class BmsClient {
   private transport: BmsRequestTransport
   private targetAddress: number
@@ -116,6 +173,7 @@ export class BmsClient {
   private maxReadRegisters: number
   private maxWriteRegisters: number
   private logger?: LoggerLike
+  private socketReadCache: Array<{ startAddress: number; registers: Uint16Array; ts: number }>
 
   constructor({
     transport,
@@ -141,6 +199,7 @@ export class BmsClient {
     this.maxReadRegisters = maxReadRegisters
     this.maxWriteRegisters = maxWriteRegisters
     this.logger = logger
+    this.socketReadCache = []
   }
 
   private _debug(...args: unknown[]) {
@@ -150,6 +209,28 @@ export class BmsClient {
   private async _request(frameBytes: Uint8Array): Promise<BmsParsedFrame> {
     const respBytes = await this.transport.request(frameBytes)
     return parseFrame(respBytes)
+  }
+
+  private cacheSocketRegisters(startAddress: number, registers: Uint16Array) {
+    if (!registers.length) return
+    const now = Date.now()
+    this.socketReadCache = this.socketReadCache.filter(item => now - item.ts <= SOCKET_READ_CACHE_TTL_MS)
+    this.socketReadCache = this.socketReadCache.filter(item => item.startAddress !== startAddress)
+    this.socketReadCache.push({ startAddress, registers: registers.slice(), ts: now })
+  }
+
+  private readCachedSocketRegisters(startAddress: number, quantity: number): Uint16Array | null {
+    const now = Date.now()
+    this.socketReadCache = this.socketReadCache.filter(item => now - item.ts <= SOCKET_READ_CACHE_TTL_MS)
+    for (const item of this.socketReadCache) {
+      const cacheStart = item.startAddress
+      const cacheEnd = cacheStart + item.registers.length
+      const reqEnd = startAddress + quantity
+      if (startAddress >= cacheStart && reqEnd <= cacheEnd) {
+        return item.registers.slice(startAddress - cacheStart, startAddress - cacheStart + quantity)
+      }
+    }
+    return null
   }
 
   /**
@@ -244,6 +325,12 @@ export class BmsClient {
     const out = new Uint16Array(quantity)
     let offset = 0
     for (const r of ranges) {
+      const cached = this.readCachedSocketRegisters(r.startAddress, r.quantity)
+      if (cached) {
+        out.set(cached, offset)
+        offset += r.quantity
+        continue
+      }
       const req = buildReadFrame({
         sourceAddress: this.sourceAddress,
         targetAddress: this.targetAddress,
@@ -254,7 +341,32 @@ export class BmsClient {
       const resp = await this._request(req)
       if (resp.type === 'error') throw new BmsProtocolError('BMS error response', resp)
       if (resp.type !== 'read') throw new BmsProtocolError('Unexpected response type', resp)
-      const regs = splitIntoRegistersBE(resp.data)
+      let dataBytes = resp.data
+      if (resp.functionCode === BMS_FUNC.SOCKET_READ) {
+        const parsed = parseSocketReadPayload(resp.data)
+        const payloadRegs = splitIntoRegistersBE(parsed.payload)
+        this.cacheSocketRegisters(parsed.startAddress, payloadRegs)
+        const respStart = parsed.startAddress
+        const respEnd = respStart + payloadRegs.length
+        const reqStart = r.startAddress
+        const reqEnd = r.startAddress + r.quantity
+        const copyStart = Math.max(reqStart, respStart)
+        const copyEnd = Math.min(reqEnd, respEnd)
+        if (copyStart >= copyEnd) {
+          throw new BmsProtocolError('Socket read response address mismatch', {
+            expectStart: r.startAddress,
+            expectQty: r.quantity,
+            gotStart: parsed.startAddress,
+            gotQty: payloadRegs.length
+          })
+        }
+        const destOffset = offset + (copyStart - reqStart)
+        const srcOffset = copyStart - respStart
+        out.set(payloadRegs.slice(srcOffset, srcOffset + (copyEnd - copyStart)), destOffset)
+        offset += r.quantity
+        continue
+      }
+      const regs = splitIntoRegistersBE(dataBytes)
       out.set(regs, offset)
       offset += regs.length
     }
@@ -309,13 +421,29 @@ export class BmsClient {
 
   async readAllStatus(): Promise<BmsStatus> {
     const { s, n } = await this.readSn()
-    const cellVoltagesStart = 0x141
+    const cellVoltagesStart = STATUS_DYNAMIC_START
     const macStart = cellVoltagesStart + s + n + 16 + 16 + 16
     const macRegs = 5 // 10 bytes
     const lastAddr = macStart + macRegs - 1
-    const totalRegs = lastAddr - 0x100 + 1
-    const regs = await this.readRegisters(0x100, totalRegs)
-    return parseStatusRegisters({ startAddress: 0x100, registers: regs })
+    const headRegs = await this.readRegisters(STATUS_REG_START, STATUS_FIXED_READ_END - STATUS_REG_START + 1)
+    const legacyGapRegs = new Uint16Array(STATUS_LEGACY_GAP_END - STATUS_LEGACY_GAP_START + 1)
+    try {
+      const alarmHighRegs = await this.readRegisters(STATUS_LEGACY_GAP_START, 1)
+      legacyGapRegs.set(alarmHighRegs.slice(0, 1), 0)
+    } catch (e) {
+      this._debug('[bms]', '[bms] optional alarm high register unavailable', {
+        address: `0x${STATUS_LEGACY_GAP_START.toString(16)}`,
+        err: e instanceof Error ? e.message : String(e || '')
+      })
+    }
+    const tailRegs = await this.readRegisters(STATUS_DYNAMIC_START, lastAddr - STATUS_DYNAMIC_START + 1)
+    const regs = buildStatusRegisterView({
+      headRegisters: headRegs,
+      legacyGapRegisters: legacyGapRegs,
+      tailRegisters: tailRegs,
+      lastAddress: lastAddr
+    })
+    return parseStatusRegisters({ startAddress: STATUS_REG_START, registers: regs })
   }
 
   /**
@@ -374,6 +502,65 @@ export class BmsClient {
       const addr = def.address
       if (addr < rangeStart || addr > rangeEnd) continue
       out[constToCamel(def.key)] = decodeParam(def, view)
+    }
+
+    return out
+  }
+
+  async readParamsByKeys(paramKeys: string[]): Promise<Record<string, unknown>> {
+    const out: Record<string, unknown> = {}
+    const ranges: DecodableParamRange[] = []
+
+    for (const paramKey of paramKeys) {
+      const key = normalizeParamKey(paramKey)
+      if (!key) {
+        out[paramKey] = null
+        continue
+      }
+      const def = PARAM_DEF_BY_KEY[key]
+      if (!def) {
+        out[key] = null
+        continue
+      }
+      if (def.valueType === 'statusPath') {
+        try {
+          out[key] = await this.readParam(key)
+        } catch {
+          out[key] = null
+        }
+        continue
+      }
+      ranges.push(getDecodableParamRange(key, def as DecodableParamDef))
+    }
+
+    const grouped = new Map<string, DecodableParamRange[]>()
+    for (const item of ranges) {
+      const functionCode = item.functionCode ?? BMS_FUNC.READ_HOLDING_REGISTERS
+      const bucket = grouped.get(String(functionCode)) || []
+      bucket.push(item)
+      grouped.set(String(functionCode), bucket)
+    }
+
+    for (const group of grouped.values()) {
+      const addressSet = new Set<number>()
+      for (const item of group) {
+        for (let addr = item.startAddress; addr <= item.endAddress; addr += 1) addressSet.add(addr)
+      }
+      const batchRanges = groupContiguousAddresses(Array.from(addressSet))
+      for (const range of batchRanges) {
+        const inRange = group.filter(item => item.startAddress >= range.startAddress && item.endAddress < range.startAddress + range.quantity)
+        if (!inRange.length) continue
+        try {
+          const first = inRange[0]
+          const regs = await this.readRegisters(range.startAddress, range.quantity, {
+            functionCode: first.functionCode
+          })
+          const view = new RegisterView(range.startAddress, regs)
+          for (const item of inRange) out[item.key] = decodeParam(item.def, view)
+        } catch {
+          for (const item of inRange) out[item.key] = null
+        }
+      }
     }
 
     return out
