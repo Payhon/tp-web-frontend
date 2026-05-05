@@ -42,6 +42,7 @@ import {
   deleteBattery,
   factoryOutBattery,
   batchFactoryOutBattery,
+  factoryRestoreBattery,
   transferBattery,
   getBatteryRollbackPreview,
   rollbackBattery,
@@ -148,11 +149,13 @@ const singleEditData = ref<Record<string, any> | null>(null)
 
 // 生命周期操作：出厂/调拨/激活
 const showFactoryModal = ref(false)
+const showFactoryRestoreModal = ref(false)
 const showTransferModal = ref(false)
 const showRollbackModal = ref(false)
 const showActivateModal = ref(false)
 const showCompleteInfoModal = ref(false)
 const factoryLoading = ref(false)
+const factoryRestoreLoading = ref(false)
 const transferLoading = ref(false)
 const rollbackLoading = ref(false)
 const activateLoading = ref(false)
@@ -174,6 +177,12 @@ const transferForm = ref({
   from_org_type: '',
   to_org_type: 'DEALER' as 'PACK_FACTORY' | 'DEALER' | 'STORE',
   to_org_id: null as string | null,
+  remark: ''
+})
+const factoryRestoreForm = ref({
+  device_id: '',
+  device_number: '',
+  current_org_name: '',
   remark: ''
 })
 const rollbackForm = ref({
@@ -394,6 +403,16 @@ function canShowRollbackAction(row: BatteryItem) {
   return (userOrgType.value === 'DEALER' || userOrgType.value === 'STORE') && ownerOrgType === userOrgType.value
 }
 
+function canShowFactoryRestoreAction(row: BatteryItem) {
+  const ownerOrgID = String(row.owner_org_id || '').trim()
+  return (
+    (userOrgType.value === 'BMS_FACTORY' ||
+      userAuthority.value === 'TENANT_ADMIN' ||
+      userAuthority.value === 'SYS_ADMIN') &&
+    ownerOrgID !== ''
+  )
+}
+
 function getActionOptions(row: BatteryItem) {
   return filterMenuOptions([
     {
@@ -441,6 +460,16 @@ function getActionOptions(row: BatteryItem) {
           icon: renderIcon(CubeOutline),
           permissionKey: 'bms_battery_list_action_lifecycle_factory'
         },
+        ...(canShowFactoryRestoreAction(row)
+          ? [
+              {
+                label: '恢复出厂',
+                key: 'lifecycle.factoryRestore',
+                icon: renderIcon(ReturnUpBackOutline),
+                permissionKey: 'bms_battery_list_action_lifecycle_factory_restore'
+              }
+            ]
+          : []),
         {
           label: '信息补全',
           key: 'lifecycle.infoComplete',
@@ -523,6 +552,7 @@ function handleActionSelect(key: string, row: BatteryItem) {
   if (key === 'edit') openEditSingleModal(row)
   if (key === 'delete') handleDeleteBattery(row)
   if (key === 'lifecycle.factory') openFactoryModal(row)
+  if (key === 'lifecycle.factoryRestore') openFactoryRestoreModal(row)
   if (key === 'lifecycle.infoComplete') openCompleteInfoModal([row])
   if (key === 'lifecycle.transfer') {
     if (isStoreOrgUser.value) {
@@ -956,6 +986,16 @@ async function openTransferModal(row: BatteryItem) {
   await ensureOrgOptions(defaultTargetType)
 }
 
+function openFactoryRestoreModal(row: BatteryItem) {
+  factoryRestoreForm.value = {
+    device_id: row.device_id,
+    device_number: row.device_number,
+    current_org_name: row.owner_org_name || row.dealer_name || '--',
+    remark: ''
+  }
+  showFactoryRestoreModal.value = true
+}
+
 async function openRollbackModal(row: BatteryItem) {
   rollbackLoading.value = true
   try {
@@ -978,6 +1018,23 @@ async function openRollbackModal(row: BatteryItem) {
     message.error(e?.message || '加载回退目标失败')
   } finally {
     rollbackLoading.value = false
+  }
+}
+
+async function confirmFactoryRestore() {
+  factoryRestoreLoading.value = true
+  try {
+    await factoryRestoreBattery({
+      device_id: factoryRestoreForm.value.device_id,
+      remark: factoryRestoreForm.value.remark?.trim() ? factoryRestoreForm.value.remark.trim() : undefined
+    })
+    message.success('恢复出厂成功')
+    showFactoryRestoreModal.value = false
+    getData()
+  } catch (e: any) {
+    message.error(e?.message || '恢复出厂失败')
+  } finally {
+    factoryRestoreLoading.value = false
   }
 }
 
@@ -1887,6 +1944,34 @@ onMounted(async () => {
         </NFormItem>
         <NFormItem label="备注">
           <NInput v-model:value="transferForm.remark" placeholder="可选" />
+        </NFormItem>
+      </NForm>
+    </NModal>
+
+    <NModal
+      v-model:show="showFactoryRestoreModal"
+      preset="dialog"
+      title="恢复出厂"
+      positive-text="确认恢复"
+      negative-text="取消"
+      :loading="factoryRestoreLoading"
+      @positive-click="confirmFactoryRestore"
+    >
+      <NForm :model="factoryRestoreForm" label-placement="left" label-width="100px">
+        <NFormItem label="电池编号">
+          <NInput v-model:value="factoryRestoreForm.device_number" disabled />
+        </NFormItem>
+        <NFormItem label="当前机构">
+          <NInput v-model:value="factoryRestoreForm.current_org_name" disabled />
+        </NFormItem>
+        <NFormItem label="恢复到">
+          <NInput value="厂家库存" disabled />
+        </NFormItem>
+        <NFormItem>
+          <div style="color: #666">该操作会将电池退回厂家库存，并写入组织转移记录和电池操作日志。</div>
+        </NFormItem>
+        <NFormItem label="备注">
+          <NInput v-model:value="factoryRestoreForm.remark" placeholder="可选" />
         </NFormItem>
       </NForm>
     </NModal>

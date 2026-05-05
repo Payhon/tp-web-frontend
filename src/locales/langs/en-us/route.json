@@ -154,6 +154,7 @@
   "perm.bms_battery_list_action_params": "Parameters",
   "perm.bms_battery_list_action_offline_command": "Offline Command",
   "perm.bms_battery_list_action_lifecycle_factory": "Lifecycle - Factory Out",
+  "perm.bms_battery_list_action_lifecycle_factory_restore": "Lifecycle - Restore Factory",
   "perm.bms_battery_list_action_lifecycle_activate": "Lifecycle - Activate",
   "perm.bms_battery_list_action_lifecycle_transfer": "Lifecycle - Transfer",
   "perm.bms_battery_list_action_lifecycle_rollback": "Lifecycle - Rollback",

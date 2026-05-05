@@ -188,6 +188,7 @@
   "perm.bms_battery_list_action_params": "参数",
   "perm.bms_battery_list_action_offline_command": "离线指令",
   "perm.bms_battery_list_action_lifecycle_factory": "生命周期-出厂",
+  "perm.bms_battery_list_action_lifecycle_factory_restore": "生命周期-恢复出厂",
   "perm.bms_battery_list_action_lifecycle_activate": "生命周期-激活",
   "perm.bms_battery_list_action_lifecycle_transfer": "生命周期-调拨",
   "perm.bms_battery_list_action_lifecycle_rollback": "生命周期-回退",

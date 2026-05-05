@@ -13,6 +13,7 @@ const opTypeOptions = [
   { label: '创建', value: 'CREATE' },
   { label: '导入', value: 'IMPORT' },
   { label: '出厂', value: 'FACTORY_OUT' },
+  { label: '恢复出厂', value: 'FACTORY_RESTORE' },
   { label: '转移/调拨', value: 'TRANSFER' },
   { label: '回退', value: 'ROLLBACK' },
   { label: '激活', value: 'ACTIVATE' },
