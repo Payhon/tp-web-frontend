@@ -3,7 +3,9 @@ import { computed, ref, watch } from 'vue'
 import {
   NButton,
   NCard,
+  NCheckbox,
   NDataTable,
+  NEllipsis,
   NForm,
   NFormItem,
   NInput,
@@ -20,9 +22,10 @@ import { useTable } from '@/hooks/common/table'
 import { getOtaUpgradePackageList } from '@/service/api/bms'
 import { deviceConfig } from '@/service/api/device'
 import { request } from '@/service/request'
+import SvgIcon from '@/components/custom/svg-icon.vue'
 import FilePicker from '@/components/business/file-picker/index.vue'
 
-type DeviceKind = 1 | 2
+type DeviceKind = 1 | 2 | 3
 
 interface OtaPackageItem {
   id: string
@@ -40,14 +43,17 @@ interface OtaPackageItem {
   description?: string | null
   additional_info?: string | null
   device_kind?: DeviceKind | null
+  is_latest?: boolean | null
 }
 
 const DEVICE_KIND_BMS: DeviceKind = 1
 const DEVICE_KIND_METER: DeviceKind = 2
+const DEVICE_KIND_4G_MODULE: DeviceKind = 3
 
 const message = useMessage()
 const activeTab = ref<DeviceKind>(DEVICE_KIND_BMS)
 const isBmsTab = computed(() => activeTab.value === DEVICE_KIND_BMS)
+const is4GModuleTab = computed(() => activeTab.value === DEVICE_KIND_4G_MODULE)
 
 const searchForm = ref({
   name: '',
@@ -72,6 +78,44 @@ function packageTypeLabel(v?: number | null) {
   return '--'
 }
 
+async function copyText(text?: string | null) {
+  const value = text?.trim()
+  if (!value) {
+    message.warning('暂无可复制的固件 URL')
+    return
+  }
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value)
+    } else {
+      const textarea = document.createElement('textarea')
+      textarea.value = value
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textarea)
+    }
+    message.success('固件 URL 已复制')
+  } catch {
+    message.error('复制失败')
+  }
+}
+
+function renderFirmwareUrl(row: OtaPackageItem) {
+  if (!row.package_url) return '--'
+  return (
+    <NSpace align="center" size={6} wrap={false}>
+      <NEllipsis style="max-width: 360px">{row.package_url}</NEllipsis>
+      <NButton size="tiny" text title="复制固件 URL" onClick={() => copyText(row.package_url)}>
+        <SvgIcon icon="material-symbols:content-copy-outline" class="text-16px" />
+      </NButton>
+    </NSpace>
+  )
+}
+
 function createColumns(): DataTableColumns<OtaPackageItem> {
   if (isBmsTab.value) {
     return [
@@ -82,6 +126,7 @@ function createColumns(): DataTableColumns<OtaPackageItem> {
       { key: 'module', title: '模块', minWidth: 100, render: r => r.module || '--' },
       { key: 'package_type', title: '类型', minWidth: 90, render: r => packageTypeLabel(r.package_type) },
       { key: 'signature_type', title: '签名算法', minWidth: 100, render: r => r.signature_type || '--' },
+      { key: 'package_url', title: '固件 URL', minWidth: 430, render: r => renderFirmwareUrl(r) },
       { key: 'created_at', title: '创建时间', minWidth: 160, render: r => r.created_at || '--' },
       {
         key: 'actions',
@@ -93,10 +138,28 @@ function createColumns(): DataTableColumns<OtaPackageItem> {
     ]
   }
 
+  if (is4GModuleTab.value) {
+    return [
+      { key: 'name', title: '升级包名称', minWidth: 200 },
+      { key: 'version', title: '版本号', minWidth: 120 },
+      { key: 'package_url', title: '固件 URL', minWidth: 430, render: r => renderFirmwareUrl(r) },
+      { key: 'is_latest', title: '是否最新固件', minWidth: 130, render: r => (r.is_latest ? '是' : '否') },
+      { key: 'description', title: '说明', minWidth: 260, render: r => r.description || '--' },
+      { key: 'created_at', title: '创建时间', minWidth: 160, render: r => r.created_at || '--' },
+      {
+        key: 'actions',
+        title: '操作',
+        minWidth: 220,
+        fixed: 'right',
+        render: r => renderActions(r)
+      }
+    ]
+  }
+
   return [
     { key: 'name', title: '升级包名称', minWidth: 220 },
     { key: 'description', title: '说明', minWidth: 300, render: r => r.description || '--' },
-    { key: 'package_url', title: '固件文件', minWidth: 260, render: r => r.package_url || '--' },
+    { key: 'package_url', title: '固件 URL', minWidth: 430, render: r => renderFirmwareUrl(r) },
     { key: 'created_at', title: '创建时间', minWidth: 160, render: r => r.created_at || '--' },
     {
       key: 'actions',
@@ -192,12 +255,15 @@ const form = ref({
   additional_info: '{}' as string,
   description: '',
   remark: '',
-  device_kind: DEVICE_KIND_BMS as DeviceKind
+  device_kind: DEVICE_KIND_BMS as DeviceKind,
+  is_latest: false
 })
 
 const modalTitle = computed(() => {
   const prefix = modalType.value === 'create' ? '新增' : '编辑'
-  return `${prefix}${isBmsTab.value ? 'BMS' : '仪表'}升级包`
+  if (isBmsTab.value) return `${prefix}BMS升级包`
+  if (is4GModuleTab.value) return `${prefix}4G模块升级包`
+  return `${prefix}仪表升级包`
 })
 
 function resetForm(kind: DeviceKind) {
@@ -214,7 +280,8 @@ function resetForm(kind: DeviceKind) {
     additional_info: '{}',
     description: '',
     remark: '',
-    device_kind: kind
+    device_kind: kind,
+    is_latest: false
   }
 }
 
@@ -239,7 +306,8 @@ function openEdit(row: OtaPackageItem) {
     additional_info: row.additional_info || '{}',
     description: row.description || '',
     remark: row.remark || '',
-    device_kind: (row.device_kind as DeviceKind) || activeTab.value
+    device_kind: (row.device_kind as DeviceKind) || activeTab.value,
+    is_latest: Boolean(row.is_latest)
   }
   showModal.value = true
 }
@@ -258,6 +326,10 @@ async function submit() {
       message.warning('请填写：升级包名称/版本号/设备配置')
       return
     }
+  }
+  if (form.value.device_kind === DEVICE_KIND_4G_MODULE && !form.value.version.trim()) {
+    message.warning('请填写版本号')
+    return
   }
 
   saving.value = true
@@ -279,6 +351,12 @@ async function submit() {
         signature_type: form.value.signature_type,
         additional_info: form.value.additional_info?.trim() ? form.value.additional_info.trim() : '{}',
         remark: form.value.remark.trim() ? form.value.remark.trim() : undefined
+      })
+    }
+    if (form.value.device_kind === DEVICE_KIND_4G_MODULE) {
+      Object.assign(payload, {
+        version: form.value.version.trim(),
+        is_latest: form.value.is_latest
       })
     }
 
@@ -315,8 +393,9 @@ loadDeviceConfigs()
   <div class="flex-vertical-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
     <NCard title="OTA升级包管理" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
       <NTabs v-model:value="activeTab" type="line" animated>
-        <NTabPane :name="1" tab="BMS升级包" />
-        <NTabPane :name="2" tab="仪表升级包" />
+        <NTabPane :name="DEVICE_KIND_BMS" tab="BMS升级包" />
+        <NTabPane :name="DEVICE_KIND_METER" tab="仪表升级包" />
+        <NTabPane :name="DEVICE_KIND_4G_MODULE" tab="4G模块升级包" />
       </NTabs>
 
       <NForm
@@ -353,7 +432,7 @@ loadDeviceConfigs()
         :loading="loading"
         :pagination="pagination"
         :row-key="row => row.id"
-        :scroll-x="isBmsTab ? 1200 : 980"
+        :scroll-x="isBmsTab ? 1600 : is4GModuleTab ? 1320 : 1180"
       />
     </NCard>
 
@@ -367,10 +446,12 @@ loadDeviceConfigs()
         <NFormItem label="升级包名称" required>
           <NInput v-model:value="form.name" />
         </NFormItem>
-        <template v-if="form.device_kind === DEVICE_KIND_BMS">
+        <template v-if="form.device_kind === DEVICE_KIND_BMS || form.device_kind === DEVICE_KIND_4G_MODULE">
           <NFormItem label="版本号" required>
             <NInput v-model:value="form.version" placeholder="例如：1.0.1" />
           </NFormItem>
+        </template>
+        <template v-if="form.device_kind === DEVICE_KIND_BMS">
           <NFormItem label="目标版本">
             <NInput v-model:value="form.target_version" placeholder="可选" />
           </NFormItem>
@@ -399,6 +480,9 @@ loadDeviceConfigs()
             />
           </NFormItem>
         </template>
+        <NFormItem v-if="form.device_kind === DEVICE_KIND_4G_MODULE" label="是否最新固件">
+          <NCheckbox v-model:checked="form.is_latest">是</NCheckbox>
+        </NFormItem>
         <NFormItem label="升级包固件" required>
           <FilePicker
             v-model="form.package_url"
@@ -417,7 +501,7 @@ loadDeviceConfigs()
           </NFormItem>
         </template>
         <NFormItem label="说明">
-          <NInput v-model:value="form.description" :type="form.device_kind === DEVICE_KIND_METER ? 'textarea' : 'text'" />
+          <NInput v-model:value="form.description" :type="form.device_kind === DEVICE_KIND_BMS ? 'text' : 'textarea'" />
         </NFormItem>
         <template v-if="form.device_kind === DEVICE_KIND_BMS">
           <NFormItem label="备注">
