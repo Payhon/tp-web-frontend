@@ -149,7 +149,11 @@ function setTableData(data: Api.NotificationServices.SMS | null) {
   formModel.status = data?.status ?? defaults.status
   formModel.remark = data?.remark ?? defaults.remark
   formModel.sme_config.provider = nextSMSConfig.provider
-  Object.assign(formModel.sme_config.aliyun_sms_config, createDefaultSMSConfig().aliyun_sms_config, nextSMSConfig.aliyun_sms_config)
+  Object.assign(
+    formModel.sme_config.aliyun_sms_config,
+    createDefaultSMSConfig().aliyun_sms_config,
+    nextSMSConfig.aliyun_sms_config
+  )
 }
 
 async function getNotificationServices() {
@@ -392,7 +396,12 @@ init()
     </NForm>
   </NSpin>
 
-  <NModal v-model:show="debugVisible" preset="card" :title="$t('page.manage.notification.shortMessage.debug.title')" class="w-640px">
+  <NModal
+    v-model:show="debugVisible"
+    preset="card"
+    :title="$t('page.manage.notification.shortMessage.debug.title')"
+    class="w-640px"
+  >
     <NForm label-placement="left" :label-width="120" :model="debugForm">
       <NGrid :cols="24" :x-gap="18">
         <NFormItemGridItem :span="24" :label="$t('page.manage.api.tenantId')" path="tenant_id">

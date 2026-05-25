@@ -465,6 +465,8 @@ declare namespace Api {
       file_ext?: string
       uploaded_at: string
       uploaded_by?: string
+      uploaded_by_name?: string
+      uploaded_by_account?: string
       path: string
       url: string
     }

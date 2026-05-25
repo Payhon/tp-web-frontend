@@ -81,7 +81,7 @@ const currentOrgType = computed(() => String(authStore.userInfo.org_type || ''))
 const isOrgScopedUser = computed(() => currentAuthority.value === 'TENANT_USER' && currentUserKind.value === 'ORG_USER')
 const currentOrgHasChildren = computed(() => {
   if (!currentOrgId.value) return false
-  return orgOptions.value.some((item) => item.parent_id === currentOrgId.value)
+  return orgOptions.value.some(item => item.parent_id === currentOrgId.value)
 })
 const showAuthorityFilter = computed(() => !isOrgScopedUser.value)
 const showIsMainFilter = computed(() => !isOrgScopedUser.value)
@@ -126,7 +126,7 @@ async function loadRoles() {
 
 function roleNameList(roleIds: string[] = []) {
   if (!Array.isArray(roleIds) || roleIds.length === 0) return '--'
-  const names = roleIds.map((id) => roleOptions.value.find((item) => item.value === id)?.label || id).filter(Boolean)
+  const names = roleIds.map(id => roleOptions.value.find(item => item.value === id)?.label || id).filter(Boolean)
   return names.length > 0 ? names.join(' / ') : '--'
 }
 
@@ -268,45 +268,45 @@ const searchForm = ref<{
 function createColumns(): DataTableColumns<any> {
   return [
     { key: 'phone_number', title: '手机号', minWidth: 140 },
-    { key: 'username', title: '用户名', minWidth: 160, render: (row) => row.username || '--' },
-    { key: 'name', title: '姓名', minWidth: 120, render: (row) => row.name || '--' },
+    { key: 'username', title: '用户名', minWidth: 160, render: row => row.username || '--' },
+    { key: 'name', title: '姓名', minWidth: 120, render: row => row.name || '--' },
     {
       key: 'account_type',
       title: '账号类型',
       minWidth: 160,
-      render: (row) => <NTag type={accountTypeTagType(row)}>{accountTypeLabel(row)}</NTag>
+      render: row => <NTag type={accountTypeTagType(row)}>{accountTypeLabel(row)}</NTag>
     },
     {
       key: 'org_name',
       title: '所属机构',
       minWidth: 180,
-      render: (row) => row.org_name || row.organization || '--'
+      render: row => row.org_name || row.organization || '--'
     },
     {
       key: 'user_roles',
       title: '已分配角色',
       minWidth: 220,
-      render: (row) => roleNameList(row.user_roles)
+      render: row => roleNameList(row.user_roles)
     },
     {
       key: 'status',
       title: '状态',
       minWidth: 100,
-      render: (row) => (
+      render: row => (
         <NTag type={row.status === 'N' ? 'success' : 'warning'}>{row.status === 'N' ? '启用' : '禁用'}</NTag>
       )
     },
-    { key: 'created_at', title: '创建时间', minWidth: 180, render: (row) => String(row.created_at || '--') },
+    { key: 'created_at', title: '创建时间', minWidth: 180, render: row => String(row.created_at || '--') },
     {
       key: 'operate',
       title: '操作',
       minWidth: 140,
       fixed: 'right',
-      render: (row) => (
+      render: row => (
         <NDropdown
           options={buildActionOptions(row)}
           trigger="click"
-          onSelect={(key) => handleActionSelect(String(key), row)}
+          onSelect={key => handleActionSelect(String(key), row)}
         >
           <NButton size="small" secondary type="primary">
             {{
@@ -414,10 +414,10 @@ const form = ref<{
 })
 
 const filteredRoleOptions = computed(() => {
-  return roleOptions.value.filter((item) => {
+  return roleOptions.value.filter(item => {
     if (item.authority && item.authority !== form.value.authority) return false
     if (item.user_kind && item.user_kind !== form.value.user_kind) return false
-    const org = orgOptions.value.find((opt) => opt.value === form.value.org_id)
+    const org = orgOptions.value.find(opt => opt.value === form.value.org_id)
     if (item.org_type && form.value.authority === 'TENANT_USER' && org?.org_type && item.org_type !== org.org_type)
       return false
     return true
@@ -553,10 +553,10 @@ function fillRandomResetPassword() {
 const roleAssignOptions = computed(() => {
   const row = roleAssignRow.value
   if (!row) return []
-  return roleOptions.value.filter((item) => {
+  return roleOptions.value.filter(item => {
     if (item.authority && item.authority !== row.authority) return false
     if (item.user_kind && item.user_kind !== row.user_kind) return false
-    const org = orgOptions.value.find((opt) => opt.value === row.org_id)
+    const org = orgOptions.value.find(opt => opt.value === row.org_id)
     if (item.org_type && row.authority === 'TENANT_USER' && org?.org_type && item.org_type !== org.org_type) {
       return false
     }
@@ -722,7 +722,7 @@ getData()
         :data="data"
         :loading="loading"
         :pagination="pagination"
-        :row-key="(row) => row.id"
+        :row-key="row => row.id"
         :scroll-x="1600"
       />
     </NCard>
@@ -737,10 +737,10 @@ getData()
         <NFormItem label="账号大类" required>
           <NSelect
             v-model:value="form.authority"
-            :options="authorityOptions.filter((item) => item.value)"
+            :options="authorityOptions.filter(item => item.value)"
             :disabled="isOrgScopedUser"
             @update:value="
-              (value) => {
+              value => {
                 if (value === 'TENANT_ADMIN') {
                   form.user_kind = 'ORG_USER'
                   form.is_main = 0
@@ -804,7 +804,7 @@ getData()
           <NInput v-model:value="form.password" placeholder="至少 6 位" />
         </NFormItem>
         <NFormItem v-if="modalType === 'edit'" label="状态">
-          <NSelect v-model:value="form.status" :options="statusOptions.filter((item) => item.value)" />
+          <NSelect v-model:value="form.status" :options="statusOptions.filter(item => item.value)" />
         </NFormItem>
       </NForm>
 

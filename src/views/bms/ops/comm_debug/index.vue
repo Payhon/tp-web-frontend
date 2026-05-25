@@ -148,7 +148,11 @@ const columns = computed<DataTableColumns<LogItem>>(() => [
     key: 'actions',
     title: '操作',
     width: 100,
-    render: row => <NButton text type="primary" onClick={() => openDetail(row)}>详情</NButton>
+    render: row => (
+      <NButton text type="primary" onClick={() => openDetail(row)}>
+        详情
+      </NButton>
+    )
   }
 ])
 
@@ -167,13 +171,21 @@ function renderEventType(type: string) {
 function renderDirection(direction: string) {
   const type = direction === 'outbound' ? 'warning' : 'info'
   const label = direction === 'outbound' ? '下行' : direction === 'inbound' ? '上行' : direction || '-'
-  return <NTag size="small" type={type}>{label}</NTag>
+  return (
+    <NTag size="small" type={type}>
+      {label}
+    </NTag>
+  )
 }
 
 function renderStatus(status: string) {
   const type = status === 'success' ? 'success' : status === 'error' ? 'error' : 'default'
   const label = status === 'success' ? '成功' : status === 'error' ? '失败' : status || '-'
-  return <NTag size="small" type={type}>{label}</NTag>
+  return (
+    <NTag size="small" type={type}>
+      {label}
+    </NTag>
+  )
 }
 
 async function getTableData() {
@@ -318,8 +330,19 @@ getTableData().then(() => {
       <NFormItem label="实时">
         <NSpace align="center">
           <NSwitch v-model:value="realtimeEnabled" />
-          <NTag size="small" :type="streamStatus === 'connected' ? 'success' : streamStatus === 'error' ? 'error' : 'default'">
-            {{ streamStatus === 'connected' ? '已连接' : streamStatus === 'connecting' ? '连接中' : streamStatus === 'error' ? '异常' : '未开启' }}
+          <NTag
+            size="small"
+            :type="streamStatus === 'connected' ? 'success' : streamStatus === 'error' ? 'error' : 'default'"
+          >
+            {{
+              streamStatus === 'connected'
+                ? '已连接'
+                : streamStatus === 'connecting'
+                  ? '连接中'
+                  : streamStatus === 'error'
+                    ? '异常'
+                    : '未开启'
+            }}
           </NTag>
         </NSpace>
       </NFormItem>

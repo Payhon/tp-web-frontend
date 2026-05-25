@@ -113,11 +113,7 @@ loadConfig()
           <NFormItemGridItem key="cloud-provider" :span="24" label="存储服务商" path="provider">
             <NRadioGroup v-model:value="formModel.provider">
               <NSpace>
-                <NRadio
-                  v-for="option in providerOptions"
-                  :key="option.value"
-                  :value="option.value"
-                >
+                <NRadio v-for="option in providerOptions" :key="option.value" :value="option.value">
                   {{ option.label }}
                 </NRadio>
               </NSpace>

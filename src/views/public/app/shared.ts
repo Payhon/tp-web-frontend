@@ -3,7 +3,9 @@ import { resolveFileUrl } from '@/utils/common/tool'
 export type PublicLang = 'zh-CN' | 'en-US'
 
 export function normalizePublicLang(value: unknown): PublicLang {
-  const lang = String(value || '').trim().toLowerCase()
+  const lang = String(value || '')
+    .trim()
+    .toLowerCase()
   if (lang === 'en' || lang === 'en-us') return 'en-US'
   return 'zh-CN'
 }
@@ -27,4 +29,3 @@ export function getNestedUrl(source: any): string {
 export function getNestedName(source: any): string {
   return String(source?.name || '').trim()
 }
-

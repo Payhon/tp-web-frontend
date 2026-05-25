@@ -777,9 +777,17 @@ const sohPct = computed(() => {
 })
 
 const cloudCellVoltagesMv = computed(() => numberArray(cloudCurrent['cell.voltagesMv'] ?? cloudCurrent.cellVoltagesMv))
-const cloudCellTempsC = computed(() => nullableNumberArray(cloudCurrent['temperature.cellTempsC'] ?? cloudCurrent.cellTempsC))
+const cloudCellTempsC = computed(() =>
+  nullableNumberArray(cloudCurrent['temperature.cellTempsC'] ?? cloudCurrent.cellTempsC)
+)
 const cellCount = computed(() =>
-  Number(displayStatus.value?.meta?.seriesCount || cloudCurrent.seriesCount || cloudCurrent['meta.seriesCount'] || cloudCellVoltagesMv.value.length || 0)
+  Number(
+    displayStatus.value?.meta?.seriesCount ||
+      cloudCurrent.seriesCount ||
+      cloudCurrent['meta.seriesCount'] ||
+      cloudCellVoltagesMv.value.length ||
+      0
+  )
 )
 const indicatorStatus = computed(() => displayStatus.value?.status?.indicatorStatus || {})
 const protectionStatus = computed(() => displayStatus.value?.status?.protectionStatus || {})
@@ -875,10 +883,20 @@ const diffVoltageText = computed(() => {
 })
 
 const highestIdx = computed(() =>
-  Number(displayStatus.value?.electrical?.cellVoltageIndex?.highest || cloudCurrent['electrical.cellVoltageIndex.highest'] || cloudCurrent.cellVoltageHighestIndex || 0)
+  Number(
+    displayStatus.value?.electrical?.cellVoltageIndex?.highest ||
+      cloudCurrent['electrical.cellVoltageIndex.highest'] ||
+      cloudCurrent.cellVoltageHighestIndex ||
+      0
+  )
 )
 const lowestIdx = computed(() =>
-  Number(displayStatus.value?.electrical?.cellVoltageIndex?.lowest || cloudCurrent['electrical.cellVoltageIndex.lowest'] || cloudCurrent.cellVoltageLowestIndex || 0)
+  Number(
+    displayStatus.value?.electrical?.cellVoltageIndex?.lowest ||
+      cloudCurrent['electrical.cellVoltageIndex.lowest'] ||
+      cloudCurrent.cellVoltageLowestIndex ||
+      0
+  )
 )
 
 const STATUS_LABELS: Record<string, string> = {
@@ -966,13 +984,28 @@ const protectStatusItems = computed(() => activeStatusItems(protectionStatus.val
 const statusFlags = computed(() => {
   const items: Array<{ type: StatusFlagType; label: string; count: number; className: string }> = []
   if (faultStatusItems.value.length) {
-    items.push({ type: 'fault', label: '故障', count: faultStatusItems.value.length, className: 'status-flag-web--danger' })
+    items.push({
+      type: 'fault',
+      label: '故障',
+      count: faultStatusItems.value.length,
+      className: 'status-flag-web--danger'
+    })
   }
   if (alarmStatusItems.value.length) {
-    items.push({ type: 'alarm', label: '告警', count: alarmStatusItems.value.length, className: 'status-flag-web--warn' })
+    items.push({
+      type: 'alarm',
+      label: '告警',
+      count: alarmStatusItems.value.length,
+      className: 'status-flag-web--warn'
+    })
   }
   if (protectStatusItems.value.length) {
-    items.push({ type: 'protect', label: '保护', count: protectStatusItems.value.length, className: 'status-flag-web--guard' })
+    items.push({
+      type: 'protect',
+      label: '保护',
+      count: protectStatusItems.value.length,
+      className: 'status-flag-web--guard'
+    })
   }
   return items
 })
@@ -1887,7 +1920,8 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
 
           <NTabPane name="params" tab="参数设置">
             <NAlert class="mb-12px" type="info" :show-icon="false">
-              参数读写支持两种通道：4G设备可手动连接 MQTT 参数直连，BLE设备走“APP蓝牙中继”；该通道状态不影响仪表/电芯云端数据显示。
+              参数读写支持两种通道：4G设备可手动连接 MQTT
+              参数直连，BLE设备走“APP蓝牙中继”；该通道状态不影响仪表/电芯云端数据显示。
             </NAlert>
             <NSpace v-if="hasAdvancedSections" class="mb-12px" justify="end">
               <NButton size="small" :disabled="connType === 'offline' && !relayReady" @click="openAdvancedSettings">
@@ -1959,7 +1993,11 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
 
     <NModal v-model:show="statusFlagModal.show" preset="card" :title="statusFlagModal.title" style="width: 420px">
       <div class="status-modal-list">
-        <div v-for="(item, idx) in statusFlagModal.items" :key="`${statusFlagModal.title}-${idx}`" class="status-modal-row">
+        <div
+          v-for="(item, idx) in statusFlagModal.items"
+          :key="`${statusFlagModal.title}-${idx}`"
+          class="status-modal-row"
+        >
           <span class="status-modal-row__idx">{{ idx + 1 }}.</span>
           <span>{{ item }}</span>
         </div>

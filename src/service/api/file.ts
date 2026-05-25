@@ -5,6 +5,11 @@ export const getFileListByPage = async (params: Api.File.ListReq) => {
   return data
 }
 
+export const deleteFile = async (id: string) => {
+  const data = await request.delete(`/file/${id}`)
+  return data
+}
+
 export const registerCloudFile = async (params: Api.File.RegisterCloudReq) => {
   const data = await request.post<Api.File.UploadRsp>('/file/cloud/register', params)
   return data

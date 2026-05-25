@@ -31,7 +31,10 @@ export const sendTestSMS = async (params: {
   phone_number: string
   scene: 'LOGIN' | 'REGISTER' | 'RESET_PASSWORD' | 'BIND'
 }) => {
-  const data = await request.post<Api.NotificationServices.SMSTestResult>('/notification/services/config/sms/test', params)
+  const data = await request.post<Api.NotificationServices.SMSTestResult>(
+    '/notification/services/config/sms/test',
+    params
+  )
   return data
 }
 

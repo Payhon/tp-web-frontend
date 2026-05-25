@@ -52,5 +52,5 @@ export function setFunctionConfigFlag(value: unknown, key: FunctionConfigFlagKey
   const word = normalizeFunctionConfigWord(value)
   const bit = 1 << FLAG_BIT_MAP[key]
   const bitShouldBeSet = REVERSED_SEMANTICS_FLAGS.has(key) ? !enabled : enabled
-  return bitShouldBeSet ? (word | bit) & 0xffff : (word & ~bit) & 0xffff
+  return bitShouldBeSet ? (word | bit) & 0xffff : word & ~bit & 0xffff
 }

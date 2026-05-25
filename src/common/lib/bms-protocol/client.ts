@@ -548,7 +548,9 @@ export class BmsClient {
       }
       const batchRanges = groupContiguousAddresses(Array.from(addressSet))
       for (const range of batchRanges) {
-        const inRange = group.filter(item => item.startAddress >= range.startAddress && item.endAddress < range.startAddress + range.quantity)
+        const inRange = group.filter(
+          item => item.startAddress >= range.startAddress && item.endAddress < range.startAddress + range.quantity
+        )
         if (!inRange.length) continue
         try {
           const first = inRange[0]

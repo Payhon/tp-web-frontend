@@ -19,8 +19,7 @@ import {
 } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import { useTable } from '@/hooks/common/table'
-import { getOtaUpgradePackageList } from '@/service/api/bms'
-import { deviceConfig } from '@/service/api/device'
+import { getBatteryBmsModelList, getOtaUpgradePackageList } from '@/service/api/bms'
 import { request } from '@/service/request'
 import SvgIcon from '@/components/custom/svg-icon.vue'
 import FilePicker from '@/components/business/file-picker/index.vue'
@@ -34,6 +33,10 @@ interface OtaPackageItem {
   target_version?: string | null
   device_config_id?: string | null
   device_config_name?: string | null
+  battery_model_id?: string | null
+  battery_model_name?: string | null
+  batch_number?: string | null
+  item_uuid?: string | null
   module?: string | null
   package_type?: number | null
   signature_type?: string | null
@@ -56,19 +59,18 @@ const isBmsTab = computed(() => activeTab.value === DEVICE_KIND_BMS)
 const is4GModuleTab = computed(() => activeTab.value === DEVICE_KIND_4G_MODULE)
 
 const searchForm = ref({
-  name: '',
-  device_config_id: ''
+  name: ''
 })
 
-const deviceConfigOptions = ref<Array<{ label: string; value: string }>>([])
+const bmsModelOptions = ref<Array<{ label: string; value: string }>>([])
 
-async function loadDeviceConfigs() {
+async function loadBmsModels() {
   try {
-    const res: any = await deviceConfig({ page: 1, page_size: 1000 })
+    const res: any = await getBatteryBmsModelList({ page: 1, page_size: 1000 })
     const list = (res?.data?.list || []) as Array<{ id: string; name: string }>
-    deviceConfigOptions.value = list.map(i => ({ label: i.name, value: i.id }))
+    bmsModelOptions.value = list.map(i => ({ label: i.name, value: i.id }))
   } catch {
-    deviceConfigOptions.value = []
+    bmsModelOptions.value = []
   }
 }
 
@@ -122,7 +124,9 @@ function createColumns(): DataTableColumns<OtaPackageItem> {
       { key: 'name', title: '升级包名称', minWidth: 180 },
       { key: 'version', title: '版本号', minWidth: 120 },
       { key: 'target_version', title: '目标版本', minWidth: 120, render: r => r.target_version || '--' },
-      { key: 'device_config_name', title: '设备配置', minWidth: 160, render: r => r.device_config_name || '--' },
+      { key: 'battery_model_name', title: 'BMS型号约束', minWidth: 160, render: r => r.battery_model_name || '--' },
+      { key: 'batch_number', title: '批号约束', minWidth: 150, render: r => r.batch_number || '--' },
+      { key: 'item_uuid', title: '序列号约束', minWidth: 220, render: r => r.item_uuid || '--' },
       { key: 'module', title: '模块', minWidth: 100, render: r => r.module || '--' },
       { key: 'package_type', title: '类型', minWidth: 90, render: r => packageTypeLabel(r.package_type) },
       { key: 'signature_type', title: '签名算法', minWidth: 100, render: r => r.signature_type || '--' },
@@ -214,7 +218,6 @@ function syncQuery(page = 1) {
     page,
     page_size: pagination.pageSize,
     name: searchForm.value.name || undefined,
-    device_config_id: isBmsTab.value ? searchForm.value.device_config_id || undefined : undefined,
     device_kind: activeTab.value
   })
 }
@@ -225,14 +228,14 @@ function handleSearch() {
 }
 
 function handleReset() {
-  searchForm.value = { name: '', device_config_id: '' }
+  searchForm.value = { name: '' }
   handleSearch()
 }
 
 watch(
   activeTab,
   () => {
-    searchForm.value = { name: '', device_config_id: '' }
+    searchForm.value = { name: '' }
     syncQuery(1)
     getData()
   },
@@ -247,7 +250,9 @@ const form = ref({
   name: '',
   version: '',
   target_version: '',
-  device_config_id: '',
+  battery_model_id: '',
+  batch_number: '',
+  item_uuid: '',
   module: '',
   package_type: 2 as 1 | 2,
   signature_type: 'SHA256' as 'MD5' | 'SHA256',
@@ -272,7 +277,9 @@ function resetForm(kind: DeviceKind) {
     name: '',
     version: '',
     target_version: '',
-    device_config_id: '',
+    battery_model_id: '',
+    batch_number: '',
+    item_uuid: '',
     module: '',
     package_type: 2,
     signature_type: 'SHA256',
@@ -298,7 +305,9 @@ function openEdit(row: OtaPackageItem) {
     name: row.name || '',
     version: row.version || '',
     target_version: row.target_version || '',
-    device_config_id: row.device_config_id || '',
+    battery_model_id: row.battery_model_id || '',
+    batch_number: row.batch_number || '',
+    item_uuid: row.item_uuid || '',
     module: row.module || '',
     package_type: (row.package_type as 1 | 2) || 2,
     signature_type: (row.signature_type as 'MD5' | 'SHA256') || 'SHA256',
@@ -322,8 +331,8 @@ async function submit() {
     return
   }
   if (form.value.device_kind === DEVICE_KIND_BMS) {
-    if (!form.value.version.trim() || !form.value.device_config_id) {
-      message.warning('请填写：升级包名称/版本号/设备配置')
+    if (!form.value.version.trim()) {
+      message.warning('请填写版本号')
       return
     }
   }
@@ -337,7 +346,6 @@ async function submit() {
     const payload: any = {
       name: form.value.name.trim(),
       package_url: form.value.package_url.trim(),
-      description: form.value.description.trim() ? form.value.description.trim() : undefined,
       device_kind: form.value.device_kind
     }
 
@@ -345,18 +353,25 @@ async function submit() {
       Object.assign(payload, {
         version: form.value.version.trim(),
         target_version: form.value.target_version.trim() ? form.value.target_version.trim() : undefined,
-        device_config_id: form.value.device_config_id,
+        battery_model_id: form.value.battery_model_id || '',
+        batch_number: form.value.batch_number.trim(),
+        item_uuid: form.value.item_uuid.trim(),
         module: form.value.module.trim() ? form.value.module.trim() : undefined,
         package_type: form.value.package_type,
         signature_type: form.value.signature_type,
-        additional_info: form.value.additional_info?.trim() ? form.value.additional_info.trim() : '{}',
         remark: form.value.remark.trim() ? form.value.remark.trim() : undefined
       })
     }
     if (form.value.device_kind === DEVICE_KIND_4G_MODULE) {
       Object.assign(payload, {
         version: form.value.version.trim(),
+        description: form.value.description.trim() ? form.value.description.trim() : undefined,
         is_latest: form.value.is_latest
+      })
+    }
+    if (form.value.device_kind === DEVICE_KIND_METER) {
+      Object.assign(payload, {
+        description: form.value.description.trim() ? form.value.description.trim() : undefined
       })
     }
 
@@ -386,7 +401,7 @@ async function doDelete(row: OtaPackageItem) {
   }
 }
 
-loadDeviceConfigs()
+loadBmsModels()
 </script>
 
 <template>
@@ -408,15 +423,6 @@ loadDeviceConfigs()
         <NFormItem label="升级包名称">
           <NInput v-model:value="searchForm.name" placeholder="支持模糊搜索" style="width: 220px" clearable />
         </NFormItem>
-        <NFormItem v-if="isBmsTab" label="设备配置">
-          <NSelect
-            v-model:value="searchForm.device_config_id"
-            :options="deviceConfigOptions"
-            clearable
-            filterable
-            style="width: 260px"
-          />
-        </NFormItem>
         <NFormItem>
           <NSpace>
             <NButton type="primary" @click="handleSearch">查询</NButton>
@@ -432,7 +438,7 @@ loadDeviceConfigs()
         :loading="loading"
         :pagination="pagination"
         :row-key="row => row.id"
-        :scroll-x="isBmsTab ? 1600 : is4GModuleTab ? 1320 : 1180"
+        :scroll-x="isBmsTab ? 1900 : is4GModuleTab ? 1320 : 1180"
       />
     </NCard>
 
@@ -454,9 +460,6 @@ loadDeviceConfigs()
         <template v-if="form.device_kind === DEVICE_KIND_BMS">
           <NFormItem label="目标版本">
             <NInput v-model:value="form.target_version" placeholder="可选" />
-          </NFormItem>
-          <NFormItem label="设备配置" required>
-            <NSelect v-model:value="form.device_config_id" :options="deviceConfigOptions" filterable />
           </NFormItem>
           <NFormItem label="模块">
             <NInput v-model:value="form.module" placeholder="可选" />
@@ -495,15 +498,25 @@ loadDeviceConfigs()
             支持扩展名：.bin/.tar/.gz/.zip/.gzip/.apk/.dav/.pack
           </div>
         </NFormItem>
-        <template v-if="form.device_kind === DEVICE_KIND_BMS">
-          <NFormItem label="附加信息(JSON)">
-            <NInput v-model:value="form.additional_info" type="textarea" :autosize="{ minRows: 3, maxRows: 8 }" />
-          </NFormItem>
-        </template>
-        <NFormItem label="说明">
-          <NInput v-model:value="form.description" :type="form.device_kind === DEVICE_KIND_BMS ? 'text' : 'textarea'" />
+        <NFormItem v-if="form.device_kind !== DEVICE_KIND_BMS" label="说明">
+          <NInput v-model:value="form.description" type="textarea" />
         </NFormItem>
         <template v-if="form.device_kind === DEVICE_KIND_BMS">
+          <NFormItem label="BMS型号约束">
+            <NSelect
+              v-model:value="form.battery_model_id"
+              :options="bmsModelOptions"
+              placeholder="可选"
+              clearable
+              filterable
+            />
+          </NFormItem>
+          <NFormItem label="批号约束">
+            <NInput v-model:value="form.batch_number" placeholder="可选，对应 device_batteries.batch_number" />
+          </NFormItem>
+          <NFormItem label="序列号约束">
+            <NInput v-model:value="form.item_uuid" placeholder="可选，对应 device_batteries.item_uuid" />
+          </NFormItem>
           <NFormItem label="备注">
             <NInput v-model:value="form.remark" />
           </NFormItem>

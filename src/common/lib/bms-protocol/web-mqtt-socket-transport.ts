@@ -296,9 +296,13 @@ export class WebMqttSocketBmsTransport {
       targetAddress: req[2] & 0xff,
       sourceAddress: req[3] & 0xff,
       socketStartAddress:
-        (req[4] & 0xff) === BMS_FUNC.SOCKET_READ && req.length >= 9 ? ((req[5] & 0xff) << 8) | (req[6] & 0xff) : undefined,
+        (req[4] & 0xff) === BMS_FUNC.SOCKET_READ && req.length >= 9
+          ? ((req[5] & 0xff) << 8) | (req[6] & 0xff)
+          : undefined,
       socketQuantity:
-        (req[4] & 0xff) === BMS_FUNC.SOCKET_READ && req.length >= 9 ? ((req[7] & 0xff) << 8) | (req[8] & 0xff) : undefined
+        (req[4] & 0xff) === BMS_FUNC.SOCKET_READ && req.length >= 9
+          ? ((req[7] & 0xff) << 8) | (req[8] & 0xff)
+          : undefined
     }
 
     const deferred = defer<Uint8Array>()

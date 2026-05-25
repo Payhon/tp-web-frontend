@@ -50,7 +50,9 @@ const uploadStage = ref<UploadStage>('preparing')
 const uploadError = ref('')
 
 const serverBaseUrl = computed(() => getDemoServerUrl())
-const effectiveValueMode = computed(() => (props.valueMode === 'path' && props.bizType === 'image' ? 'url' : props.valueMode))
+const effectiveValueMode = computed(() =>
+  props.valueMode === 'path' && props.bizType === 'image' ? 'url' : props.valueMode
+)
 
 const selectedCount = computed(() => props.modelValue.length)
 const selectedValueSet = computed(() => new Set(props.modelValue.filter(Boolean)))
@@ -75,9 +77,7 @@ function formatSize(bytes: number) {
 }
 
 function syncSelectedIdsFromValue() {
-  const currentIds = fileList.value
-    .filter(item => selectedValueSet.value.has(toFileValue(item)))
-    .map(item => item.id)
+  const currentIds = fileList.value.filter(item => selectedValueSet.value.has(toFileValue(item))).map(item => item.id)
 
   const merged = new Set([...selectedIds.value, ...currentIds])
   selectedIds.value = Array.from(merged)
@@ -289,7 +289,12 @@ watch(
 <template>
   <div class="flex flex-col gap-8px">
     <div class="flex items-center gap-8px">
-      <NInput :value="selectedCount ? `已选择 ${selectedCount} 个文件` : ''" readonly placeholder="未选择文件" class="w-260px" />
+      <NInput
+        :value="selectedCount ? `已选择 ${selectedCount} 个文件` : ''"
+        readonly
+        placeholder="未选择文件"
+        class="w-260px"
+      />
       <NButton type="primary" secondary :disabled="uploading" @click="open">选择文件</NButton>
       <NButton v-if="modelValue.length" tertiary :disabled="uploading" @click="clear">{{ $t('common.clear') }}</NButton>
     </div>
@@ -334,7 +339,12 @@ watch(
         <NButtonGroup size="medium">
           <NTooltip trigger="hover">
             <template #trigger>
-              <NButton :type="viewMode === 'list' ? 'primary' : 'default'" secondary class="w-44px" @click="viewMode = 'list'">
+              <NButton
+                :type="viewMode === 'list' ? 'primary' : 'default'"
+                secondary
+                class="w-44px"
+                @click="viewMode = 'list'"
+              >
                 <SvgIcon icon="mdi:format-list-bulleted" class="text-18px" />
               </NButton>
             </template>
@@ -342,7 +352,12 @@ watch(
           </NTooltip>
           <NTooltip trigger="hover">
             <template #trigger>
-              <NButton :type="viewMode === 'thumb' ? 'primary' : 'default'" secondary class="w-44px" @click="viewMode = 'thumb'">
+              <NButton
+                :type="viewMode === 'thumb' ? 'primary' : 'default'"
+                secondary
+                class="w-44px"
+                @click="viewMode = 'thumb'"
+              >
                 <SvgIcon icon="mdi:view-grid-outline" class="text-18px" />
               </NButton>
             </template>
@@ -361,8 +376,8 @@ watch(
       :show-file-list="false"
       :disabled="uploading"
       multiple
-      @before-upload="beforeUpload"
       :custom-request="handleUploadRequest"
+      @before-upload="beforeUpload"
     >
       <NUploadDragger>
         <div class="py-12px">点击或拖拽上传</div>

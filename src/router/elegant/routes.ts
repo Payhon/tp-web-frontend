@@ -1033,6 +1033,16 @@ export const generatedRoutes: GeneratedRoute[] = [
         }
       },
       {
+        name: 'management_attachment',
+        path: '/management/attachment',
+        component: 'view.management_attachment',
+        meta: {
+          title: 'management_attachment',
+          i18nKey: 'route.management_attachment',
+          roles: ['SYS_ADMIN', 'TENANT_ADMIN']
+        }
+      },
+      {
         name: 'management_auth',
         path: '/management/auth',
         component: 'view.management_auth',

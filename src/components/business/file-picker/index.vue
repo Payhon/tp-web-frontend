@@ -54,7 +54,9 @@ const uploadStage = ref<UploadStage>('preparing')
 const uploadError = ref('')
 
 const serverBaseUrl = computed(() => getDemoServerUrl())
-const effectiveValueMode = computed(() => (props.valueMode === 'path' && props.bizType === 'image' ? 'url' : props.valueMode))
+const effectiveValueMode = computed(() =>
+  props.valueMode === 'path' && props.bizType === 'image' ? 'url' : props.valueMode
+)
 
 const displayValue = computed(() => {
   if (!props.modelValue) return ''
@@ -319,8 +321,8 @@ watch(
       :accept="accept"
       :show-file-list="false"
       :disabled="uploading"
-      @before-upload="beforeUpload"
       :custom-request="handleUploadRequest"
+      @before-upload="beforeUpload"
     >
       <NUploadDragger>
         <div class="py-12px">点击或拖拽上传</div>

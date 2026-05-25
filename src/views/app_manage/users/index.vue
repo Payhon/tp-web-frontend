@@ -61,7 +61,7 @@ const table = useTable<UserRow, typeof fetchEndUserList>({
     page_size: 10,
     user_kind: 'END_USER'
   } as any,
-  onPaginationChanged: async (p) => {
+  onPaginationChanged: async p => {
     const kw = searchForm.value.keyword.trim()
     const next: any = {
       page: p.page,
@@ -90,13 +90,13 @@ const table = useTable<UserRow, typeof fetchEndUserList>({
     { type: 'selection' },
     { key: 'phone_number', title: $t('page.manage.user.userPhone'), minWidth: 140 },
     { key: 'email', title: $t('page.manage.user.userEmail'), minWidth: 180 },
-    { key: 'username', title: '用户名', minWidth: 160, render: (row) => row.username || '--' },
-    { key: 'name', title: $t('page.manage.user.userName'), minWidth: 140, render: (row) => row.name || '--' },
+    { key: 'username', title: '用户名', minWidth: 160, render: row => row.username || '--' },
+    { key: 'name', title: $t('page.manage.user.userName'), minWidth: 140, render: row => row.name || '--' },
     {
       key: 'status',
       title: $t('page.manage.user.userStatus2'),
       width: 100,
-      render: (row) => (
+      render: row => (
         <NTag type={row.status === 'F' ? 'error' : 'success'}>
           {row.status === 'F' ? $t('page.manage.user.status.freeze') : $t('page.manage.user.status.normal')}
         </NTag>
@@ -106,14 +106,14 @@ const table = useTable<UserRow, typeof fetchEndUserList>({
       key: 'created_at',
       title: $t('page.manage.api.created_at'),
       minWidth: 160,
-      render: (row) => (row.created_at ? dayjs(row.created_at).format('YYYY-MM-DD HH:mm:ss') : '--')
+      render: row => (row.created_at ? dayjs(row.created_at).format('YYYY-MM-DD HH:mm:ss') : '--')
     },
     {
       key: 'actions',
       title: $t('common.actions'),
       width: 200,
       fixed: 'right',
-      render: (row) => (
+      render: row => (
         <NSpace>
           <NButton size="small" type={row.status === 'F' ? 'primary' : 'warning'} onClick={() => toggleStatus(row)}>
             {row.status === 'F' ? $t('page.appManage.users.action.unfreeze') : $t('page.appManage.users.action.freeze')}
@@ -227,7 +227,7 @@ const statusOptions = computed(() => [
         size="small"
         :loading="loading"
         :pagination="pagination"
-        :row-key="(row) => row.id"
+        :row-key="row => row.id"
         :scroll-x="1260"
         class="flex-1-hidden"
       />
