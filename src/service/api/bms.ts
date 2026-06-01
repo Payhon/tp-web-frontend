@@ -661,6 +661,37 @@ export const resetOrgAccountPassword = (id: string, data: { password: string }) 
   return request.put(`/org/${id}/account/password`, data)
 }
 
+export interface PackWxMpConfig {
+  id?: string
+  tenant_id?: string
+  org_id?: string
+  app_id?: string
+  wx_appid?: string
+  status?: 'OPEN' | 'CLOSE'
+  home_banner_url?: string | null
+  login_logo_url?: string | null
+  remark?: string | null
+  created_at?: string
+  updated_at?: string
+}
+
+export interface UpsertPackWxMpConfigReq {
+  wx_appid: string
+  app_secret?: string
+  status: 'OPEN' | 'CLOSE'
+  home_banner_url?: string
+  login_logo_url?: string
+  remark?: string
+}
+
+export const getPackWxMpConfig = (id: string) => {
+  return request.get<PackWxMpConfig>(`/org/${id}/wxmp-config`)
+}
+
+export const upsertPackWxMpConfig = (id: string, data: UpsertPackWxMpConfigReq) => {
+  return request.put<PackWxMpConfig>(`/org/${id}/wxmp-config`, data)
+}
+
 // 设备组织转移
 export const transferDevicesToOrg = (data: { device_ids: string[]; to_org_id?: string; remark?: string }) => {
   return request.post('/device/transfer/org', data)

@@ -71,7 +71,7 @@ async function initAppOptions() {
   try {
     const res: any = await fetchAppList({ page: 1, page_size: 1000 })
     const list = (res?.data?.list || []) as Array<{ id: string; name: string; appid: string }>
-    appOptions.value = list.map(i => ({ label: i.name, value: i.id, appid: i.appid, name: i.name }))
+    appOptions.value = list.map((i) => ({ label: i.name, value: i.id, appid: i.appid, name: i.name }))
     if (!currentAppId.value && appOptions.value.length) currentAppId.value = appOptions.value[0]!.value
   } catch {
     appOptions.value = []
@@ -93,6 +93,7 @@ const currentLang = ref<'zh-CN' | 'en-US'>('zh-CN')
 const contentKeyOptions = computed(() => [
   { label: $t('page.appManage.content.pages.userPolicy'), value: 'user_policy' },
   { label: $t('page.appManage.content.pages.privacyPolicy'), value: 'privacy_policy' },
+  { label: $t('page.appManage.content.pages.aboutUs') || '关于我们', value: 'about_us' },
   { label: $t('page.appManage.content.pages.contactService'), value: 'contact_service' }
 ])
 const currentContentKey = ref<ContentKey>('user_policy')
@@ -173,7 +174,7 @@ async function togglePublishContentPage() {
 // FAQ
 // ---------------------------------------------------------------------------
 
-const faqSearchForm = ref({ keyword: '', published: null as boolean | null })
+const faqSearchForm = ref({ keyword: '', published: null as 'true' | 'false' | null })
 const faqCheckedRowKeys = ref<string[]>([])
 
 let getFaqTableData: () => void = () => {}
@@ -187,7 +188,7 @@ const faqTable = useTable<any, typeof fetchAdminFaqList>({
     page_size: 10,
     app_id: ''
   } as any,
-  onPaginationChanged: async p => {
+  onPaginationChanged: async (p) => {
     setFaqSearchParams({
       page: p.page,
       page_size: p.pageSize
@@ -210,14 +211,14 @@ const faqTable = useTable<any, typeof fetchAdminFaqList>({
       key: 'is_pinned',
       title: $t('page.appManage.content.faq.table.pinned'),
       width: 100,
-      render: row => (row.is_pinned ? <NTag type="warning">{$t('page.appManage.content.faq.pinned')}</NTag> : '--')
+      render: (row) => (row.is_pinned ? <NTag type="warning">{$t('page.appManage.content.faq.pinned')}</NTag> : '--')
     },
     { key: 'sort', title: $t('page.appManage.content.faq.table.sort'), width: 90 },
     {
       key: 'published',
       title: $t('page.appManage.content.faq.table.published'),
       width: 110,
-      render: row => (
+      render: (row) => (
         <NTag type={row.published ? 'success' : 'default'}>
           {row.published ? $t('page.appManage.content.common.published') : $t('page.appManage.content.common.draft')}
         </NTag>
@@ -227,14 +228,14 @@ const faqTable = useTable<any, typeof fetchAdminFaqList>({
       key: 'updated_at',
       title: $t('page.appManage.content.common.updatedAtLabel'),
       minWidth: 160,
-      render: row => row.updated_at || '--'
+      render: (row) => row.updated_at || '--'
     },
     {
       key: 'actions',
       title: $t('common.actions'),
       width: 200,
       fixed: 'right',
-      render: row => (
+      render: (row) => (
         <NSpace>
           <NButton size="small" onClick={() => openFaqEdit(row.id)}>
             {$t('common.edit')}
@@ -259,10 +260,10 @@ const {
 getFaqTableData = faqGetData
 setFaqSearchParams = faqUpdateSearchParams
 
-const faqPublishedOptions = computed(() => [
+const faqPublishedOptions = computed<any>(() => [
   { label: $t('page.appManage.content.common.all'), value: null },
-  { label: $t('page.appManage.content.common.published'), value: true },
-  { label: $t('page.appManage.content.common.draft'), value: false }
+  { label: $t('page.appManage.content.common.published'), value: 'true' },
+  { label: $t('page.appManage.content.common.draft'), value: 'false' }
 ])
 
 function handleFaqSearch() {
@@ -273,7 +274,7 @@ function handleFaqSearch() {
     app_id: currentAppId.value,
     lang: currentLang.value,
     keyword: faqSearchForm.value.keyword || undefined,
-    published: faqSearchForm.value.published ?? undefined
+    published: faqSearchForm.value.published == null ? undefined : faqSearchForm.value.published === 'true'
   })
   faqGetData()
 }
@@ -336,9 +337,9 @@ const faqModalLoading = ref(false)
 const faqOperateType = ref<'add' | 'edit'>('add')
 const faqEditingId = ref<string | null>(null)
 const faqForm = ref({
-  is_pinned: false,
+  is_pinned: 'false' as 'true' | 'false',
   sort: 0,
-  published: false,
+  published: 'false' as 'true' | 'false',
   i18n: {
     'zh-CN': { question: '', answer_markdown: '' },
     'en-US': { question: '', answer_markdown: '' }
@@ -349,9 +350,9 @@ function openFaqAdd() {
   faqOperateType.value = 'add'
   faqEditingId.value = null
   faqForm.value = {
-    is_pinned: false,
+    is_pinned: 'false',
     sort: 0,
-    published: false,
+    published: 'false',
     i18n: {
       'zh-CN': { question: '', answer_markdown: '' },
       'en-US': { question: '', answer_markdown: '' }
@@ -368,9 +369,9 @@ async function openFaqEdit(id: string) {
   try {
     const res: any = await fetchAdminFaqDetail(id)
     const d = res?.data
-    faqForm.value.is_pinned = Boolean(d?.is_pinned)
+    faqForm.value.is_pinned = d?.is_pinned ? 'true' : 'false'
     faqForm.value.sort = Number(d?.sort || 0)
-    faqForm.value.published = Boolean(d?.published)
+    faqForm.value.published = d?.published ? 'true' : 'false'
     faqForm.value.i18n['zh-CN'] = {
       question: d?.i18n?.['zh-CN']?.question || '',
       answer_markdown: d?.i18n?.['zh-CN']?.answer_markdown || ''
@@ -393,9 +394,9 @@ async function submitFaq() {
   try {
     const payload = {
       app_id: currentAppId.value,
-      is_pinned: faqForm.value.is_pinned,
+      is_pinned: faqForm.value.is_pinned === 'true',
       sort: faqForm.value.sort,
-      published: faqForm.value.published,
+      published: faqForm.value.published === 'true',
       i18n: faqForm.value.i18n
     }
     if (faqOperateType.value === 'add') {
@@ -419,7 +420,7 @@ async function submitFaq() {
 // ---------------------------------------------------------------------------
 
 const feedbackSearchForm = ref({ status: null as AdminFeedbackStatus | null, keyword: '' })
-const feedbackStatusOptions = computed(() => [
+const feedbackStatusOptions = computed<any>(() => [
   { label: $t('page.appManage.content.common.all'), value: null },
   { label: $t('page.appManage.content.feedback.status.NEW'), value: 'NEW' },
   { label: $t('page.appManage.content.feedback.status.PROCESSING'), value: 'PROCESSING' },
@@ -434,7 +435,7 @@ const feedbackTable = useTable<any, typeof fetchAdminFeedbackList>({
   apiFn: fetchAdminFeedbackList,
   immediate: false,
   apiParams: { page: 1, page_size: 10, app_id: '' } as any,
-  onPaginationChanged: async p => {
+  onPaginationChanged: async (p) => {
     setFeedbackSearchParams({ page: p.page, page_size: p.pageSize })
     getFeedbackTableData()
   },
@@ -452,13 +453,13 @@ const feedbackTable = useTable<any, typeof fetchAdminFeedbackList>({
       key: 'created_at',
       title: $t('page.manage.api.created_at'),
       minWidth: 160,
-      render: row => row.created_at || '--'
+      render: (row) => row.created_at || '--'
     },
     {
       key: 'user',
       title: $t('page.appManage.content.feedback.table.user'),
       minWidth: 180,
-      render: row => row.phone || row.email || row.user_id || '--'
+      render: (row) => row.phone || row.email || row.user_id || '--'
     },
     { key: 'content', title: $t('page.appManage.content.feedback.table.content'), minWidth: 260 },
     { key: 'image_cnt', title: $t('page.appManage.content.feedback.table.images'), width: 90 },
@@ -466,20 +467,20 @@ const feedbackTable = useTable<any, typeof fetchAdminFeedbackList>({
       key: 'status',
       title: $t('page.appManage.content.feedback.table.status'),
       width: 120,
-      render: row => <NTag>{$t(`page.appManage.content.feedback.status.${row.status}` as any)}</NTag>
+      render: (row) => <NTag>{$t(`page.appManage.content.feedback.status.${row.status}` as any)}</NTag>
     },
     {
       key: 'reply',
       title: $t('page.appManage.content.feedback.table.reply'),
       minWidth: 160,
-      render: row => row.reply || '--'
+      render: (row) => row.reply || '--'
     },
     {
       key: 'actions',
       title: $t('common.actions'),
       width: 120,
       fixed: 'right',
-      render: row => (
+      render: (row) => (
         <NButton size="small" type="primary" onClick={() => openFeedbackDetail(row.id)}>
           {$t('page.appManage.content.feedback.table.handle')}
         </NButton>
@@ -575,7 +576,7 @@ async function submitFeedbackHandle() {
 
 watch(
   () => tabs.value,
-  t => {
+  (t) => {
     if (t === 'pages') loadContentPage()
     if (t === 'faq') handleFaqSearch()
     if (t === 'feedback') handleFeedbackSearch()
@@ -675,12 +676,12 @@ onMounted(async () => {
 
           <NDataTable
             v-model:checked-row-keys="faqCheckedRowKeys"
-            :columns="faqColumns"
+            :columns="faqColumns as any"
             :data="faqData"
             size="small"
             :loading="faqLoading"
             :pagination="faqPagination"
-            :row-key="row => row.id"
+            :row-key="(row) => row.id"
             :scroll-x="1100"
             class="flex-1-hidden"
           />
@@ -705,12 +706,12 @@ onMounted(async () => {
           </div>
 
           <NDataTable
-            :columns="feedbackColumns"
+            :columns="feedbackColumns as any"
             :data="feedbackData"
             size="small"
             :loading="feedbackLoading"
             :pagination="feedbackPagination"
-            :row-key="row => row.id"
+            :row-key="(row) => row.id"
             :scroll-x="1200"
             class="flex-1-hidden"
           />
@@ -744,8 +745,8 @@ onMounted(async () => {
             <NSelect
               v-model:value="faqForm.is_pinned"
               :options="[
-                { label: $t('common.yesOrNo.no'), value: false },
-                { label: $t('common.yesOrNo.yes'), value: true }
+                { label: $t('common.yesOrNo.no'), value: 'false' },
+                { label: $t('common.yesOrNo.yes'), value: 'true' }
               ]"
               style="width: 220px"
             />
@@ -757,8 +758,8 @@ onMounted(async () => {
             <NSelect
               v-model:value="faqForm.published"
               :options="[
-                { label: $t('page.appManage.content.common.draft'), value: false },
-                { label: $t('page.appManage.content.common.published'), value: true }
+                { label: $t('page.appManage.content.common.draft'), value: 'false' },
+                { label: $t('page.appManage.content.common.published'), value: 'true' }
               ]"
               style="width: 220px"
             />
@@ -840,7 +841,7 @@ onMounted(async () => {
           <NFormItem :label="$t('page.appManage.content.feedback.form.status')">
             <NSelect
               v-model:value="feedbackHandleForm.status"
-              :options="feedbackStatusOptions.filter(o => o.value !== null)"
+              :options="feedbackStatusOptions.filter((o) => o.value !== null)"
               style="width: 220px"
             />
           </NFormItem>

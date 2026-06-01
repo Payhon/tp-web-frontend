@@ -80,7 +80,7 @@ watch(
     const list = normalizeValue(value).map(path => ({
       id: path,
       name: path.split('/').pop() || 'image',
-      status: 'finished',
+      status: 'finished' as const,
       url: toPreviewUrl(path)
     }))
     fileList.value = list

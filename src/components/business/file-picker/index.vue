@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import type { DataTableColumns, UploadCustomRequestOptions, UploadFileInfo } from 'naive-ui'
 import { $t } from '@/locales'
-import { getDemoServerUrl, getFileName } from '@/utils/common/tool'
+import { getDemoServerUrl, getFileName, resolveFileUrl } from '@/utils/common/tool'
 import { formatDateTime } from '@/utils/common/datetime'
 import { getFileListByPage } from '@/service/api/file'
 import { uploadFileWithStorageStrategy, type UploadStage } from '../upload/shared'
@@ -21,13 +21,22 @@ export interface Props {
   accept?: string
   /** 输出值类型 */
   valueMode?: 'path' | 'url'
+  /** 表单回显样式：auto 下图片业务显示缩略图，其他文件显示文本 */
+  displayMode?: 'auto' | 'input' | 'image'
+  /** 图片缩略图宽度 */
+  previewWidth?: number
+  /** 图片缩略图高度 */
+  previewHeight?: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
   modelValue: '',
   allowedExtensions: () => [],
   accept: '',
-  valueMode: 'path'
+  valueMode: 'path',
+  displayMode: 'auto',
+  previewWidth: 120,
+  previewHeight: 80
 })
 
 interface Emits {
@@ -39,7 +48,7 @@ interface Emits {
 const emit = defineEmits<Emits>()
 
 const show = ref(false)
-const viewMode = ref<'list' | 'thumb'>('list')
+const viewMode = ref<'list' | 'thumb'>(props.bizType === 'image' ? 'thumb' : 'list')
 const loading = ref(false)
 
 const keyword = ref('')
@@ -53,7 +62,6 @@ const uploadProgress = ref(0)
 const uploadStage = ref<UploadStage>('preparing')
 const uploadError = ref('')
 
-const serverBaseUrl = computed(() => getDemoServerUrl())
 const effectiveValueMode = computed(() =>
   props.valueMode === 'path' && props.bizType === 'image' ? 'url' : props.valueMode
 )
@@ -61,6 +69,15 @@ const effectiveValueMode = computed(() =>
 const displayValue = computed(() => {
   if (!props.modelValue) return ''
   return getFileName(props.modelValue)
+})
+const showImagePreview = computed(() => {
+  if (props.displayMode === 'image') return true
+  if (props.displayMode === 'input') return false
+  return props.bizType === 'image' || props.accept.includes('image/')
+})
+const previewUrl = computed(() => {
+  if (!props.modelValue) return ''
+  return resolveFileUrl(props.modelValue, getDemoServerUrl())
 })
 
 const selectedFile = computed(() => fileList.value.find(it => it.id === selectedId.value) || null)
@@ -252,8 +269,28 @@ watch(
 </script>
 
 <template>
-  <div class="flex items-center gap-8px">
-    <NInput :value="displayValue" readonly placeholder="未选择文件" class="w-260px" />
+  <div class="file-picker-value">
+    <div
+      v-if="showImagePreview"
+      class="file-picker-value__image"
+      :style="{ width: `${previewWidth}px`, height: `${previewHeight}px` }"
+      :title="displayValue || '未选择图片'"
+      @click="open"
+    >
+      <NImage
+        v-if="previewUrl"
+        :src="previewUrl"
+        object-fit="cover"
+        :preview-disabled="false"
+        :img-props="{ draggable: false }"
+        @click.stop
+      />
+      <div v-else class="file-picker-value__empty">
+        <SvgIcon icon="mdi:image-plus-outline" class="text-24px opacity-60" />
+        <span>未选择图片</span>
+      </div>
+    </div>
+    <NInput v-else :value="displayValue" readonly placeholder="未选择文件" class="w-260px" />
     <NButton type="primary" secondary :disabled="uploading" @click="open">选择文件</NButton>
     <NButton v-if="modelValue" tertiary :disabled="uploading" @click="clear">{{ $t('common.clear') }}</NButton>
   </div>
@@ -421,6 +458,47 @@ watch(
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.file-picker-value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.file-picker-value__image {
+  border: 1px solid var(--n-border-color);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.03);
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.file-picker-value__image :deep(.n-image) {
+  width: 100%;
+  height: 100%;
+}
+
+.file-picker-value__image :deep(img) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.file-picker-value__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  height: 100%;
+  color: var(--n-text-color-3);
+  font-size: 12px;
 }
 
 .file-picker-toolbar__search {

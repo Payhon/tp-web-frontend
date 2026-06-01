@@ -47,6 +47,56 @@ export const fetchAppList = (params: AppListParams) => {
   return request.get<AppListResp>('/apps', { params })
 }
 
+export type AppUserSourceOption = {
+  key: string
+  label: string
+  source_type: 'APP' | 'WXMP'
+  wx_appid?: string
+  children?: AppUserSourceOption[]
+}
+
+export type AppUserListParams = {
+  page: number
+  page_size: number
+  source_type: 'APP' | 'WXMP'
+  wx_appid?: string
+  keyword?: string
+  status?: 'N' | 'F'
+}
+
+export type AppUserListItem = {
+  id: string
+  phone_number: string
+  email: string
+  username?: string | null
+  name?: string | null
+  status?: 'N' | 'F'
+  user_kind?: string | null
+  source_type: 'APP' | 'WXMP'
+  source_name: string
+  wx_appid?: string | null
+  identity_types: string
+  device_count: number
+  last_bind_at?: string | null
+  last_visit_time?: string | null
+  created_at?: string | null
+}
+
+export type AppUserListResp = {
+  list: AppUserListItem[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export const fetchAppUserSourceOptions = () => {
+  return request.get<AppUserSourceOption[]>('/app_users/source-options')
+}
+
+export const fetchAppUserList = (params: AppUserListParams) => {
+  return request.get<AppUserListResp>('/app_users', { params })
+}
+
 export const fetchAppDetail = (id: string) => {
   return request.get<AppDetail>(`/apps/${id}`)
 }
@@ -135,6 +185,12 @@ export type PublicAppInfo = {
   h5?: any
 }
 
+export type AppContentPageResp = {
+  title?: string
+  content_markdown?: string
+  content_html?: string
+}
+
 export const fetchPublicAppInfo = (params: { appid: string }) => {
   return request.get<PublicAppInfo>('/app/public/info', {
     params,
@@ -153,7 +209,7 @@ export const fetchPublicContentPage = (contentKey: ContentKey, params: { appid?:
 // APP内容管理（单页/FAQ/用户反馈）
 // ---------------------------------------------------------------------------
 
-export type ContentKey = 'user_policy' | 'privacy_policy' | 'contact_service'
+export type ContentKey = 'user_policy' | 'privacy_policy' | 'contact_service' | 'about_us'
 
 export type AdminContentPageResp = {
   app_id: string

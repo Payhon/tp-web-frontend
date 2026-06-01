@@ -1,5 +1,5 @@
 <script setup lang="tsx">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import {
   NButton,
   NCard,
@@ -10,142 +10,160 @@ import {
   NSelect,
   NSpace,
   NTag,
+  NTree,
   useDialog,
   useMessage
 } from 'naive-ui'
-import type { DataTableColumns } from 'naive-ui'
+import type { DataTableColumns, TreeOption } from 'naive-ui'
 import dayjs from 'dayjs'
-import { useTable } from '@/hooks/common/table'
 import { $t } from '@/locales'
-import { delUser, editUser, fetchUserList } from '@/service/api/auth'
+import { delUser, editUser } from '@/service/api/auth'
+import {
+  fetchAppUserList,
+  fetchAppUserSourceOptions,
+  type AppUserListItem,
+  type AppUserSourceOption
+} from '@/service/api/app-manage'
 
-type UserRow = {
-  id: string
-  email: string
-  username?: string | null
-  name?: string | null
-  phone_number: string
-  status?: 'N' | 'F'
-  created_at?: string
-  updated_at?: string
-  user_kind?: string
-}
-
-type ListResp<T> = {
-  list: T[]
-  total: number
+type SourceNode = TreeOption & {
+  key: string
+  label: string
+  source_type: 'APP' | 'WXMP'
+  wx_appid?: string
+  children?: SourceNode[]
 }
 
 const message = useMessage()
 const dialog = useDialog()
 
+const sourceLoading = ref(false)
+const sourceTree = ref<SourceNode[]>([])
+const selectedSourceKeys = ref<string[]>(['APP'])
+const selectedSource = ref<SourceNode>({
+  key: 'APP',
+  label: 'App 端',
+  source_type: 'APP'
+})
+
+const loading = ref(false)
+const data = ref<AppUserListItem[]>([])
+const total = ref(0)
+const page = ref(1)
+const pageSize = ref(10)
 const searchForm = ref({
   keyword: '',
   status: null as 'N' | 'F' | null
 })
 
-const checkedRowKeys = ref<string[]>([])
+const statusOptions = computed(() => [
+  { label: $t('page.manage.user.status.normal'), value: 'N' },
+  { label: $t('page.manage.user.status.freeze'), value: 'F' }
+])
 
-const fetchEndUserList = async (params: any) => {
-  const res: any = await fetchUserList(params)
-  return { ...res, __params: params }
+const pagination = computed(() => ({
+  page: page.value,
+  pageSize: pageSize.value,
+  itemCount: total.value,
+  showSizePicker: true,
+  pageSizes: [10, 20, 50, 100],
+  onChange: (nextPage: number) => {
+    page.value = nextPage
+    loadUsers()
+  },
+  onUpdatePageSize: (nextPageSize: number) => {
+    pageSize.value = nextPageSize
+    page.value = 1
+    loadUsers()
+  }
+}))
+
+function formatTime(value?: string | null) {
+  return value ? dayjs(value).format('YYYY-MM-DD HH:mm:ss') : '--'
 }
 
-let getTableData: () => void = () => {}
-let setSearchParams: any = () => {}
+function formatIdentityTypes(value?: string | null) {
+  if (!value) return '--'
+  const map: Record<string, string> = {
+    PHONE: '手机号',
+    EMAIL: '邮箱',
+    WXMP_OPENID: '微信'
+  }
+  return value
+    .split(',')
+    .map(item => map[item] || item)
+    .join(' / ')
+}
 
-const table = useTable<UserRow, typeof fetchEndUserList>({
-  apiFn: fetchEndUserList as any,
-  apiParams: {
-    page: 1,
-    page_size: 10,
-    user_kind: 'END_USER'
-  } as any,
-  onPaginationChanged: async p => {
-    const kw = searchForm.value.keyword.trim()
-    const next: any = {
-      page: p.page,
-      page_size: p.pageSize,
-      user_kind: 'END_USER',
+function toSourceNode(item: AppUserSourceOption): SourceNode {
+  return {
+    key: item.key,
+    label: item.label,
+    source_type: item.source_type,
+    wx_appid: item.wx_appid,
+    children: item.children?.map(toSourceNode)
+  }
+}
+
+function findSourceNode(nodes: SourceNode[], key: string): SourceNode | null {
+  for (const node of nodes) {
+    if (node.key === key) return node
+    const child = node.children ? findSourceNode(node.children, key) : null
+    if (child) return child
+  }
+  return null
+}
+
+async function loadSources() {
+  sourceLoading.value = true
+  try {
+    const res: any = await fetchAppUserSourceOptions()
+    sourceTree.value = (res?.data || []).map(toSourceNode)
+    const initial = findSourceNode(sourceTree.value, selectedSourceKeys.value[0]) || sourceTree.value[0]
+    if (initial) {
+      selectedSource.value = initial
+      selectedSourceKeys.value = [initial.key]
+    }
+  } catch (e: any) {
+    message.error(e?.message || '来源加载失败')
+  } finally {
+    sourceLoading.value = false
+  }
+}
+
+async function loadUsers() {
+  loading.value = true
+  try {
+    const source = selectedSource.value
+    const res: any = await fetchAppUserList({
+      page: page.value,
+      page_size: pageSize.value,
+      source_type: source.source_type,
+      wx_appid: source.wx_appid,
+      keyword: searchForm.value.keyword.trim() || undefined,
       status: searchForm.value.status || undefined
-    }
-    if (kw) {
-      if (kw.includes('@')) next.email = kw
-      else if (/^[0-9+\\-\\s]+$/.test(kw)) next.phone_number = kw
-      else next.username = kw
-    }
-    setSearchParams(next)
-    getTableData()
-  },
-  transformer: (res: any) => {
-    const payload: ListResp<UserRow> | undefined = res?.data
-    return {
-      data: payload?.list ?? [],
-      pageNum: res?.__params?.page ?? 1,
-      pageSize: res?.__params?.page_size ?? 10,
-      total: payload?.total ?? 0
-    }
-  },
-  columns: (): DataTableColumns<UserRow> => [
-    { type: 'selection' },
-    { key: 'phone_number', title: $t('page.manage.user.userPhone'), minWidth: 140 },
-    { key: 'email', title: $t('page.manage.user.userEmail'), minWidth: 180 },
-    { key: 'username', title: '用户名', minWidth: 160, render: row => row.username || '--' },
-    { key: 'name', title: $t('page.manage.user.userName'), minWidth: 140, render: row => row.name || '--' },
-    {
-      key: 'status',
-      title: $t('page.manage.user.userStatus2'),
-      width: 100,
-      render: row => (
-        <NTag type={row.status === 'F' ? 'error' : 'success'}>
-          {row.status === 'F' ? $t('page.manage.user.status.freeze') : $t('page.manage.user.status.normal')}
-        </NTag>
-      )
-    },
-    {
-      key: 'created_at',
-      title: $t('page.manage.api.created_at'),
-      minWidth: 160,
-      render: row => (row.created_at ? dayjs(row.created_at).format('YYYY-MM-DD HH:mm:ss') : '--')
-    },
-    {
-      key: 'actions',
-      title: $t('common.actions'),
-      width: 200,
-      fixed: 'right',
-      render: row => (
-        <NSpace>
-          <NButton size="small" type={row.status === 'F' ? 'primary' : 'warning'} onClick={() => toggleStatus(row)}>
-            {row.status === 'F' ? $t('page.appManage.users.action.unfreeze') : $t('page.appManage.users.action.freeze')}
-          </NButton>
-          <NButton size="small" type="error" onClick={() => confirmDelete(row)}>
-            {$t('common.delete')}
-          </NButton>
-        </NSpace>
-      )
-    }
-  ]
-})
+    })
+    data.value = res?.data?.list || []
+    total.value = res?.data?.total || 0
+  } catch (e: any) {
+    message.error(e?.message || '用户列表加载失败')
+  } finally {
+    loading.value = false
+  }
+}
 
-const { data, loading, columns, pagination, getData, updateSearchParams } = table
-getTableData = getData
-setSearchParams = updateSearchParams
+function handleSelectSource(keys: Array<string | number>) {
+  const key = String(keys[0] || '')
+  const node = findSourceNode(sourceTree.value, key)
+  if (!node) return
+  selectedSource.value = node
+  selectedSourceKeys.value = [key]
+  page.value = 1
+  loadUsers()
+}
 
 function handleSearch() {
-  const kw = searchForm.value.keyword.trim()
-  const next: any = {
-    page: 1,
-    page_size: pagination.pageSize,
-    user_kind: 'END_USER',
-    status: searchForm.value.status || undefined
-  }
-  if (kw) {
-    if (kw.includes('@')) next.email = kw
-    else if (/^[0-9+\\-\\s]+$/.test(kw)) next.phone_number = kw
-    else next.username = kw
-  }
-  updateSearchParams(next)
-  getData()
+  page.value = 1
+  loadUsers()
 }
 
 function handleReset() {
@@ -153,7 +171,7 @@ function handleReset() {
   handleSearch()
 }
 
-function toggleStatus(row: UserRow) {
+function toggleStatus(row: AppUserListItem) {
   const next = row.status === 'F' ? 'N' : 'F'
   const nextLabel = next === 'F' ? $t('page.manage.user.status.freeze') : $t('page.manage.user.status.normal')
   dialog.warning({
@@ -165,7 +183,7 @@ function toggleStatus(row: UserRow) {
       try {
         await editUser({ id: row.id, status: next })
         message.success($t('common.operationSuccess'))
-        getData()
+        loadUsers()
       } catch (e: any) {
         message.error(e?.message || $t('common.operationFailed'))
       }
@@ -173,17 +191,17 @@ function toggleStatus(row: UserRow) {
   })
 }
 
-function confirmDelete(row: UserRow) {
+function confirmDelete(row: AppUserListItem) {
   dialog.warning({
     title: $t('page.appManage.users.confirm.deleteTitle'),
-    content: $t('page.appManage.users.confirm.deleteContent', { phone: row.phone_number }),
+    content: $t('page.appManage.users.confirm.deleteContent', { phone: row.phone_number || row.email || row.username || row.id }),
     positiveText: $t('common.confirm'),
     negativeText: $t('common.cancel'),
     onPositiveClick: async () => {
       try {
         await delUser(row.id)
         message.success($t('common.deleteSuccess'))
-        getData()
+        loadUsers()
       } catch (e: any) {
         message.error(e?.message || $t('common.deleteFailed'))
       }
@@ -191,25 +209,90 @@ function confirmDelete(row: UserRow) {
   })
 }
 
-const statusOptions = computed(() => [
-  { label: $t('page.manage.user.status.normal'), value: 'N' },
-  { label: $t('page.manage.user.status.freeze'), value: 'F' }
+const columns = computed<DataTableColumns<AppUserListItem>>(() => [
+  { key: 'phone_number', title: '手机号', minWidth: 140, render: row => row.phone_number || '--' },
+  { key: 'email', title: '邮箱', minWidth: 190, render: row => row.email || '--' },
+  { key: 'username', title: '用户名', minWidth: 160, render: row => row.username || '--' },
+  { key: 'name', title: '昵称', minWidth: 130, render: row => row.name || '--' },
+  {
+    key: 'status',
+    title: '状态',
+    width: 100,
+    render: row => (
+      <NTag type={row.status === 'F' ? 'error' : 'success'}>
+        {row.status === 'F' ? $t('page.manage.user.status.freeze') : $t('page.manage.user.status.normal')}
+      </NTag>
+    )
+  },
+  {
+    key: 'source',
+    title: '来源',
+    minWidth: 160,
+    render: row => (
+      <NSpace size={4}>
+        <NTag type={row.source_type === 'WXMP' ? 'info' : 'default'}>{row.source_type === 'WXMP' ? '小程序' : 'App'}</NTag>
+        <span>{row.source_name || '--'}</span>
+      </NSpace>
+    )
+  },
+  { key: 'wx_appid', title: '微信 AppID', minWidth: 190, render: row => row.wx_appid || '--' },
+  { key: 'identity_types', title: '身份', minWidth: 150, render: row => formatIdentityTypes(row.identity_types) },
+  { key: 'device_count', title: '绑定设备', width: 100, render: row => row.device_count || 0 },
+  { key: 'last_bind_at', title: '最近绑定', minWidth: 170, render: row => row.last_bind_at || '--' },
+  { key: 'last_visit_time', title: '最近访问', minWidth: 170, render: row => formatTime(row.last_visit_time) },
+  { key: 'created_at', title: '注册时间', minWidth: 170, render: row => formatTime(row.created_at) },
+  {
+    key: 'actions',
+    title: $t('common.actions'),
+    width: 190,
+    fixed: 'right',
+    render: row => (
+      <NSpace>
+        <NButton size="small" type={row.status === 'F' ? 'primary' : 'warning'} onClick={() => toggleStatus(row)}>
+          {row.status === 'F' ? $t('page.appManage.users.action.unfreeze') : $t('page.appManage.users.action.freeze')}
+        </NButton>
+        <NButton size="small" type="error" onClick={() => confirmDelete(row)}>
+          {$t('common.delete')}
+        </NButton>
+      </NSpace>
+    )
+  }
 ])
+
+onMounted(async () => {
+  await loadSources()
+  await loadUsers()
+})
 </script>
 
 <template>
-  <div class="flex-vertical-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
-    <NCard :title="$t('page.appManage.users.title')" :bordered="false" size="small" class="card-wrapper">
+  <div class="app-users-page">
+    <NCard title="用户来源" :bordered="false" size="small" class="source-card">
+      <NTree
+        v-model:selected-keys="selectedSourceKeys"
+        block-line
+        default-expand-all
+        :data="sourceTree"
+        :loading="sourceLoading"
+        :selectable="true"
+        key-field="key"
+        label-field="label"
+        @update:selected-keys="handleSelectSource"
+      />
+    </NCard>
+
+    <NCard :title="$t('page.appManage.users.title')" :bordered="false" size="small" class="list-card">
       <NForm inline :model="searchForm" label-placement="left" label-width="auto" class="mb-4 flex flex-wrap gap-4">
-        <NFormItem :label="$t('page.appManage.users.keyword')">
+        <NFormItem label="关键词">
           <NInput
             v-model:value="searchForm.keyword"
             clearable
             style="width: 320px"
-            :placeholder="$t('page.appManage.users.keywordPlaceholder')"
+            placeholder="手机号 / 邮箱 / 用户名 / 昵称"
+            @keyup.enter="handleSearch"
           />
         </NFormItem>
-        <NFormItem :label="$t('page.manage.user.userStatus2')">
+        <NFormItem label="状态">
           <NSelect v-model:value="searchForm.status" :options="statusOptions" clearable style="width: 160px" />
         </NFormItem>
         <NFormItem>
@@ -221,16 +304,37 @@ const statusOptions = computed(() => [
       </NForm>
 
       <NDataTable
-        v-model:checked-row-keys="checkedRowKeys"
         :columns="columns"
         :data="data"
         size="small"
         :loading="loading"
         :pagination="pagination"
-        :row-key="row => row.id"
-        :scroll-x="1260"
+        :row-key="row => row.id + ':' + (row.wx_appid || row.source_type)"
+        :scroll-x="1820"
         class="flex-1-hidden"
       />
     </NCard>
   </div>
 </template>
+
+<style scoped>
+.app-users-page {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 16px;
+  height: 100%;
+  overflow: hidden;
+}
+
+.source-card,
+.list-card {
+  min-height: 0;
+}
+
+@media (max-width: 900px) {
+  .app-users-page {
+    grid-template-columns: 1fr;
+    overflow: auto;
+  }
+}
+</style>
