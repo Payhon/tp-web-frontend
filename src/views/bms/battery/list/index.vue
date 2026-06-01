@@ -94,6 +94,7 @@ interface BatteryItem {
   batch_number?: string | null
   product_spec?: string | null
   ble_mac?: string | null
+  identity_ble_mac?: string | null
   comm_chip_id?: string | null
   production_date?: string | null
   warranty_expire_date?: string | null
@@ -575,7 +576,14 @@ function handleBatchActionSelect(key: string) {
 }
 
 const searchForm = ref<{
-  search_field: 'device_number' | 'batch_number' | 'battery_model_name' | 'product_spec' | 'ble_mac' | 'comm_chip_id'
+  search_field:
+    | 'device_number'
+    | 'batch_number'
+    | 'battery_model_name'
+    | 'product_spec'
+    | 'ble_mac'
+    | 'identity_ble_mac'
+    | 'comm_chip_id'
   search_value: string
   device_number: string
   battery_model_id: string | null
@@ -603,14 +611,15 @@ const searchForm = ref<{
 })
 const showAdvancedSearch = ref(false)
 
-const textSearchFieldOptions = [
+const textSearchFieldOptions: Array<{ label: string; value: typeof searchForm.value.search_field }> = [
   { label: '序列号', value: 'device_number' },
   { label: '批号', value: 'batch_number' },
   { label: 'BMS型号', value: 'battery_model_name' },
   { label: '产品规格', value: 'product_spec' },
-  { label: '蓝牙MAC', value: 'ble_mac' },
+  { label: '蓝牙模块MAC', value: 'ble_mac' },
+  { label: '设备身份MAC', value: 'identity_ble_mac' },
   { label: '4G卡ID', value: 'comm_chip_id' }
-] as const
+]
 
 const textSearchPlaceholder = computed(() => {
   const current = textSearchFieldOptions.find(item => item.value === searchForm.value.search_field)
@@ -677,7 +686,8 @@ const createColumns = (): DataTableColumns<BatteryItem> => [
     minWidth: 160,
     render: row => row.pack_battery_model_name || '--'
   },
-  { key: 'ble_mac', title: '蓝牙Mac', minWidth: 160, render: row => row.ble_mac || '--' },
+  { key: 'ble_mac', title: '蓝牙模块MAC', minWidth: 160, render: row => row.ble_mac || '--' },
+  { key: 'identity_ble_mac', title: '设备身份MAC', minWidth: 160, render: row => row.identity_ble_mac || '--' },
   { key: 'comm_chip_id', title: '4G卡ID', minWidth: 160, render: row => row.comm_chip_id || '--' },
   { key: 'production_date', title: '出厂日期', minWidth: 120, render: row => row.production_date || '--' },
   {
