@@ -40,21 +40,21 @@ const enableBmsBatteryDetailMode = computed(() => enableBmsPanel.value)
 
 const bmsPanelTab = {
   key: 'bms-panel',
-  name: () => 'BMS面板',
+  name: () => $t('bms.detail.tabs.bmsPanel'),
   component: BmsPanel,
   refreshKey: 0
 }
 
 const batteryBasicInfoTab = {
   key: 'battery-basic-info',
-  name: () => '基本信息',
+  name: () => $t('bms.detail.tabs.basicInfo'),
   component: BatteryBasicInfo,
   refreshKey: 0
 }
 
 const batteryOperationLogTab = {
   key: 'battery-operation-log',
-  name: () => '操作记录',
+  name: () => $t('bms.detail.tabs.operationLog'),
   component: BatteryOperationLog,
   refreshKey: 0
 }

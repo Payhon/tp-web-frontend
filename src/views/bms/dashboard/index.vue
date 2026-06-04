@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useMessage } from 'naive-ui'
 import { getBmsDashboardAlarmOverview, getBmsDashboardKpi, getBmsDashboardOnlineTrend } from '@/service/api/bms'
 import dayjs from 'dayjs'
+import { $t } from '@/locales'
 
 const message = useMessage()
 
@@ -37,10 +38,10 @@ const onlineRate = computed(() => {
 })
 
 function statusLabel(s: string) {
-  if (s === 'H') return '高'
-  if (s === 'M') return '中'
-  if (s === 'L') return '低'
-  if (s === 'N') return '正常'
+  if (s === 'H') return $t('bms.pages.dashboard.severityHigh')
+  if (s === 'M') return $t('bms.pages.dashboard.severityMedium')
+  if (s === 'L') return $t('bms.pages.dashboard.severityLow')
+  if (s === 'N') return $t('bms.pages.dashboard.severityNormal')
   return s || '--'
 }
 
@@ -64,7 +65,7 @@ async function loadAll() {
     }))
     onlineTrend.value = { points }
   } catch (e: any) {
-    message.error(e?.message || '加载看板数据失败')
+    message.error(e?.message || $t('bms.pages.dashboard.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -77,30 +78,30 @@ onMounted(() => {
 
 <template>
   <div class="flex-vertical-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
-    <NCard title="BMS 看板" :bordered="false" size="small" class="card-wrapper">
+    <NCard :title="$t('bms.pages.dashboard.title')" :bordered="false" size="small" class="card-wrapper">
       <NGrid cols="1 s:2 m:4" responsive="screen" :x-gap="16" :y-gap="16">
         <NGridItem>
           <NCard size="small" :bordered="true">
-            <div class="text-14px text-gray-500">设备总数</div>
+            <div class="text-14px text-gray-500">{{ $t('bms.pages.dashboard.deviceTotal') }}</div>
             <div class="text-28px font-600">{{ kpi.device_total }}</div>
           </NCard>
         </NGridItem>
         <NGridItem>
           <NCard size="small" :bordered="true">
-            <div class="text-14px text-gray-500">在线设备</div>
+            <div class="text-14px text-gray-500">{{ $t('bms.pages.dashboard.onlineDevices') }}</div>
             <div class="text-28px font-600">{{ kpi.device_online }}</div>
-            <div class="text-12px text-gray-500">在线率 {{ onlineRate }}%</div>
+            <div class="text-12px text-gray-500">{{ $t('bms.pages.dashboard.onlineRate') }} {{ onlineRate }}%</div>
           </NCard>
         </NGridItem>
         <NGridItem>
           <NCard size="small" :bordered="true">
-            <div class="text-14px text-gray-500">已激活</div>
+            <div class="text-14px text-gray-500">{{ $t('bms.pages.dashboard.activated') }}</div>
             <div class="text-28px font-600">{{ kpi.device_activated }}</div>
           </NCard>
         </NGridItem>
         <NGridItem>
           <NCard size="small" :bordered="true">
-            <div class="text-14px text-gray-500">活跃告警</div>
+            <div class="text-14px text-gray-500">{{ $t('bms.pages.dashboard.activeAlarms') }}</div>
             <div class="text-28px font-600">{{ kpi.alarm_active }}</div>
           </NCard>
         </NGridItem>
@@ -110,10 +111,10 @@ onMounted(() => {
 
       <NGrid cols="1 m:2" responsive="screen" :x-gap="16" :y-gap="16">
         <NGridItem>
-          <NCard size="small" title="告警概览(近7天)" :bordered="true" :loading="loading">
+          <NCard size="small" :title="$t('bms.pages.dashboard.alarmOverview')" :bordered="true" :loading="loading">
             <NSpace vertical :size="8">
               <div>
-                <div class="text-13px text-gray-500 mb-8px">状态分布</div>
+                <div class="text-13px text-gray-500 mb-8px">{{ $t('bms.pages.dashboard.statusDistribution') }}</div>
                 <NSpace>
                   <NTag v-for="s in alarmOverview.status_counts" :key="s.status" type="warning">
                     {{ statusLabel(s.status) }}：{{ s.count }}
@@ -126,8 +127,8 @@ onMounted(() => {
                   size="small"
                   :bordered="false"
                   :columns="[
-                    { title: '告警', key: 'name' },
-                    { title: '次数', key: 'count', width: 80 }
+                    { title: $t('bms.pages.dashboard.alarm'), key: 'name' },
+                    { title: $t('bms.pages.dashboard.count'), key: 'count', width: 80 }
                   ]"
                   :data="alarmOverview.top"
                   :pagination="false"
@@ -138,22 +139,26 @@ onMounted(() => {
           </NCard>
         </NGridItem>
         <NGridItem>
-          <NCard size="small" title="在线趋势" :bordered="true" :loading="loading">
+          <NCard size="small" :title="$t('bms.pages.dashboard.onlineTrend')" :bordered="true" :loading="loading">
             <NDataTable
               size="small"
               :bordered="false"
               :columns="[
-                { title: '时间', key: 'timestamp', render: (row: any) => dayjs(row.timestamp).format('MM-DD HH:mm') },
-                { title: '总数', key: 'device_total', width: 80 },
-                { title: '在线', key: 'device_online', width: 80 },
-                { title: '离线', key: 'device_offline', width: 80 }
+                {
+                  title: $t('bms.pages.dashboard.time'),
+                  key: 'timestamp',
+                  render: (row: any) => dayjs(row.timestamp).format('MM-DD HH:mm')
+                },
+                { title: $t('bms.pages.dashboard.total'), key: 'device_total', width: 80 },
+                { title: $t('bms.pages.dashboard.online'), key: 'device_online', width: 80 },
+                { title: $t('bms.pages.dashboard.offline'), key: 'device_offline', width: 80 }
               ]"
               :data="onlineTrend.points"
               :pagination="{ pageSize: 8 }"
               :row-key="row => row.timestamp"
             />
             <div class="text-12px text-gray-500 mt-8px">
-              经销商账号当前仅展示实时点（历史趋势后续补充按经销商采样）。
+              {{ $t('bms.pages.dashboard.dealerRealtimeHint') }}
             </div>
           </NCard>
         </NGridItem>
@@ -161,12 +166,16 @@ onMounted(() => {
 
       <NDivider class="my-12px" />
 
-      <NCard size="small" title="快捷入口" :bordered="true">
+      <NCard size="small" :title="$t('bms.pages.dashboard.quickLinks')" :bordered="true">
         <NSpace>
-          <NButton type="primary" @click="$router.push('/bms/battery/list')">电池列表</NButton>
-          <NButton @click="$router.push('/bms/dealer')">经销商管理</NButton>
-          <NButton @click="$router.push('/bms/warranty')">维保中心</NButton>
-          <NButton @click="$router.push('/bms/battery/transfer')">转移记录</NButton>
+          <NButton type="primary" @click="$router.push('/bms/battery/list')">
+            {{ $t('bms.pages.dashboard.batteryList') }}
+          </NButton>
+          <NButton @click="$router.push('/bms/dealer')">{{ $t('bms.pages.dashboard.dealerManagement') }}</NButton>
+          <NButton @click="$router.push('/bms/warranty')">{{ $t('bms.pages.dashboard.warrantyCenter') }}</NButton>
+          <NButton @click="$router.push('/bms/battery/transfer')">
+            {{ $t('bms.pages.dashboard.transferRecords') }}
+          </NButton>
         </NSpace>
       </NCard>
     </NCard>

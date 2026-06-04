@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { NCard, NDescriptions, NDescriptionsItem, NEmpty, NSpin, NTag } from 'naive-ui'
 import { getAppBatteryDetail } from '@/service/api/bms'
+import { $t } from '@/locales'
 
 const props = defineProps<{
   id: string
@@ -26,9 +27,9 @@ const battery = ref<BatteryBasicInfo | null>(null)
 
 const commTypeLabel = computed(() => {
   const value = battery.value?.bms_comm_type
-  if (value === 1) return '蓝牙'
+  if (value === 1) return $t('bms.common.bluetooth')
   if (value === 2) return '4G'
-  if (value === 3) return '蓝牙+4G'
+  if (value === 3) return $t('bms.common.bluetooth4g')
   return '--'
 })
 
@@ -66,44 +67,44 @@ watch(
     <NCard :bordered="false" size="small">
       <template v-if="battery">
         <NDescriptions label-placement="left" :column="2" bordered size="small">
-          <NDescriptionsItem label="电池序列号ID">
+          <NDescriptionsItem :label="$t('bms.basicInfo.itemUuid')">
             {{ displayText(battery.item_uuid) }}
           </NDescriptionsItem>
-          <NDescriptionsItem label="批号">
+          <NDescriptionsItem :label="$t('bms.basicInfo.batchNumber')">
             {{ displayText(battery.batch_number) }}
           </NDescriptionsItem>
-          <NDescriptionsItem label="产品规格">
+          <NDescriptionsItem :label="$t('bms.basicInfo.productSpec')">
             {{ displayText(battery.product_spec) }}
           </NDescriptionsItem>
-          <NDescriptionsItem label="订单编号">
+          <NDescriptionsItem :label="$t('bms.basicInfo.orderNumber')">
             {{ displayText(battery.order_number) }}
           </NDescriptionsItem>
-          <NDescriptionsItem label="BMS通讯类型">
+          <NDescriptionsItem :label="$t('bms.basicInfo.commType')">
             <NTag size="small" type="info">
               {{ commTypeLabel }}
             </NTag>
           </NDescriptionsItem>
-          <NDescriptionsItem label="BMS型号">
+          <NDescriptionsItem :label="$t('bms.basicInfo.bmsModel')">
             {{ displayText(battery.battery_model_name) }}
           </NDescriptionsItem>
-          <NDescriptionsItem label="蓝牙Mac">
+          <NDescriptionsItem :label="$t('bms.basicInfo.bleMac')">
             {{ displayText(battery.ble_mac) }}
           </NDescriptionsItem>
-          <NDescriptionsItem label="4G通讯卡ID">
+          <NDescriptionsItem :label="$t('bms.basicInfo.commChipId')">
             {{ displayText(battery.comm_chip_id) }}
           </NDescriptionsItem>
-          <NDescriptionsItem label="出厂日期">
+          <NDescriptionsItem :label="$t('bms.basicInfo.productionDate')">
             {{ displayText(battery.production_date) }}
           </NDescriptionsItem>
-          <NDescriptionsItem label="质保到期">
+          <NDescriptionsItem :label="$t('bms.basicInfo.warrantyExpireDate')">
             {{ displayText(battery.warranty_expire_date) }}
           </NDescriptionsItem>
-          <NDescriptionsItem label="备注" :span="2">
+          <NDescriptionsItem :label="$t('bms.basicInfo.remark')" :span="2">
             {{ displayText(battery.remark) }}
           </NDescriptionsItem>
         </NDescriptions>
       </template>
-      <NEmpty v-else description="暂无基本信息" />
+      <NEmpty v-else :description="$t('bms.basicInfo.empty')" />
     </NCard>
   </NSpin>
 </template>

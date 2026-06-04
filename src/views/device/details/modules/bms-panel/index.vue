@@ -26,6 +26,7 @@ import {
 } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import ChartComponent from '@/components/custom/ChartComponent.vue'
+import { $t } from '@/locales'
 import { localStg } from '@/utils/storage'
 import {
   getAppBatteryDetail,
@@ -122,6 +123,15 @@ const CLOUD_KEYS = [
 
 const message = useMessage()
 
+function tr(key: string, params?: Record<string, unknown>, fallback?: string) {
+  const text = params ? $t(key, params) : $t(key)
+  return text === key ? fallback || key : text
+}
+
+function tb(key: string, params?: Record<string, unknown>, fallback?: string) {
+  return tr(`bms.${key}`, params, fallback)
+}
+
 const loading = ref(false)
 const battery = ref<AppBatteryDetail | null>(null)
 
@@ -183,17 +193,17 @@ const relayReady = computed(() => canUseRelay.value && relayState.ownerOnline)
 const hasCloudTelemetry = computed(() => !!cloudLastUpdateAt.value)
 const mqttReportOnline = computed(() => Number(battery.value?.is_online || 0) === 1 || hasCloudTelemetry.value)
 const mqttReportText = computed(() => {
-  if (!canUse4G.value) return '非4G上报设备'
-  return mqttReportOnline.value ? 'MQTT上报在线' : 'MQTT上报离线'
+  if (!canUse4G.value) return tb('detail.telemetry.non4g')
+  return mqttReportOnline.value ? tb('detail.telemetry.mqttOnline') : tb('detail.telemetry.mqttOffline')
 })
 const mqttReportType = computed(() => {
   if (!canUse4G.value) return 'default'
   return mqttReportOnline.value ? 'success' : 'default'
 })
 const connText = computed(() => {
-  if (connType.value === 'mqtt' && status.value) return 'MQTT透传实时'
-  if (hasCloudTelemetry.value) return '主动上报兜底'
-  return '离线/无数据'
+  if (connType.value === 'mqtt' && status.value) return tb('detail.telemetry.mqttRealtime')
+  if (hasCloudTelemetry.value) return tb('detail.telemetry.activeReportFallback')
+  return tb('detail.telemetry.offlineNoData')
 })
 const connTagType = computed(() => {
   if (connType.value === 'mqtt' && status.value) return 'success'
@@ -201,10 +211,10 @@ const connTagType = computed(() => {
   return 'default'
 })
 const paramLinkText = computed(() => {
-  if (connType.value === 'mqtt') return '参数通道：MQTT透传可用'
-  if (relayReady.value) return '参数通道：APP蓝牙中继可用'
-  if (canUseRelay.value) return '参数通道：等待APP蓝牙连接设备'
-  return '参数通道：未连接'
+  if (connType.value === 'mqtt') return tb('detail.telemetry.paramMqtt')
+  if (relayReady.value) return tb('detail.telemetry.paramRelay')
+  if (canUseRelay.value) return tb('detail.telemetry.paramRelayWaiting')
+  return tb('detail.telemetry.paramDisconnected')
 })
 const paramLinkType = computed(() => {
   if (connType.value === 'mqtt') return 'success'
@@ -214,11 +224,11 @@ const paramLinkType = computed(() => {
 })
 
 const cloudStatusText = computed(() => {
-  if (cloudWsState.value === 'open' && cloudLastUpdateAt.value) return '云端订阅已连接（有实时数据）'
-  if (cloudWsState.value === 'open') return '云端订阅已连接（暂无实时数据）'
-  if (cloudWsState.value === 'connecting') return '云端实时连接中'
-  if (cloudWsState.value === 'error') return '云端实时连接异常，正在重连'
-  return '云端订阅未连接'
+  if (cloudWsState.value === 'open' && cloudLastUpdateAt.value) return tb('detail.telemetry.cloudConnectedLive')
+  if (cloudWsState.value === 'open') return tb('detail.telemetry.cloudConnectedNoLive')
+  if (cloudWsState.value === 'connecting') return tb('detail.telemetry.cloudConnecting')
+  if (cloudWsState.value === 'error') return tb('detail.telemetry.cloudError')
+  return tb('detail.telemetry.cloudDisconnected')
 })
 
 const cloudStatusType = computed(() => {
@@ -230,7 +240,9 @@ const cloudStatusType = computed(() => {
 })
 
 const cloudUpdateText = computed(() => formatTime(cloudLastUpdateAt.value))
-const paramConnectButtonText = computed(() => (canUse4G.value ? '重新连接MQTT透传' : '连接APP中继'))
+const paramConnectButtonText = computed(() =>
+  canUse4G.value ? tb('detail.telemetry.reconnectMqtt') : tb('detail.telemetry.connectRelay')
+)
 
 const cloudSnapshot = computed<BmsStatus | null>(() => {
   const raw = cloudCurrent['bms.snapshot']
@@ -371,7 +383,7 @@ function summarizeSnapshot(raw: string): string {
       2
     )}V, I:${Number(current ?? 0).toFixed(2)}A`
   } catch {
-    return '快照解析失败'
+    return tb('detail.history.snapshotParseFailed')
   }
 }
 
@@ -397,7 +409,7 @@ async function loadRelayStatus({ silent = false }: { silent?: boolean } = {}) {
   } catch (e: any) {
     applyRelayStatus(null)
     if (!silent) {
-      message.warning(e?.message || '获取APP中继状态失败')
+      message.warning(e?.message || tb('messages.relayStatusFailed'))
     }
   } finally {
     relayState.loading = false
@@ -420,9 +432,9 @@ async function runRelayCommand(payload: Record<string, unknown>): Promise<Batter
   }
   const rsp: any = await sendBatteryRelayCommand(req)
   const data = (rsp?.data || rsp || {}) as BatteryRelayCommandResp
-  if (!data || !data.status) throw new Error('中继命令返回无效')
+  if (!data || !data.status) throw new Error(tb('messages.invalidRelayResponse'))
   if (data.status !== 'SUCCESS') {
-    throw new Error(data.error_message || `中继命令执行失败(${data.status})`)
+    throw new Error(data.error_message || tb('messages.relayCommandFailed', { status: data.status }))
   }
   return data
 }
@@ -444,7 +456,7 @@ async function loadCloudCurrent() {
     })
     mergeCloudCurrent(patch, latestTs)
   } catch (e: any) {
-    message.warning(e?.message || '加载云端实时数据失败')
+    message.warning(e?.message || tb('messages.cloudLoadFailed'))
   } finally {
     cloudLoading.value = false
   }
@@ -561,7 +573,7 @@ async function loadHistory() {
       })
       .sort((a, b) => b.ts - a.ts)
   } catch (e: any) {
-    message.warning(e?.message || '加载历史数据失败')
+    message.warning(e?.message || tb('messages.historyLoadFailed'))
   } finally {
     historyLoading.value = false
   }
@@ -570,7 +582,7 @@ async function loadHistory() {
 const historyChartOption = computed<EChartsCoreOption>(() => {
   return {
     tooltip: { trigger: 'axis' },
-    legend: { data: ['SOC(%)', 'SOH(%)', 'Pack电压(V)', '电流(A)'] },
+    legend: { data: ['SOC(%)', 'SOH(%)', tb('detail.history.packVoltageSeries'), tb('detail.history.currentSeries')] },
     grid: { left: 48, right: 24, top: 36, bottom: 36 },
     xAxis: { type: 'time' },
     yAxis: [
@@ -581,14 +593,21 @@ const historyChartOption = computed<EChartsCoreOption>(() => {
       { name: 'SOC(%)', type: 'line', smooth: true, showSymbol: false, yAxisIndex: 0, data: historyChartData.soc },
       { name: 'SOH(%)', type: 'line', smooth: true, showSymbol: false, yAxisIndex: 0, data: historyChartData.soh },
       {
-        name: 'Pack电压(V)',
+        name: tb('detail.history.packVoltageSeries'),
         type: 'line',
         smooth: true,
         showSymbol: false,
         yAxisIndex: 1,
         data: historyChartData.packCellSumVoltageV
       },
-      { name: '电流(A)', type: 'line', smooth: true, showSymbol: false, yAxisIndex: 1, data: historyChartData.currentA }
+      {
+        name: tb('detail.history.currentSeries'),
+        type: 'line',
+        smooth: true,
+        showSymbol: false,
+        yAxisIndex: 1,
+        data: historyChartData.currentA
+      }
     ]
   }
 })
@@ -596,13 +615,13 @@ const historyChartOption = computed<EChartsCoreOption>(() => {
 const snapshotColumns: DataTableColumns<SnapshotHistoryRow> = [
   {
     key: 'ts',
-    title: '时间',
+    title: tb('detail.history.time'),
     width: 180,
     render: row => formatTime(row.ts)
   },
   {
     key: 'summary',
-    title: '快照摘要',
+    title: tb('detail.history.snapshotSummary'),
     minWidth: 380
   }
 ]
@@ -647,7 +666,7 @@ async function handleDisconnect() {
     stopRelayStatusTimer()
     applyRelayStatus(null)
   }
-  message.success('已断开参数通道')
+  message.success(tb('messages.disconnected'))
 }
 
 async function connectRealtime() {
@@ -660,9 +679,9 @@ async function connectRealtime() {
   await loadRelayStatus()
   startRelayStatusTimer()
   if (relayReady.value) {
-    message.success('已连接APP蓝牙中继通道')
+    message.success(tb('messages.relayConnected'))
   } else {
-    message.info('请先在手机APP中蓝牙连接该设备，WEB端将自动使用中继参数通道')
+    message.info(tb('messages.relayHint'))
   }
 }
 
@@ -686,7 +705,7 @@ async function connectMqtt(options: { silent?: boolean } = {}) {
   } catch (e: any) {
     await disconnectMqtt()
     if (!options.silent) {
-      message.error(e?.message || '连接失败')
+      message.error(e?.message || tb('messages.connectFailed'))
     }
   } finally {
     connecting.value = false
@@ -705,7 +724,7 @@ async function load() {
     }
   } catch (e: any) {
     battery.value = null
-    message.error(e?.message || '获取电池信息失败')
+    message.error(e?.message || tb('messages.batteryLoadFailed'))
   } finally {
     loading.value = false
   }
@@ -820,12 +839,12 @@ function isInvalidU16(v: unknown) {
 
 function formatCountText(v: unknown) {
   if (isInvalidU16(v)) return '-'
-  return `${Number(v || 0)}次`
+  return `${Number(v || 0)}${tb('common.times')}`
 }
 
 function formatMinuteText(v: unknown) {
   if (isInvalidU16(v)) return '-'
-  return `${Number(v || 0)}分钟`
+  return `${Number(v || 0)}${tb('common.minutes')}`
 }
 
 function cToFText(c: number | null | undefined) {
@@ -899,74 +918,10 @@ const lowestIdx = computed(() =>
   )
 )
 
-const STATUS_LABELS: Record<string, string> = {
-  cellOverVoltageProtectionLv1: '单体过压一级保护',
-  cellUnderVoltageProtectionLv1: '单体过放一级保护',
-  preDischargeShortCircuitProtection: '预放电短路保护',
-  chargeMosFault: '充电MOS故障',
-  dischargeMosFault: '放电MOS故障',
-  poleTempOverTempProtection: '极柱过温保护',
-  antiReverseMosFault: '防反MOS故障',
-  chargeOverCurrentProtectionLv1: '充电过流保护',
-  dischargeOverCurrentProtectionLv1: '放电过流保护',
-  shortCircuitProtection: '短路保护',
-  insulationProtection: '绝缘保护',
-  cellOverVoltageProtectionLv2: '电芯过压保护',
-  cellUnderVoltageProtectionLv2: '电芯欠压保护',
-  chargeOverCurrentProtectionLv2: '充电过流二级保护',
-  dischargeOverCurrentProtectionLv2: '放电过流二级保护',
-  afeOverTempProtection: 'AFE高温保护',
-  ambientUnderTempProtection: '环境低温保护',
-  ambientOverTempProtection: '环境高温保护',
-  chargeHighTempProtectionCell: '充电高温保护',
-  dischargeHighTempProtectionCell: '放电高温保护',
-  prechargeMosFault: '预充MOS故障',
-  heatingMosFault: '加热MOS故障',
-  cellSamplingOpenCircuitFault: '电芯采样断线故障',
-  rtcOrCellUltraLowVoltageChargeDisableFault: 'RTC失效/电芯超低压禁充失效',
-  fuseBlownFault: 'FUSE熔断故障',
-  voltageSamplingFault: '电压采样故障',
-  currentSamplingFault: '电流采样故障',
-  cellAbnormalOverTempFault: '电芯异常高温故障',
-  afeCommunicationFault: 'AFE通讯故障',
-  cellNtcInvalid: '电芯NTC异常',
-  ambientNtcInvalid: '环境温度NTC异常',
-  mosNtcInvalid: 'MOS NTC异常',
-  chargeLowTempProtectionCell: '充电低温保护',
-  dischargeLowTempProtectionCell: '放电低温保护',
-  cellUnderTempProtection: '电芯低温保护',
-  cellOverTempProtection: '电芯高温保护',
-  dischargeMosOverTempProtection: '放电MOS过温保护',
-  chargeMosOverTempProtection: '充电MOS过温保护',
-  fullChargeProtection: '满充保护',
-  deltaVProtection: '压差保护',
-  tempDiffProtection: '温差保护',
-  heatingFilmTempProtection: '加热膜温度保护',
-  packUnderVoltageProtection: '电池包欠压保护',
-  packOverVoltageProtection: '电池包过压保护',
-  chargeHighTempAlarmCell: '充电高温告警',
-  dischargeOrIdleHighTempAlarmCell: '放电/静置高温告警',
-  chargeLowTempAlarmCell: '充电低温告警',
-  dischargeOrIdleLowTempAlarmCell: '放电/静置低温告警',
-  thermalRunawayAlarm: '热失控告警',
-  ambientHighTempAlarm: '环境高温告警',
-  ambientLowTempAlarm: '环境低温告警',
-  dischargeMosHighTempAlarm: '放电MOS高温告警',
-  chargeMosHighTempAlarm: '充电MOS高温告警',
-  lowSocAlarm: 'SOC低告警',
-  cellOverVoltageAlarm: '电芯过压告警',
-  cellUnderVoltageAlarm: '电芯欠压告警',
-  packOverVoltageAlarm: '电池包过压告警',
-  packUnderVoltageAlarm: '电池包欠压告警',
-  chargeOverCurrentAlarm: '充电过流告警',
-  dischargeOverCurrentAlarm: '放电过流告警',
-  deltaVAlarm: '压差告警',
-  tempDiffAlarm: '温差告警',
-  insulationAlarm: '绝缘告警'
-}
+const STATUS_LABELS: Record<string, string> = {}
 
 function labelForStatus(key: string) {
-  return STATUS_LABELS[key] || key
+  return tr(`bms.status.flags.${key}`, undefined, STATUS_LABELS[key] || key)
 }
 
 function activeStatusItems(obj: Record<string, boolean>) {
@@ -986,7 +941,7 @@ const statusFlags = computed(() => {
   if (faultStatusItems.value.length) {
     items.push({
       type: 'fault',
-      label: '故障',
+      label: tb('status.fault'),
       count: faultStatusItems.value.length,
       className: 'status-flag-web--danger'
     })
@@ -994,7 +949,7 @@ const statusFlags = computed(() => {
   if (alarmStatusItems.value.length) {
     items.push({
       type: 'alarm',
-      label: '告警',
+      label: tb('status.alarm'),
       count: alarmStatusItems.value.length,
       className: 'status-flag-web--warn'
     })
@@ -1002,7 +957,7 @@ const statusFlags = computed(() => {
   if (protectStatusItems.value.length) {
     items.push({
       type: 'protect',
-      label: '保护',
+      label: tb('status.protect'),
       count: protectStatusItems.value.length,
       className: 'status-flag-web--guard'
     })
@@ -1019,9 +974,9 @@ const statusFlagModal = reactive({
 
 function openStatusFlag(type: StatusFlagType) {
   const config = {
-    fault: { title: '故障', items: faultStatusItems.value },
-    alarm: { title: '告警', items: alarmStatusItems.value },
-    protect: { title: '保护', items: protectStatusItems.value }
+    fault: { title: tb('status.fault'), items: faultStatusItems.value },
+    alarm: { title: tb('status.alarm'), items: alarmStatusItems.value },
+    protect: { title: tb('status.protect'), items: protectStatusItems.value }
   }[type]
   if (!config.items.length) return
   statusFlagModal.title = config.title
@@ -1037,7 +992,9 @@ const protectStatusRows = computed(() =>
   }))
 )
 const protectSummaryText = computed(() =>
-  protectStatusItems.value.length ? `${protectStatusItems.value.length}项保护` : '无'
+  protectStatusItems.value.length
+    ? tb('detail.dashboard.protections', { count: protectStatusItems.value.length })
+    : tb('detail.dashboard.none')
 )
 function toggleProtectPanel() {
   protectPanelExpanded.value = !protectPanelExpanded.value
@@ -1080,62 +1037,44 @@ type FactoryAction = { key: string; raw: number; confirm: boolean; label: string
 type FunctionControlRow = (typeof FUNCTION_CONFIG_ITEMS)[number] & { enabled: boolean; statusText: string }
 
 const BATTERY_TYPE_OPTIONS = [
-  { label: '默认保留', value: 0x00 },
-  { label: '磷酸铁锂', value: 0x01 },
-  { label: '锰酸锂', value: 0x02 },
-  { label: '三元锂', value: 0x03 },
-  { label: '钴酸锂', value: 0x04 },
-  { label: '聚合锂', value: 0x05 },
-  { label: '钛酸锂', value: 0x06 },
-  { label: '铅酸', value: 0x07 },
-  { label: '镍氢', value: 0x08 },
-  { label: '钠离子', value: 0x09 }
+  { labelKey: 'batteryType.reserved', value: 0x00 },
+  { labelKey: 'batteryType.lfp', value: 0x01 },
+  { labelKey: 'batteryType.lmo', value: 0x02 },
+  { labelKey: 'batteryType.ncm', value: 0x03 },
+  { labelKey: 'batteryType.lco', value: 0x04 },
+  { labelKey: 'batteryType.polymer', value: 0x05 },
+  { labelKey: 'batteryType.lto', value: 0x06 },
+  { labelKey: 'batteryType.leadAcid', value: 0x07 },
+  { labelKey: 'batteryType.nimh', value: 0x08 },
+  { labelKey: 'batteryType.sodiumIon', value: 0x09 }
 ] as const
+const batteryTypeSelectOptions = computed(() =>
+  BATTERY_TYPE_OPTIONS.map(item => ({
+    label: tb(item.labelKey),
+    value: item.value
+  }))
+)
 
 const paramValues = reactive<Record<string, unknown>>({})
 const TEMP_DISPLAY_LABELS: Record<string, string> = {
-  CELL_OVER_TEMP_PROTECT_C: 'MOS高温保护温度',
-  CELL_OVER_TEMP_RELEASE_C: 'MOS高温保护解除温度',
-  MOS_OVER_TEMP_PROTECT_DELAY_S: 'MOS高温保护延时',
-  MOS_OVER_TEMP_RELEASE_DELAY_S: 'MOS高温保护解除延时',
-  CELL_UNDER_TEMP_PROTECT_C: '充电低温保护温度',
-  CELL_UNDER_TEMP_RELEASE_C: '充电低温保护解除温度',
-  CHARGE_OVER_TEMP_PROTECT_C: '充电高温保护温度',
-  CHARGE_OVER_TEMP_RELEASE_C: '充电高温保护解除温度',
-  CHARGE_OVER_TEMP_PROTECT_DELAY_S: '充电高低温保护延时',
-  CHARGE_OVER_TEMP_RELEASE_DELAY_S: '充电高低温保护解除延时',
-  DISCHARGE_UNDER_TEMP_PROTECT_C: '放电低温保护温度',
-  DISCHARGE_UNDER_TEMP_RELEASE_C: '放电低温保护解除温度',
-  DISCHARGE_OVER_TEMP_PROTECT_C: '放电高温保护温度',
-  DISCHARGE_OVER_TEMP_RELEASE_C: '放电高温保护解除温度',
-  DISCHARGE_OVER_TEMP_PROTECT_DELAY_S: '放电高低温保护延时',
-  DISCHARGE_OVER_TEMP_RELEASE_DELAY_S: '放电高低温保护解除延时'
+  CELL_OVER_TEMP_PROTECT_C: 'CELL_OVER_TEMP_PROTECT_C',
+  CELL_OVER_TEMP_RELEASE_C: 'CELL_OVER_TEMP_RELEASE_C',
+  MOS_OVER_TEMP_PROTECT_DELAY_S: 'MOS_OVER_TEMP_PROTECT_DELAY_S',
+  MOS_OVER_TEMP_RELEASE_DELAY_S: 'MOS_OVER_TEMP_RELEASE_DELAY_S',
+  CELL_UNDER_TEMP_PROTECT_C: 'CELL_UNDER_TEMP_PROTECT_C',
+  CELL_UNDER_TEMP_RELEASE_C: 'CELL_UNDER_TEMP_RELEASE_C',
+  CHARGE_OVER_TEMP_PROTECT_C: 'CHARGE_OVER_TEMP_PROTECT_C',
+  CHARGE_OVER_TEMP_RELEASE_C: 'CHARGE_OVER_TEMP_RELEASE_C',
+  CHARGE_OVER_TEMP_PROTECT_DELAY_S: 'CHARGE_OVER_TEMP_PROTECT_DELAY_S',
+  CHARGE_OVER_TEMP_RELEASE_DELAY_S: 'CHARGE_OVER_TEMP_RELEASE_DELAY_S',
+  DISCHARGE_UNDER_TEMP_PROTECT_C: 'DISCHARGE_UNDER_TEMP_PROTECT_C',
+  DISCHARGE_UNDER_TEMP_RELEASE_C: 'DISCHARGE_UNDER_TEMP_RELEASE_C',
+  DISCHARGE_OVER_TEMP_PROTECT_C: 'DISCHARGE_OVER_TEMP_PROTECT_C',
+  DISCHARGE_OVER_TEMP_RELEASE_C: 'DISCHARGE_OVER_TEMP_RELEASE_C',
+  DISCHARGE_OVER_TEMP_PROTECT_DELAY_S: 'DISCHARGE_OVER_TEMP_PROTECT_DELAY_S',
+  DISCHARGE_OVER_TEMP_RELEASE_DELAY_S: 'DISCHARGE_OVER_TEMP_RELEASE_DELAY_S'
 }
-const FACTORY_ACTION_LABELS: Record<string, string> = {
-  enterTestMode: '进入测试模式',
-  exitTestMode: '退出测试模式',
-  balanceAllOn: '开启全均衡',
-  balanceAllOff: '关闭全均衡',
-  function1On: '功能1打开',
-  function1Off: '功能1关闭',
-  function2On: '功能2打开',
-  function2Off: '功能2关闭',
-  function3On: '功能3打开',
-  function3Off: '功能3关闭',
-  function4On: '功能4打开',
-  function4Off: '功能4关闭',
-  resetProtectionBoard: '复位保护板',
-  mcuProtectionOn: 'MCU进入保护',
-  mcuProtectionOff: 'MCU退出保护',
-  manualChargeDischargeOn: '手动打开充放电管',
-  manualChargeDischargeOff: '手动关闭充放电管',
-  manualHeatingOn: '手动打开加热',
-  manualHeatingOff: '手动关闭加热',
-  gpsPowerOn: 'GPS电源打开',
-  gpsPowerOff: 'GPS电源关闭',
-  sleep: '进入休眠',
-  powerOff: '关机'
-}
+const FACTORY_ACTION_LABELS: Record<string, string> = {}
 
 function resolveParamEntry(entry: ParamEntry) {
   if (typeof entry === 'string') return { key: entry, actualKey: entry }
@@ -1143,7 +1082,13 @@ function resolveParamEntry(entry: ParamEntry) {
 }
 
 function labelOf(key: string, actualKey?: string) {
+  const displayText = tr(`bms.param.${key}`, undefined, TEMP_DISPLAY_LABELS[key])
+  if (displayText !== `bms.param.${key}`) return displayText
   if (TEMP_DISPLAY_LABELS[key]) return TEMP_DISPLAY_LABELS[key]
+  if (actualKey) {
+    const actualText = tr(`bms.param.${actualKey}`, undefined)
+    if (actualText !== `bms.param.${actualKey}`) return actualText
+  }
   if (PARAM_DEF_BY_KEY[key]?.label) return PARAM_DEF_BY_KEY[key]?.label || key
   if (actualKey && PARAM_DEF_BY_KEY[actualKey]?.label) return PARAM_DEF_BY_KEY[actualKey]?.label || key
   return key
@@ -1186,7 +1131,8 @@ function formatDisplayNumber(value: number, decimals: number) {
 function getBatteryTypeLabel(value: unknown) {
   const n = typeof value === 'number' ? value : Number(value)
   if (!Number.isFinite(n)) return '-'
-  return BATTERY_TYPE_OPTIONS.find(item => item.value === n)?.label || `未知类型(${Math.trunc(n)})`
+  const item = BATTERY_TYPE_OPTIONS.find(option => option.value === n)
+  return item ? tb(item.labelKey) : tb('common.unknownType', { value: Math.trunc(n) })
 }
 
 function formatEditableValue(key: string, value: unknown) {
@@ -1348,7 +1294,7 @@ const FACTORY_ACTIONS: Array<Omit<FactoryAction, 'label'>> = [
 const factoryItems = computed<FactoryAction[]>(() =>
   FACTORY_ACTIONS.filter(item => canAccessFactoryAction(item.key)).map(item => ({
     ...item,
-    label: FACTORY_ACTION_LABELS[item.key] || item.key
+    label: tb(`factory.${item.key}`, undefined, FACTORY_ACTION_LABELS[item.key] || item.key)
   }))
 )
 
@@ -1386,8 +1332,23 @@ const functionConfigFlags = computed(() => parseFunctionConfigFlags(paramValues[
 const functionControlRows = computed<FunctionControlRow[]>(() =>
   FUNCTION_CONFIG_ITEMS.filter(item => canAccessFunctionControl(item.key)).map(item => ({
     ...item,
+    label: tb(`functionConfig.${item.key}`, undefined, item.label),
     enabled: functionConfigFlags.value[item.key],
-    statusText: functionConfigFlags.value[item.key] ? item.enabledLabel : item.disabledLabel
+    statusText: functionConfigFlags.value[item.key]
+      ? tb(
+          item.key === 'chargeAllowed' || item.key === 'dischargeAllowed'
+            ? 'functionConfig.allowed'
+            : 'functionConfig.enabled',
+          undefined,
+          item.enabledLabel
+        )
+      : tb(
+          item.key === 'chargeAllowed' || item.key === 'dischargeAllowed'
+            ? 'functionConfig.forbidden'
+            : 'functionConfig.disabled',
+          undefined,
+          item.disabledLabel
+        )
   }))
 )
 const hasFunctionControlRows = computed(() => functionControlRows.value.length > 0)
@@ -1452,11 +1413,11 @@ const advancedState = reactive({
 
 function openEdit(item: ParamItem) {
   if ((!client || connType.value === 'offline') && !relayReady.value) {
-    message.warning('当前离线，无法设置参数')
+    message.warning(tb('messages.offlineSet'))
     return
   }
   if (!canAccessParamKey(item.actualKey)) {
-    message.warning('当前账号无权限操作该参数')
+    message.warning(tb('messages.noParamPermission'))
     return
   }
   editState.key = item.actualKey
@@ -1505,7 +1466,7 @@ async function confirmEdit() {
   try {
     if (isBatteryTypeKey(editState.key)) {
       if (editState.selectValue == null || !Number.isFinite(editState.selectValue)) {
-        message.warning('请选择电池类型')
+        message.warning(tb('messages.selectBatteryType'))
         return
       }
       await writeParamValue(editState.key, editState.selectValue)
@@ -1515,22 +1476,22 @@ async function confirmEdit() {
       const raw = editState.inputText.trim()
       const v = Number(raw)
       if (!raw || !Number.isFinite(v)) {
-        message.warning('请输入有效数值')
+        message.warning(tb('messages.invalidNumber'))
         return
       }
       await writeParamValue(editState.key, v)
     }
     editState.show = false
-    message.success('已保存')
+    message.success(tb('messages.saved'))
   } catch (e: any) {
     editState.show = false
-    message.error(e?.message || '保存失败')
+    message.error(e?.message || tb('messages.saveFailed'))
   }
 }
 
 async function openAdvancedSettings() {
   if ((!client || connType.value === 'offline') && !relayReady.value) {
-    message.warning('当前离线，无法读取高级参数')
+    message.warning(tb('messages.offlineReadAdvanced'))
     return
   }
   advancedState.show = true
@@ -1546,11 +1507,11 @@ async function setFunctionControl(key: FunctionConfigFlagKey, enabled: boolean) 
   const useDirect = !!client && connType.value !== 'offline'
   const useRelay = !useDirect && relayReady.value
   if (!useDirect && !useRelay) {
-    message.warning('当前离线，无法设置功能配置')
+    message.warning(tb('messages.offlineFunction'))
     return
   }
   if (!canAccessFunctionControl(key)) {
-    message.warning('当前账号无权限操作功能配置')
+    message.warning(tb('messages.noFunctionPermission'))
     return
   }
   const nextWord = setFunctionConfigFlag(paramValues[BMS_PARAM.FUNCTION_CONFIG], key, enabled)
@@ -1570,9 +1531,9 @@ async function setFunctionControl(key: FunctionConfigFlagKey, enabled: boolean) 
       })
       paramValues[BMS_PARAM.FUNCTION_CONFIG] = (after?.result as any)?.value
     }
-    message.success('功能配置已更新')
+    message.success(tb('messages.functionUpdated'))
   } catch (e: any) {
-    message.error(e?.message || '功能配置更新失败')
+    message.error(e?.message || tb('messages.functionUpdateFailed'))
   }
 }
 
@@ -1580,15 +1541,15 @@ async function runFactoryAction(item: FactoryAction) {
   const useDirect = !!client && connType.value !== 'offline'
   const useRelay = !useDirect && relayReady.value
   if (!useDirect && !useRelay) {
-    message.warning('当前离线，无法执行工厂命令')
+    message.warning(tb('messages.offlineFactory'))
     return
   }
   if (!canAccessFactoryAction(item.key)) {
-    message.warning('当前账号无权限执行工厂命令')
+    message.warning(tb('messages.noFactoryPermission'))
     return
   }
   if (item.confirm) {
-    const ok = window.confirm('执行工厂命令可能影响设备运行，是否继续？')
+    const ok = window.confirm(tb('messages.factoryConfirm'))
     if (!ok) return
   }
   try {
@@ -1603,57 +1564,57 @@ async function runFactoryAction(item: FactoryAction) {
         register_values: [hi, lo]
       })
     }
-    message.success('工厂命令已发送')
+    message.success(tb('messages.factorySent'))
   } catch (e: any) {
-    message.error(e?.message || '工厂命令执行失败')
+    message.error(e?.message || tb('messages.factoryFailed'))
   }
 }
 
 const paramColumns: DataTableColumns<ParamItem> = [
-  { key: 'label', title: '参数', minWidth: 220 },
-  { key: 'valueText', title: '值', minWidth: 160 },
-  { key: 'unit', title: '单位', width: 90 },
+  { key: 'label', title: () => tb('detail.params.parameter'), minWidth: 220 },
+  { key: 'valueText', title: () => tb('detail.params.value'), minWidth: 160 },
+  { key: 'unit', title: () => tb('detail.params.unit'), width: 90 },
   {
     key: 'actions',
-    title: '操作',
+    title: () => tb('detail.params.action'),
     width: 120,
     render: row => (
       <NButton size="small" tertiary type="primary" onClick={() => openEdit(row)}>
-        设置
+        {tb('common.set')}
       </NButton>
     )
   }
 ]
 const factoryColumns: DataTableColumns<FactoryAction> = [
-  { key: 'label', title: '工厂命令', minWidth: 260 },
+  { key: 'label', title: () => tb('detail.params.factoryCommand'), minWidth: 260 },
   {
     key: 'raw',
-    title: '命令字',
+    title: () => tb('detail.params.commandWord'),
     width: 140,
     render: row => `0x${row.raw.toString(16).toUpperCase().padStart(8, '0')}`
   },
   {
     key: 'actions',
-    title: '操作',
+    title: () => tb('detail.params.action'),
     width: 120,
     render: row => (
       <NButton size="small" tertiary type="warning" onClick={() => runFactoryAction(row)}>
-        执行
+        {tb('common.execute')}
       </NButton>
     )
   }
 ]
 const functionColumns: DataTableColumns<FunctionControlRow> = [
-  { key: 'label', title: '功能项', minWidth: 220 },
+  { key: 'label', title: () => tb('detail.params.functionItem'), minWidth: 220 },
   {
     key: 'status',
-    title: '当前状态',
+    title: () => tb('detail.params.currentStatus'),
     width: 120,
     render: row => <NTag type={row.enabled ? 'success' : 'default'}>{row.statusText}</NTag>
   },
   {
     key: 'actions',
-    title: '开关',
+    title: () => tb('detail.params.switch'),
     width: 100,
     render: row => <NSwitch value={row.enabled} onUpdateValue={value => setFunctionControl(row.key, value)} />
   }
@@ -1666,32 +1627,48 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
       <NCard size="small" :bordered="false">
         <NSpace align="center" justify="space-between">
           <NSpace align="center">
-            <NText strong>通讯：</NText>
+            <NText strong>{{ $t('bms.common.communication') }}</NText>
             <NTag :type="mqttReportType">{{ mqttReportText }}</NTag>
             <NTag :type="connTagType">{{ connText }}</NTag>
-            <NTag v-if="battery?.comm_chip_id" type="info">4G卡ID：{{ battery.comm_chip_id }}</NTag>
+            <NTag v-if="battery?.comm_chip_id" type="info">
+              {{ $t('bms.basicInfo.commChipId') }}: {{ battery.comm_chip_id }}
+            </NTag>
             <NTag :type="cloudStatusType">{{ cloudStatusText }}</NTag>
-            <NTag type="default">最近云端数据时间：{{ cloudUpdateText }}</NTag>
+            <NTag type="default">{{ $t('bms.detail.dashboard.updatedAt') }}: {{ cloudUpdateText }}</NTag>
             <NTag :type="paramLinkType">{{ paramLinkText }}</NTag>
           </NSpace>
           <NSpace>
             <NButton size="small" :disabled="connecting" @click="connectRealtime">{{ paramConnectButtonText }}</NButton>
-            <NButton size="small" :disabled="connecting" @click="handleDisconnect">断开参数通道</NButton>
-            <NButton size="small" @click="refreshCloudData">刷新云端</NButton>
+            <NButton size="small" :disabled="connecting" @click="handleDisconnect">
+              {{ $t('bms.detail.telemetry.disconnectParam') }}
+            </NButton>
+            <NButton size="small" @click="refreshCloudData">{{ $t('bms.detail.telemetry.refreshCloud') }}</NButton>
           </NSpace>
         </NSpace>
       </NCard>
 
       <div class="panel-body">
-        <NAlert v-if="canUse4G" class="mb-12px" type="info" :show-icon="false" title="4G设备数据链路">
-          仪表和电芯数据默认使用 MQTT Socket 透传实时读取；透传失败时保留云端主动上报数据作为兜底。
+        <NAlert
+          v-if="canUse4G"
+          class="mb-12px"
+          type="info"
+          :show-icon="false"
+          :title="$t('bms.detail.telemetry.card4gTitle')"
+        >
+          {{ $t('bms.detail.telemetry.card4gDesc') }}
         </NAlert>
-        <NAlert v-if="!canUse4G" class="mb-12px" type="warning" :show-icon="false" title="当前设备未配置4G通讯卡ID">
-          已切换为云端数据展示模式；参数读写需手机 APP 蓝牙连接设备后通过中继通道完成。
+        <NAlert
+          v-if="!canUse4G"
+          class="mb-12px"
+          type="warning"
+          :show-icon="false"
+          :title="$t('bms.detail.telemetry.no4gTitle')"
+        >
+          {{ $t('bms.detail.telemetry.no4gDesc') }}
         </NAlert>
 
         <NTabs type="line" animated>
-          <NTabPane name="dashboard" tab="仪表">
+          <NTabPane name="dashboard" :tab="$t('bms.detail.dashboard.tab')">
             <NGrid :cols="24" :x-gap="12" :y-gap="12">
               <NGridItem v-if="hasStatusFlags" :span="24">
                 <div class="status-flags-web">
@@ -1721,41 +1698,41 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
                 </NCard>
               </NGridItem>
               <NGridItem :span="8">
-                <NCard size="small" title="Pack电压" :bordered="false">
+                <NCard size="small" :title="$t('bms.detail.dashboard.packVoltage')" :bordered="false">
                   <div class="metric-big">{{ packVoltageText }}</div>
-                  <div class="metric-sub">电芯串数：{{ cellCount || '-' }}</div>
+                  <div class="metric-sub">{{ $t('bms.detail.dashboard.cellSeries') }}: {{ cellCount || '-' }}</div>
                 </NCard>
               </NGridItem>
 
               <NGridItem :span="8">
-                <NCard size="small" title="循环次数" :bordered="false">
+                <NCard size="small" :title="$t('bms.detail.dashboard.cycleCount')" :bordered="false">
                   <div class="metric-big">{{ cycleCountText }}</div>
                 </NCard>
               </NGridItem>
               <NGridItem :span="8">
-                <NCard size="small" title="充电时间" :bordered="false">
+                <NCard size="small" :title="$t('bms.detail.dashboard.chargeTime')" :bordered="false">
                   <div class="metric-big">{{ chargeTimeText }}</div>
                 </NCard>
               </NGridItem>
               <NGridItem :span="8">
-                <NCard size="small" title="充放电电流" :bordered="false">
+                <NCard size="small" :title="$t('bms.detail.dashboard.chargeDischargeCurrent')" :bordered="false">
                   <div class="metric-big">{{ currentText }}</div>
                 </NCard>
               </NGridItem>
 
               <NGridItem :span="12">
-                <NCard size="small" title="开关状态" :bordered="false">
+                <NCard size="small" :title="$t('bms.detail.dashboard.switchStatus')" :bordered="false">
                   <div class="switch-grid">
                     <div class="switch-item">
-                      <span class="switch-item__label">充电开关</span>
+                      <span class="switch-item__label">{{ $t('bms.detail.dashboard.chargeSwitch') }}</span>
                       <NSwitch :value="chargeSwitchOn" disabled />
                     </div>
                     <div class="switch-item">
-                      <span class="switch-item__label">放电开关</span>
+                      <span class="switch-item__label">{{ $t('bms.detail.dashboard.dischargeSwitch') }}</span>
                       <NSwitch :value="dischargeSwitchOn" disabled />
                     </div>
                     <div class="switch-item">
-                      <span class="switch-item__label">均衡状态</span>
+                      <span class="switch-item__label">{{ $t('bms.detail.dashboard.balanceStatus') }}</span>
                       <NSwitch :value="balancingOn" disabled />
                     </div>
                   </div>
@@ -1763,22 +1740,22 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
               </NGridItem>
 
               <NGridItem :span="12">
-                <NCard size="small" title="电压信息" :bordered="false">
+                <NCard size="small" :title="$t('bms.detail.dashboard.voltageInfo')" :bordered="false">
                   <div class="temp-list">
                     <div class="temp-row">
-                      <span class="temp-label">平均电压</span>
+                      <span class="temp-label">{{ $t('bms.detail.dashboard.avgVoltage') }}</span>
                       <span>{{ avgVoltageText }}</span>
                     </div>
                     <div class="temp-row">
-                      <span class="temp-label">最高电压</span>
+                      <span class="temp-label">{{ $t('bms.detail.dashboard.highestVoltage') }}</span>
                       <span>{{ highestVoltageText }}</span>
                     </div>
                     <div class="temp-row">
-                      <span class="temp-label">最低电压</span>
+                      <span class="temp-label">{{ $t('bms.detail.dashboard.lowestVoltage') }}</span>
                       <span>{{ lowestVoltageText }}</span>
                     </div>
                     <div class="temp-row">
-                      <span class="temp-label">电压差</span>
+                      <span class="temp-label">{{ $t('bms.detail.dashboard.voltageDiff') }}</span>
                       <span>{{ diffVoltageText }}</span>
                     </div>
                   </div>
@@ -1786,18 +1763,18 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
               </NGridItem>
 
               <NGridItem :span="12">
-                <NCard size="small" title="温度信息" :bordered="false">
+                <NCard size="small" :title="$t('bms.detail.dashboard.temperatureInfo')" :bordered="false">
                   <div class="temp-list">
                     <div class="temp-row">
-                      <span class="temp-label">MOS温度</span>
+                      <span class="temp-label">{{ $t('bms.detail.dashboard.mosTemp') }}</span>
                       <span>{{ mosTempText }}</span>
                     </div>
                     <div class="temp-row">
-                      <span class="temp-label">T1：环境温度</span>
+                      <span class="temp-label">{{ $t('bms.detail.dashboard.ambientTemp') }}</span>
                       <span>{{ ambientTempText }}</span>
                     </div>
                     <div class="temp-row">
-                      <span class="temp-label">T2：电芯温度</span>
+                      <span class="temp-label">{{ $t('bms.detail.dashboard.cellTemp') }}</span>
                       <span>{{ cellTempText }}</span>
                     </div>
                   </div>
@@ -1805,10 +1782,12 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
               </NGridItem>
 
               <NGridItem :span="12">
-                <NCard size="small" title="BMS保护状态" :bordered="false">
+                <NCard size="small" :title="$t('bms.detail.dashboard.protectStatus')" :bordered="false">
                   <template #header-extra>
                     <NButton text type="primary" @click="toggleProtectPanel">
-                      {{ protectPanelExpanded ? '收起' : '展开' }}
+                      {{
+                        protectPanelExpanded ? $t('bms.detail.dashboard.collapse') : $t('bms.detail.dashboard.expand')
+                      }}
                     </NButton>
                   </template>
                   <div class="metric-sub mb-12px">{{ protectSummaryText }}</div>
@@ -1816,7 +1795,7 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
                     <div v-for="item in protectStatusRows" :key="item.key" class="protect-row-web">
                       <span class="protect-row-web__label">{{ item.label }}</span>
                       <span class="protect-row-web__value" :class="{ 'protect-row-web__value--on': item.enabled }">
-                        {{ item.enabled ? '开启' : '关闭' }}
+                        {{ item.enabled ? $t('bms.status.on') : $t('bms.status.off') }}
                       </span>
                     </div>
                   </div>
@@ -1824,42 +1803,60 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
               </NGridItem>
 
               <NGridItem :span="24">
-                <NCard size="small" title="设备信息" :bordered="false">
+                <NCard size="small" :title="$t('bms.detail.dashboard.deviceInfo')" :bordered="false">
                   <NDescriptions :columns="3" size="small" label-placement="left">
-                    <NDescriptionsItem label="设备名称">{{ battery?.device_name || '-' }}</NDescriptionsItem>
-                    <NDescriptionsItem label="设备编号">{{ battery?.device_number || '-' }}</NDescriptionsItem>
-                    <NDescriptionsItem label="型号">{{ battery?.battery_model_name || '-' }}</NDescriptionsItem>
-                    <NDescriptionsItem label="固件版本">{{ battery?.fw_version || '-' }}</NDescriptionsItem>
-                    <NDescriptionsItem label="蓝牙Mac">{{ battery?.ble_mac || '-' }}</NDescriptionsItem>
-                    <NDescriptionsItem label="更新时间">{{ battery?.updated_at || '-' }}</NDescriptionsItem>
+                    <NDescriptionsItem :label="$t('bms.detail.dashboard.deviceName')">
+                      {{ battery?.device_name || '-' }}
+                    </NDescriptionsItem>
+                    <NDescriptionsItem :label="$t('bms.detail.dashboard.deviceNumber')">
+                      {{ battery?.device_number || '-' }}
+                    </NDescriptionsItem>
+                    <NDescriptionsItem :label="$t('bms.detail.dashboard.model')">
+                      {{ battery?.battery_model_name || '-' }}
+                    </NDescriptionsItem>
+                    <NDescriptionsItem :label="$t('bms.detail.dashboard.firmwareVersion')">
+                      {{ battery?.fw_version || '-' }}
+                    </NDescriptionsItem>
+                    <NDescriptionsItem :label="$t('bms.detail.dashboard.bleMac')">
+                      {{ battery?.ble_mac || '-' }}
+                    </NDescriptionsItem>
+                    <NDescriptionsItem :label="$t('bms.detail.dashboard.updatedAt')">
+                      {{ battery?.updated_at || '-' }}
+                    </NDescriptionsItem>
                   </NDescriptions>
                 </NCard>
               </NGridItem>
             </NGrid>
           </NTabPane>
 
-          <NTabPane name="cells" tab="电芯">
+          <NTabPane name="cells" :tab="$t('bms.detail.cells.tab')">
             <NCard size="small" :bordered="false">
               <div v-if="cellVoltageRows.length > 0" class="cell-panel">
                 <div class="cell-panel-summary">
                   <div class="cell-summary-list">
                     <div class="cell-summary-item cell-summary-item--highest">
                       <span class="cell-summary-dot"></span>
-                      <span>最大({{ highestCellRow?.index || '-' }}) {{ highestCellRow?.voltageText || '-' }}</span>
+                      <span>
+                        {{ $t('bms.detail.cells.max') }}({{ highestCellRow?.index || '-' }})
+                        {{ highestCellRow?.voltageText || '-' }}
+                      </span>
                     </div>
                     <div class="cell-summary-item cell-summary-item--lowest">
                       <span class="cell-summary-dot"></span>
-                      <span>最小({{ lowestCellRow?.index || '-' }}) {{ lowestCellRow?.voltageText || '-' }}</span>
+                      <span>
+                        {{ $t('bms.detail.cells.min') }}({{ lowestCellRow?.index || '-' }})
+                        {{ lowestCellRow?.voltageText || '-' }}
+                      </span>
                     </div>
                     <div class="cell-summary-item cell-summary-item--balancing">
                       <span class="cell-summary-dot"></span>
-                      <span>均衡 {{ balancingCellCount }}</span>
+                      <span>{{ $t('bms.detail.cells.balancing') }} {{ balancingCellCount }}</span>
                     </div>
                   </div>
 
                   <div class="cell-summary-meta">
-                    <span>Pack：{{ packVoltageText }}</span>
-                    <span>串数：{{ cellCount || '-' }}</span>
+                    <span>{{ $t('bms.detail.cells.pack') }}: {{ packVoltageText }}</span>
+                    <span>{{ $t('bms.detail.cells.series') }}: {{ cellCount || '-' }}</span>
                   </div>
                 </div>
 
@@ -1890,21 +1887,26 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
                   </div>
                 </div>
               </div>
-              <NEmpty v-else description="暂无电芯数据" />
+              <NEmpty v-else :description="$t('bms.detail.cells.empty')" />
             </NCard>
           </NTabPane>
 
-          <NTabPane name="history" tab="历史记录">
+          <NTabPane name="history" :tab="$t('bms.detail.history.tab')">
             <NSpin :show="historyLoading">
-              <NCard size="small" :bordered="false" title="近1小时核心指标曲线（云端）">
+              <NCard size="small" :bordered="false" :title="$t('bms.detail.history.coreChartTitle')">
                 <div class="history-chart">
                   <ChartComponent :initial-options="historyChartOption" />
                 </div>
               </NCard>
 
-              <NCard size="small" :bordered="false" class="mt-12px" title="最近快照时间线（近24小时）">
+              <NCard
+                size="small"
+                :bordered="false"
+                class="mt-12px"
+                :title="$t('bms.detail.history.snapshotTimelineTitle')"
+              >
                 <template #header-extra>
-                  <NButton size="small" @click="loadHistory">刷新</NButton>
+                  <NButton size="small" @click="loadHistory">{{ $t('bms.common.refresh') }}</NButton>
                 </template>
                 <NDataTable
                   v-if="snapshotHistoryRows.length > 0"
@@ -1913,73 +1915,72 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
                   :bordered="false"
                   :max-height="320"
                 />
-                <NEmpty v-else description="暂无快照历史数据" />
+                <NEmpty v-else :description="$t('bms.detail.history.snapshotEmpty')" />
               </NCard>
             </NSpin>
           </NTabPane>
 
-          <NTabPane name="params" tab="参数设置">
+          <NTabPane name="params" :tab="$t('bms.detail.params.tab')">
             <NAlert class="mb-12px" type="info" :show-icon="false">
-              参数读写支持两种通道：4G设备可手动连接 MQTT
-              参数直连，BLE设备走“APP蓝牙中继”；该通道状态不影响仪表/电芯云端数据显示。
+              {{ $t('bms.detail.params.channelHint') }}
             </NAlert>
             <NSpace v-if="hasAdvancedSections" class="mb-12px" justify="end">
               <NButton size="small" :disabled="connType === 'offline' && !relayReady" @click="openAdvancedSettings">
-                高级设置
+                {{ $t('bms.detail.params.advancedSettings') }}
               </NButton>
             </NSpace>
             <NGrid :cols="24" :x-gap="12" :y-gap="12">
               <NGridItem v-if="hasSingleItems" :span="12">
-                <NCard size="small" title="单体设置" :bordered="false">
+                <NCard size="small" :title="$t('bms.detail.params.singleSettings')" :bordered="false">
                   <NSpace justify="space-between" class="mb-10px">
                     <NButton
                       size="small"
                       :disabled="connType === 'offline' && !relayReady"
                       @click="loadKeys(SINGLE_KEYS)"
                     >
-                      刷新
+                      {{ $t('bms.common.refresh') }}
                     </NButton>
                   </NSpace>
                   <NDataTable :columns="paramColumns" :data="singleItems" :bordered="false" :max-height="260" />
                 </NCard>
               </NGridItem>
               <NGridItem v-if="hasVoltageItems" :span="12">
-                <NCard size="small" title="总压设置" :bordered="false">
+                <NCard size="small" :title="$t('bms.detail.params.voltageSettings')" :bordered="false">
                   <NSpace justify="space-between" class="mb-10px">
                     <NButton
                       size="small"
                       :disabled="connType === 'offline' && !relayReady"
                       @click="loadKeys(VOLTAGE_KEYS)"
                     >
-                      刷新
+                      {{ $t('bms.common.refresh') }}
                     </NButton>
                   </NSpace>
                   <NDataTable :columns="paramColumns" :data="voltageItems" :bordered="false" :max-height="260" />
                 </NCard>
               </NGridItem>
               <NGridItem v-if="hasCurrentItems" :span="12">
-                <NCard size="small" title="电流设置" :bordered="false">
+                <NCard size="small" :title="$t('bms.detail.params.currentSettings')" :bordered="false">
                   <NSpace justify="space-between" class="mb-10px">
                     <NButton
                       size="small"
                       :disabled="connType === 'offline' && !relayReady"
                       @click="loadKeys(CURRENT_KEYS)"
                     >
-                      刷新
+                      {{ $t('bms.common.refresh') }}
                     </NButton>
                   </NSpace>
                   <NDataTable :columns="paramColumns" :data="currentItems" :bordered="false" :max-height="260" />
                 </NCard>
               </NGridItem>
               <NGridItem v-if="hasTemperatureItems" :span="12">
-                <NCard size="small" title="温度设置" :bordered="false">
+                <NCard size="small" :title="$t('bms.detail.params.temperatureSettings')" :bordered="false">
                   <NSpace justify="space-between" class="mb-10px">
                     <NButton
                       size="small"
                       :disabled="connType === 'offline' && !relayReady"
                       @click="loadKeys(TEMP_KEYS)"
                     >
-                      刷新
+                      {{ $t('bms.common.refresh') }}
                     </NButton>
                   </NSpace>
                   <NDataTable :columns="paramColumns" :data="temperatureItems" :bordered="false" :max-height="260" />
@@ -2004,40 +2005,57 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
       </div>
     </NModal>
 
-    <NModal v-model:show="editState.show" preset="card" style="width: 520px" :title="`设置：${editState.title}`">
+    <NModal
+      v-model:show="editState.show"
+      preset="card"
+      style="width: 520px"
+      :title="$t('bms.detail.params.setTitle', { title: editState.title })"
+    >
       <NSpace vertical size="large">
-        <NText depth="3">单位：{{ editState.unit || '-' }}</NText>
+        <NText depth="3">{{ $t('bms.detail.params.unitLabel', { unit: editState.unit || '-' }) }}</NText>
         <NSelect
           v-if="editState.key === BMS_PARAM.BATTERY_TYPE"
           v-model:value="editState.selectValue"
-          :options="BATTERY_TYPE_OPTIONS"
-          placeholder="请选择电池类型"
+          :options="batteryTypeSelectOptions"
+          :placeholder="$t('bms.detail.params.selectBatteryType')"
         />
         <NInput
           v-else
           v-model:value="editState.inputText"
-          :placeholder="editState.valueType === 'str' ? '请输入文本值' : '请输入数值'"
+          :placeholder="
+            editState.valueType === 'str' ? $t('bms.detail.params.inputText') : $t('bms.detail.params.inputNumber')
+          "
           type="text"
         />
         <NSpace justify="end">
-          <NButton @click="editState.show = false">取消</NButton>
-          <NButton type="primary" @click="confirmEdit">保存</NButton>
+          <NButton @click="editState.show = false">{{ $t('bms.common.cancel') }}</NButton>
+          <NButton type="primary" @click="confirmEdit">{{ $t('bms.common.save') }}</NButton>
         </NSpace>
       </NSpace>
     </NModal>
 
-    <NModal v-model:show="advancedState.show" preset="card" style="width: min(1100px, 95vw)" title="高级设置">
+    <NModal
+      v-model:show="advancedState.show"
+      preset="card"
+      style="width: min(1100px, 95vw)"
+      :title="$t('bms.detail.params.advancedSettings')"
+    >
       <NSpin :show="advancedState.loading">
         <NTabs type="line" animated>
-          <NTabPane v-if="hasOtherItems" name="advanced-config" tab="高级配置">
+          <NTabPane v-if="hasOtherItems" name="advanced-config" :tab="$t('bms.detail.params.advancedConfig')">
             <NDataTable :columns="paramColumns" :data="otherItems" :bordered="false" :max-height="420" />
           </NTabPane>
-          <NTabPane v-if="hasNumberingItems" name="numbering-config" tab="编号配置">
+          <NTabPane v-if="hasNumberingItems" name="numbering-config" :tab="$t('bms.detail.params.numberingConfig')">
             <NDataTable :columns="paramColumns" :data="numberingItems" :bordered="false" :max-height="420" />
           </NTabPane>
-          <NTabPane v-if="hasSystemSection" name="system-config" tab="系统配置">
+          <NTabPane v-if="hasSystemSection" name="system-config" :tab="$t('bms.detail.params.systemConfig')">
             <NSpace vertical size="large">
-              <NCard v-if="hasFunctionControlRows" size="small" title="功能控制" :bordered="false">
+              <NCard
+                v-if="hasFunctionControlRows"
+                size="small"
+                :title="$t('bms.detail.params.functionControl')"
+                :bordered="false"
+              >
                 <NDataTable
                   :columns="functionColumns"
                   :data="functionControlRows"
@@ -2054,14 +2072,14 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
               />
             </NSpace>
           </NTabPane>
-          <NTabPane v-if="hasFactoryItems" name="factory-config" tab="工厂配置">
+          <NTabPane v-if="hasFactoryItems" name="factory-config" :tab="$t('bms.detail.params.factoryConfig')">
             <NDataTable :columns="factoryColumns" :data="factoryItems" :bordered="false" :max-height="420" />
           </NTabPane>
         </NTabs>
       </NSpin>
       <template #footer>
         <NSpace justify="end">
-          <NButton @click="advancedState.show = false">关闭</NButton>
+          <NButton @click="advancedState.show = false">{{ $t('bms.common.close') }}</NButton>
         </NSpace>
       </template>
     </NModal>

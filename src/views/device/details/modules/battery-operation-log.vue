@@ -4,6 +4,7 @@ import { NDataTable, NEmpty, NSpin, useMessage } from 'naive-ui'
 import type { DataTableColumns, PaginationProps } from 'naive-ui'
 import { getBatteryOperationLogList } from '@/service/api/bms'
 import { formatDateTime } from '@/utils/common/datetime'
+import { $t } from '@/locales'
 
 const props = defineProps<{
   id: string
@@ -41,25 +42,25 @@ const pagination = reactive<PaginationProps>({
 const columns = computed<DataTableColumns<BatteryOperationLogRow>>(() => [
   {
     key: 'occurred_at',
-    title: '时间',
+    title: $t('bms.operationLog.time'),
     minWidth: 180,
     render: row => formatDateTime(row.occurred_at) || '-'
   },
   {
     key: 'operation_type',
-    title: '类型',
+    title: $t('bms.operationLog.type'),
     minWidth: 140,
     render: row => row.operation_type || '-'
   },
   {
     key: 'operator_name',
-    title: '操作人',
+    title: $t('bms.operationLog.operator'),
     minWidth: 140,
     render: row => row.operator_name || '-'
   },
   {
     key: 'description',
-    title: '描述',
+    title: $t('bms.operationLog.description'),
     minWidth: 420,
     ellipsis: { tooltip: true },
     render: row => row.description || '-'
@@ -91,7 +92,7 @@ async function fetchData() {
   } catch (error: any) {
     tableData.value = []
     pagination.itemCount = 0
-    message.error(error?.message || '获取操作记录失败')
+    message.error(error?.message || $t('bms.operationLog.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -126,7 +127,7 @@ watch(
         :bordered="false"
         :scroll-x="960"
       />
-      <NEmpty v-else-if="!loading" description="暂无操作记录" class="py-24px" />
+      <NEmpty v-else-if="!loading" :description="$t('bms.operationLog.empty')" class="py-24px" />
     </NSpin>
   </div>
 </template>
