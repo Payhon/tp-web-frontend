@@ -1,4 +1,5 @@
 <script setup lang="tsx">
+import { bt } from '@/views/bms/_shared/i18n'
 import { onMounted, ref } from 'vue'
 import { NButton, NCard, NDataTable, NInput, NInputNumber, NPopconfirm, NSpace, useMessage } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
@@ -50,15 +51,15 @@ function validateRow(row: CellBrandRow): { seqNo: number; name: string } | null 
   const name = normalizeName(row.draftName || '')
 
   if (!Number.isInteger(seqNo) || seqNo < 1 || seqNo > 255) {
-    message.warning('序号必须是 1~255 的整数')
+    message.warning(bt('auto.s_739763a4f8'))
     return null
   }
   if (!name) {
-    message.warning('请输入品牌名')
+    message.warning(bt('auto.s_a800e7be00'))
     return null
   }
   if ([...name].length > 16) {
-    message.warning('品牌名不能超过16个字符')
+    message.warning(bt('auto.s_155eb813be'))
     return null
   }
   return { seqNo, name }
@@ -79,14 +80,14 @@ async function saveRow(row: CellBrandRow) {
   try {
     if (row.isNew) {
       await createCellBrand({ seq_no: payload.seqNo, name: payload.name })
-      message.success('新增成功')
+      message.success(bt('auto.s_a5bfd70d4a'))
     } else {
       await updateCellBrand(row.id, { seq_no: payload.seqNo, name: payload.name })
-      message.success('更新成功')
+      message.success(bt('auto.s_55aa6366c0'))
     }
     await fetchData()
   } catch (e: any) {
-    message.error(e?.message || '保存失败')
+    message.error(e?.message || bt('auto.s_6de920b4e4'))
   } finally {
     savingId.value = null
   }
@@ -95,7 +96,7 @@ async function saveRow(row: CellBrandRow) {
 function handleAdd() {
   const existsNew = data.value.some(item => item.isNew)
   if (existsNew) {
-    message.warning('请先保存当前新增行')
+    message.warning(bt('auto.s_5a0d0f4b9a'))
     return
   }
   const tempId = `new-${Date.now()}`
@@ -123,17 +124,17 @@ async function handleDelete(row: CellBrandRow) {
 
   try {
     await deleteCellBrand(row.id)
-    message.success('删除成功')
+    message.success(bt('auto.s_0007d170de'))
     await fetchData()
   } catch (e: any) {
-    message.error(e?.message || '删除失败')
+    message.error(e?.message || bt('auto.s_acf0664a54'))
   }
 }
 
 const columns: DataTableColumns<CellBrandRow> = [
   {
     key: 'seq_no',
-    title: '序号',
+    title: bt('auto.s_faaadc447b'),
     width: 120,
     render: row => {
       if (row.editing) {
@@ -154,7 +155,7 @@ const columns: DataTableColumns<CellBrandRow> = [
   },
   {
     key: 'name',
-    title: '品牌名',
+    title: bt('auto.s_fc4a058347'),
     minWidth: 220,
     render: row => {
       if (row.editing) {
@@ -163,7 +164,7 @@ const columns: DataTableColumns<CellBrandRow> = [
             value={row.draftName}
             maxlength={16}
             showCount
-            placeholder="请输入品牌名"
+            placeholder={bt('auto.s_a800e7be00')}
             onKeydown={event => handleNameEnter(row, event)}
             onUpdateValue={value => {
               row.draftName = value
@@ -174,38 +175,30 @@ const columns: DataTableColumns<CellBrandRow> = [
       return row.name
     }
   },
-  { key: 'created_at', title: '创建时间', minWidth: 180 },
+  { key: 'created_at', title: bt('auto.s_eca37cb072'), minWidth: 180 },
   {
     key: 'actions',
-    title: '操作',
+    title: bt('auto.s_2b6bc0f293'),
     width: 220,
     render: row => {
       const saving = savingId.value === row.id
       if (row.editing) {
         return (
           <NSpace>
-            <NButton size="small" type="primary" loading={saving} onClick={() => saveRow(row)}>
-              保存
-            </NButton>
-            <NButton size="small" onClick={() => cancelEdit(row)}>
-              取消
-            </NButton>
+            <NButton size="small" type="primary" loading={saving} onClick={() => saveRow(row)}>{bt('auto.s_be5fbbe34c')}</NButton>
+            <NButton size="small" onClick={() => cancelEdit(row)}>{bt('auto.s_625fb26b4b')}</NButton>
           </NSpace>
         )
       }
 
       return (
         <NSpace>
-          <NButton size="small" type="primary" onClick={() => startEdit(row)}>
-            编辑
-          </NButton>
+          <NButton size="small" type="primary" onClick={() => startEdit(row)}>{bt('auto.s_95b351c862')}</NButton>
           <NPopconfirm onPositiveClick={() => handleDelete(row)}>
             {{
-              default: () => '确认删除该电芯品牌吗？',
+              default: () => bt('auto.s_059e1dcc48'),
               trigger: () => (
-                <NButton size="small" type="error">
-                  删除
-                </NButton>
+                <NButton size="small" type="error">{bt('auto.s_2f4aaddde3')}</NButton>
               )
             }}
           </NPopconfirm>
@@ -227,7 +220,7 @@ async function fetchData() {
       draftName: item.name
     }))
   } catch (e: any) {
-    message.error(e?.message || '获取列表失败')
+    message.error(e?.message || bt('auto.s_fe9d24d531'))
     data.value = []
   } finally {
     loading.value = false
@@ -241,9 +234,9 @@ onMounted(() => {
 
 <template>
   <div class="flex-vertical-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
-    <NCard title="电芯品牌管理" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
+    <NCard :title="bt('auto.s_a9ef81fe9d')" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
       <div class="mb-4">
-        <NButton type="primary" @click="handleAdd">+ 新增电芯品牌</NButton>
+        <NButton type="primary" @click="handleAdd">{{ bt('auto.s_41cbaa2302') }}</NButton>
       </div>
 
       <NDataTable :columns="columns" :data="data" :loading="loading" :pagination="false" :row-key="row => row.id" />

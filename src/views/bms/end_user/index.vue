@@ -1,4 +1,5 @@
 <script setup lang="tsx">
+import { bt } from '@/views/bms/_shared/i18n'
 import { computed, onMounted, ref } from 'vue'
 import {
   NButton,
@@ -67,45 +68,41 @@ const devicesLoading = ref(false)
 const devices = ref<DeviceItem[]>([])
 
 const deviceColumns = computed<DataTableColumns<DeviceItem>>(() => [
-  { key: 'device_number', title: '设备编号', minWidth: 140 },
-  { key: 'device_name', title: '设备名称', minWidth: 140, render: r => r.device_name || '--' },
+  { key: 'device_number', title: bt('auto.s_cf05392308'), minWidth: 140 },
+  { key: 'device_name', title: bt('auto.s_9f694f603c'), minWidth: 140, render: r => r.device_name || '--' },
   {
     key: 'is_owner',
-    title: '主用户',
+    title: bt('auto.s_8bd7d7bc69'),
     width: 90,
-    render: r => <NTag type={r.is_owner ? 'success' : 'default'}>{r.is_owner ? '是' : '否'}</NTag>
+    render: r => <NTag type={r.is_owner ? 'success' : 'default'}>{r.is_owner ? bt('auto.s_0a60ac8f02') : bt('auto.s_c9744f45e7')}</NTag>
   },
-  { key: 'binding_time', title: '绑定时间', minWidth: 160 },
+  { key: 'binding_time', title: bt('auto.s_d129528d4a'), minWidth: 160 },
   {
     key: 'actions',
-    title: '操作',
+    title: bt('auto.s_2b6bc0f293'),
     width: 120,
     fixed: 'right',
     render: row => (
-      <NButton size="small" type="error" onClick={() => confirmForceUnbind(row)}>
-        强制解绑
-      </NButton>
+      <NButton size="small" type="error" onClick={() => confirmForceUnbind(row)}>{bt('auto.s_a7a881b549')}</NButton>
     )
   }
 ])
 
 const createColumns = (): DataTableColumns<EndUserItem> => [
-  { key: 'user_phone', title: '手机号', minWidth: 140 },
-  { key: 'username', title: '用户名', minWidth: 160, render: r => r.username || '--' },
-  { key: 'user_name', title: '姓名', minWidth: 120, render: r => r.user_name || '--' },
-  { key: 'device_count', title: '绑定设备数', width: 110 },
-  { key: 'last_bind_at', title: '最近绑定', minWidth: 160, render: r => r.last_bind_at || '--' },
-  { key: 'dealer_name', title: '经销商', minWidth: 140, render: r => r.dealer_name || '--' },
+  { key: 'user_phone', title: bt('auto.s_8098e2b4e8'), minWidth: 140 },
+  { key: 'username', title: bt('auto.s_819767ada1'), minWidth: 160, render: r => r.username || '--' },
+  { key: 'user_name', title: bt('auto.s_60d0458ac6'), minWidth: 120, render: r => r.user_name || '--' },
+  { key: 'device_count', title: bt('auto.s_d27754bfcc'), width: 110 },
+  { key: 'last_bind_at', title: bt('auto.s_5ebab5068c'), minWidth: 160, render: r => r.last_bind_at || '--' },
+  { key: 'dealer_name', title: bt('auto.s_9019dc8029'), minWidth: 140, render: r => r.dealer_name || '--' },
   {
     key: 'actions',
-    title: '操作',
+    title: bt('auto.s_2b6bc0f293'),
     width: 220,
     fixed: 'right',
     render: row => (
       <NSpace>
-        <NButton size="small" type="primary" onClick={() => openDevices(row)}>
-          查看绑定设备
-        </NButton>
+        <NButton size="small" type="primary" onClick={() => openDevices(row)}>{bt('auto.s_8004d8433c')}</NButton>
       </NSpace>
     )
   }
@@ -171,7 +168,7 @@ async function loadDevices() {
     const res: any = await getEndUserDevices({ page: 1, page_size: 100, user_id: currentUser.value.user_id })
     devices.value = res?.data?.list ?? []
   } catch (e: any) {
-    message.error(e?.message || '加载绑定设备失败')
+    message.error(e?.message || bt('auto.s_bb670c6ed6'))
   } finally {
     devicesLoading.value = false
   }
@@ -179,10 +176,10 @@ async function loadDevices() {
 
 function confirmForceUnbind(item: DeviceItem) {
   dialog.warning({
-    title: '强制解绑确认',
-    content: `确认解绑设备 ${item.device_number} 吗？`,
-    positiveText: '确认解绑',
-    negativeText: '取消',
+    title: bt('auto.s_bdbd91fd77'),
+    content: bt('pages.endUser.forceUnbindContent', { device: item.device_number }),
+    positiveText: bt('auto.s_9981b36e81'),
+    negativeText: bt('auto.s_625fb26b4b'),
     onPositiveClick: async () => {
       await doForceUnbind(item.binding_id)
     }
@@ -192,11 +189,11 @@ function confirmForceUnbind(item: DeviceItem) {
 async function doForceUnbind(bindingId: string) {
   try {
     await forceUnbindEndUserDeviceApi({ binding_id: bindingId })
-    message.success('解绑成功')
+    message.success(bt('auto.s_1c4385b583'))
     await loadDevices()
     getData()
   } catch (e: any) {
-    message.error(e?.message || '解绑失败')
+    message.error(e?.message || bt('auto.s_913643d07c'))
   }
 }
 
@@ -207,7 +204,7 @@ onMounted(() => {
 
 <template>
   <div class="flex-vertical-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
-    <NCard title="终端用户" :bordered="false" size="small" class="card-wrapper">
+    <NCard :title="bt('auto.s_5ddfa01711')" :bordered="false" size="small" class="card-wrapper">
       <NForm
         inline
         :model="searchForm"
@@ -215,25 +212,25 @@ onMounted(() => {
         label-width="auto"
         class="mb-4 flex flex-wrap gap-4 items-end"
       >
-        <NFormItem label="经销商" path="dealer_id">
+        <NFormItem :label="bt('auto.s_9019dc8029')" path="dealer_id">
           <NSelect
             v-model:value="searchForm.dealer_id"
             :options="dealerOptions"
             clearable
             style="width: 220px"
-            placeholder="全部"
+            :placeholder="bt('auto.s_a8b0c20416')"
           />
         </NFormItem>
-        <NFormItem label="手机号" path="phone">
-          <NInput v-model:value="searchForm.phone" clearable style="width: 220px" placeholder="手机号" />
+        <NFormItem :label="bt('auto.s_8098e2b4e8')" path="phone">
+          <NInput v-model:value="searchForm.phone" clearable style="width: 220px" :placeholder="bt('auto.s_8098e2b4e8')" />
         </NFormItem>
-        <NFormItem label="设备编号" path="device_number">
-          <NInput v-model:value="searchForm.device_number" clearable style="width: 220px" placeholder="设备编号" />
+        <NFormItem :label="bt('auto.s_cf05392308')" path="device_number">
+          <NInput v-model:value="searchForm.device_number" clearable style="width: 220px" :placeholder="bt('auto.s_cf05392308')" />
         </NFormItem>
         <NFormItem>
           <NSpace>
-            <NButton type="primary" @click="handleSearch">查询</NButton>
-            <NButton @click="handleReset">重置</NButton>
+            <NButton type="primary" @click="handleSearch">{{ bt('auto.s_bee912d79e') }}</NButton>
+            <NButton @click="handleReset">{{ bt('auto.s_4b9c3271dc') }}</NButton>
           </NSpace>
         </NFormItem>
       </NForm>
@@ -248,10 +245,10 @@ onMounted(() => {
       />
     </NCard>
 
-    <NModal v-model:show="showDevicesModal" preset="card" style="width: 860px" title="绑定设备">
+    <NModal v-model:show="showDevicesModal" preset="card" style="width: 860px" :title="bt('auto.s_4e11161b68')">
       <NSpace vertical :size="12">
         <div class="text-13px text-gray-500">
-          用户：{{ currentUser?.user_phone }}
+          {{ bt('pages.endUser.userLabel', { user: currentUser?.user_phone || '--' }) }}
           {{ currentUser?.username ? `[${currentUser?.username}]` : '' }}
           {{ currentUser?.user_name ? `(${currentUser?.user_name})` : '' }}
         </div>
@@ -262,9 +259,9 @@ onMounted(() => {
           :pagination="false"
           :row-key="row => row.binding_id"
         >
-          <template #empty>暂无绑定设备</template>
+          <template #empty>{{ bt('auto.s_cb86be4c85') }}</template>
         </NDataTable>
-        <div class="text-12px text-gray-500">提示：强制解绑会在无其它绑定时重置激活状态。</div>
+        <div class="text-12px text-gray-500">{{ bt('auto.s_1c18afe3fd') }}</div>
       </NSpace>
     </NModal>
   </div>

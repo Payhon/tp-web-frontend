@@ -1,4 +1,5 @@
 <script setup lang="tsx">
+import { bt } from '@/views/bms/_shared/i18n'
 import { computed, reactive, ref } from 'vue'
 import { NButton, NCard, NDatePicker, NForm, NFormItem, NInput, NSelect, useMessage } from 'naive-ui'
 import type { DataTableColumns, PaginationProps } from 'naive-ui'
@@ -9,9 +10,9 @@ import { formatDateTime } from '@/utils/common/datetime'
 const message = useMessage()
 
 const methodOptions = [
-  { label: '全部', value: '' },
-  { label: 'APP扫码', value: 'APP' },
-  { label: 'WEB手动', value: 'WEB' }
+  { label: bt('auto.s_a8b0c20416'), value: '' },
+  { label: bt('auto.s_9612e5845b'), value: 'APP' },
+  { label: bt('auto.s_09a96ffb71'), value: 'WEB' }
 ]
 
 const range = ref<[number, number]>([moment().subtract(1, 'months').valueOf(), moment().valueOf()])
@@ -58,34 +59,34 @@ function pickerChange(value: [number, number] | null) {
 const columns = computed<DataTableColumns<any>>(() => [
   {
     key: 'activation_time',
-    title: '激活时间',
+    title: bt('auto.s_94d02ed943'),
     minWidth: 160,
     render: row => row.activation_time || formatDateTime(row.created_at)
   },
   {
     key: 'device_number',
-    title: '序列号',
+    title: bt('auto.s_7079d2e6c4'),
     minWidth: 160
   },
   {
     key: 'battery_model',
-    title: '型号',
+    title: bt('auto.s_ac4190dfda'),
     minWidth: 140,
     render: row => row.battery_model || '-'
   },
   {
     key: 'user_phone',
-    title: '激活用户(手机号)',
+    title: bt('auto.s_a99d97869f'),
     minWidth: 140
   },
   {
     key: 'activation_way',
-    title: '激活方式',
+    title: bt('auto.s_3f0fa92e69'),
     minWidth: 120
   },
   {
     key: 'binding_terminal',
-    title: '终端',
+    title: bt('auto.s_4722bc0c56'),
     minWidth: 100
   },
   {
@@ -110,7 +111,7 @@ async function getTableData() {
     tableData.value = res?.data?.list || []
     total.value = res?.data?.total || 0
   } catch (e: any) {
-    message.error(e?.message || '获取激活日志失败')
+    message.error(e?.message || bt('auto.s_085b5e4538'))
   }
 }
 
@@ -134,25 +135,25 @@ getTableData()
 </script>
 
 <template>
-  <NCard title="激活日志">
+  <NCard :title="bt('auto.s_dd878d9b59')">
     <NForm class="mb-12px" :inline="true" label-placement="left" :model="queryParams">
-      <NFormItem label="序列号">
-        <NInput v-model:value="queryParams.device_number" class="w-220px" placeholder="设备序列号" />
+      <NFormItem :label="bt('auto.s_7079d2e6c4')">
+        <NInput v-model:value="queryParams.device_number" class="w-220px" :placeholder="bt('auto.s_4419e8a1ba')" />
       </NFormItem>
-      <NFormItem label="手机号">
-        <NInput v-model:value="queryParams.user_phone" class="w-220px" placeholder="激活用户手机号" />
+      <NFormItem :label="bt('auto.s_8098e2b4e8')">
+        <NInput v-model:value="queryParams.user_phone" class="w-220px" :placeholder="bt('auto.s_764ea9a1bd')" />
       </NFormItem>
-      <NFormItem label="时间范围">
+      <NFormItem :label="bt('auto.s_cd649f76d4')">
         <NDatePicker v-model:value="range" type="datetimerange" clearable separator="-" @update:value="pickerChange" />
       </NFormItem>
-      <NFormItem label="方式">
+      <NFormItem :label="bt('auto.s_7220e4d5f9')">
         <NSelect v-model:value="queryParams.method" class="w-160px" :options="methodOptions" />
       </NFormItem>
       <NFormItem>
-        <NButton type="primary" @click="handleQuery">查询</NButton>
+        <NButton type="primary" @click="handleQuery">{{ bt('auto.s_bee912d79e') }}</NButton>
       </NFormItem>
       <NFormItem>
-        <NButton @click="handleReset">重置</NButton>
+        <NButton @click="handleReset">{{ bt('auto.s_4b9c3271dc') }}</NButton>
       </NFormItem>
     </NForm>
 

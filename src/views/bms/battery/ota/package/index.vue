@@ -1,4 +1,5 @@
 <script setup lang="tsx">
+import { bt } from '@/views/bms/_shared/i18n'
 import { computed, ref, watch } from 'vue'
 import {
   NButton,
@@ -75,15 +76,15 @@ async function loadBmsModels() {
 }
 
 function packageTypeLabel(v?: number | null) {
-  if (v === 1) return '差分'
-  if (v === 2) return '整包'
+  if (v === 1) return bt('auto.s_db45871e79')
+  if (v === 2) return bt('auto.s_82e6566781')
   return '--'
 }
 
 async function copyText(text?: string | null) {
   const value = text?.trim()
   if (!value) {
-    message.warning('暂无可复制的固件 URL')
+    message.warning(bt('auto.s_0e7ab0fb76'))
     return
   }
 
@@ -100,9 +101,9 @@ async function copyText(text?: string | null) {
       document.execCommand('copy')
       document.body.removeChild(textarea)
     }
-    message.success('固件 URL 已复制')
+    message.success(bt('auto.s_b3e98deb76'))
   } catch {
-    message.error('复制失败')
+    message.error(bt('auto.s_5154ae17da'))
   }
 }
 
@@ -111,7 +112,7 @@ function renderFirmwareUrl(row: OtaPackageItem) {
   return (
     <NSpace align="center" size={6} wrap={false}>
       <NEllipsis style="max-width: 360px">{row.package_url}</NEllipsis>
-      <NButton size="tiny" text title="复制固件 URL" onClick={() => copyText(row.package_url)}>
+      <NButton size="tiny" text title={bt('auto.s_52129e059c')} onClick={() => copyText(row.package_url)}>
         <SvgIcon icon="material-symbols:content-copy-outline" class="text-16px" />
       </NButton>
     </NSpace>
@@ -121,20 +122,20 @@ function renderFirmwareUrl(row: OtaPackageItem) {
 function createColumns(): DataTableColumns<OtaPackageItem> {
   if (isBmsTab.value) {
     return [
-      { key: 'name', title: '升级包名称', minWidth: 180 },
-      { key: 'version', title: '版本号', minWidth: 120 },
-      { key: 'target_version', title: '目标版本', minWidth: 120, render: r => r.target_version || '--' },
-      { key: 'battery_model_name', title: 'BMS型号约束', minWidth: 160, render: r => r.battery_model_name || '--' },
-      { key: 'batch_number', title: '批号约束', minWidth: 150, render: r => r.batch_number || '--' },
-      { key: 'item_uuid', title: '序列号约束', minWidth: 220, render: r => r.item_uuid || '--' },
-      { key: 'module', title: '模块', minWidth: 100, render: r => r.module || '--' },
-      { key: 'package_type', title: '类型', minWidth: 90, render: r => packageTypeLabel(r.package_type) },
-      { key: 'signature_type', title: '签名算法', minWidth: 100, render: r => r.signature_type || '--' },
-      { key: 'package_url', title: '固件 URL', minWidth: 430, render: r => renderFirmwareUrl(r) },
-      { key: 'created_at', title: '创建时间', minWidth: 160, render: r => r.created_at || '--' },
+      { key: 'name', title: bt('auto.s_9d9540e486'), minWidth: 180 },
+      { key: 'version', title: bt('auto.s_d0b2958432'), minWidth: 120 },
+      { key: 'target_version', title: bt('auto.s_bc15bf0b06'), minWidth: 120, render: r => r.target_version || '--' },
+      { key: 'battery_model_name', title: bt('auto.s_e96355e54a'), minWidth: 160, render: r => r.battery_model_name || '--' },
+      { key: 'batch_number', title: bt('auto.s_3546dde727'), minWidth: 150, render: r => r.batch_number || '--' },
+      { key: 'item_uuid', title: bt('auto.s_f461d11622'), minWidth: 220, render: r => r.item_uuid || '--' },
+      { key: 'module', title: bt('auto.s_fac54c3430'), minWidth: 100, render: r => r.module || '--' },
+      { key: 'package_type', title: bt('auto.s_226b091218'), minWidth: 90, render: r => packageTypeLabel(r.package_type) },
+      { key: 'signature_type', title: bt('auto.s_a82af18739'), minWidth: 100, render: r => r.signature_type || '--' },
+      { key: 'package_url', title: bt('auto.s_dc16922c1d'), minWidth: 430, render: r => renderFirmwareUrl(r) },
+      { key: 'created_at', title: bt('auto.s_eca37cb072'), minWidth: 160, render: r => r.created_at || '--' },
       {
         key: 'actions',
-        title: '操作',
+        title: bt('auto.s_2b6bc0f293'),
         minWidth: 240,
         fixed: 'right',
         render: r => renderActions(r)
@@ -144,15 +145,15 @@ function createColumns(): DataTableColumns<OtaPackageItem> {
 
   if (is4GModuleTab.value) {
     return [
-      { key: 'name', title: '升级包名称', minWidth: 200 },
-      { key: 'version', title: '版本号', minWidth: 120 },
-      { key: 'package_url', title: '固件 URL', minWidth: 430, render: r => renderFirmwareUrl(r) },
-      { key: 'is_latest', title: '是否最新固件', minWidth: 130, render: r => (r.is_latest ? '是' : '否') },
-      { key: 'description', title: '说明', minWidth: 260, render: r => r.description || '--' },
-      { key: 'created_at', title: '创建时间', minWidth: 160, render: r => r.created_at || '--' },
+      { key: 'name', title: bt('auto.s_9d9540e486'), minWidth: 200 },
+      { key: 'version', title: bt('auto.s_d0b2958432'), minWidth: 120 },
+      { key: 'package_url', title: bt('auto.s_dc16922c1d'), minWidth: 430, render: r => renderFirmwareUrl(r) },
+      { key: 'is_latest', title: bt('auto.s_71ba0bc268'), minWidth: 130, render: r => (r.is_latest ? bt('auto.s_0a60ac8f02') : bt('auto.s_c9744f45e7')) },
+      { key: 'description', title: bt('auto.s_f411d0f1f9'), minWidth: 260, render: r => r.description || '--' },
+      { key: 'created_at', title: bt('auto.s_eca37cb072'), minWidth: 160, render: r => r.created_at || '--' },
       {
         key: 'actions',
-        title: '操作',
+        title: bt('auto.s_2b6bc0f293'),
         minWidth: 220,
         fixed: 'right',
         render: r => renderActions(r)
@@ -161,13 +162,13 @@ function createColumns(): DataTableColumns<OtaPackageItem> {
   }
 
   return [
-    { key: 'name', title: '升级包名称', minWidth: 220 },
-    { key: 'description', title: '说明', minWidth: 300, render: r => r.description || '--' },
-    { key: 'package_url', title: '固件 URL', minWidth: 430, render: r => renderFirmwareUrl(r) },
-    { key: 'created_at', title: '创建时间', minWidth: 160, render: r => r.created_at || '--' },
+    { key: 'name', title: bt('auto.s_9d9540e486'), minWidth: 220 },
+    { key: 'description', title: bt('auto.s_f411d0f1f9'), minWidth: 300, render: r => r.description || '--' },
+    { key: 'package_url', title: bt('auto.s_dc16922c1d'), minWidth: 430, render: r => renderFirmwareUrl(r) },
+    { key: 'created_at', title: bt('auto.s_eca37cb072'), minWidth: 160, render: r => r.created_at || '--' },
     {
       key: 'actions',
-      title: '操作',
+      title: bt('auto.s_2b6bc0f293'),
       minWidth: 220,
       fixed: 'right',
       render: r => renderActions(r)
@@ -178,16 +179,12 @@ function createColumns(): DataTableColumns<OtaPackageItem> {
 function renderActions(row: OtaPackageItem) {
   return (
     <NSpace>
-      <NButton size="small" type="primary" onClick={() => openEdit(row)}>
-        编辑
-      </NButton>
+      <NButton size="small" type="primary" onClick={() => openEdit(row)}>{bt('auto.s_95b351c862')}</NButton>
       <NPopconfirm onPositiveClick={() => doDelete(row)}>
         {{
-          default: () => '确认删除该升级包？',
+          default: () => bt('auto.s_bf62fd3fbc'),
           trigger: () => (
-            <NButton size="small" type="error">
-              删除
-            </NButton>
+            <NButton size="small" type="error">{bt('auto.s_2f4aaddde3')}</NButton>
           )
         }}
       </NPopconfirm>
@@ -265,10 +262,10 @@ const form = ref({
 })
 
 const modalTitle = computed(() => {
-  const prefix = modalType.value === 'create' ? '新增' : '编辑'
-  if (isBmsTab.value) return `${prefix}BMS升级包`
-  if (is4GModuleTab.value) return `${prefix}4G模块升级包`
-  return `${prefix}仪表升级包`
+  const prefix = modalType.value === 'create' ? bt('auto.s_66ab5e9f24') : bt('auto.s_95b351c862')
+  if (isBmsTab.value) return bt('pages.ota.modalTitle', { prefix, kind: bt('auto.s_96b721c7f1') })
+  if (is4GModuleTab.value) return bt('pages.ota.modalTitle', { prefix, kind: bt('auto.s_3751b81511') })
+  return bt('pages.ota.modalTitle', { prefix, kind: bt('auto.s_0a0ca8d002') })
 })
 
 function resetForm(kind: DeviceKind) {
@@ -323,21 +320,21 @@ function openEdit(row: OtaPackageItem) {
 
 async function submit() {
   if (!form.value.name.trim()) {
-    message.warning('请填写升级包名称')
+    message.warning(bt('auto.s_3f239874d7'))
     return
   }
   if (!form.value.package_url.trim()) {
-    message.warning('请上传升级包固件')
+    message.warning(bt('auto.s_f1bba9c2a5'))
     return
   }
   if (form.value.device_kind === DEVICE_KIND_BMS) {
     if (!form.value.version.trim()) {
-      message.warning('请填写版本号')
+      message.warning(bt('auto.s_18a9c8fb65'))
       return
     }
   }
   if (form.value.device_kind === DEVICE_KIND_4G_MODULE && !form.value.version.trim()) {
-    message.warning('请填写版本号')
+    message.warning(bt('auto.s_18a9c8fb65'))
     return
   }
 
@@ -377,15 +374,15 @@ async function submit() {
 
     if (modalType.value === 'create') {
       await request.post('/ota/package', payload)
-      message.success('创建成功')
+      message.success(bt('auto.s_04a691b377'))
     } else {
       await request.put('/ota/package', { ...payload, id: form.value.id })
-      message.success('更新成功')
+      message.success(bt('auto.s_55aa6366c0'))
     }
     showModal.value = false
     handleSearch()
   } catch (e: any) {
-    message.error(e?.message || '保存失败')
+    message.error(e?.message || bt('auto.s_6de920b4e4'))
   } finally {
     saving.value = false
   }
@@ -394,10 +391,10 @@ async function submit() {
 async function doDelete(row: OtaPackageItem) {
   try {
     await request.delete(`/ota/package/${row.id}`)
-    message.success('删除成功')
+    message.success(bt('auto.s_0007d170de'))
     handleSearch()
   } catch (e: any) {
-    message.error(e?.message || '删除失败')
+    message.error(e?.message || bt('auto.s_acf0664a54'))
   }
 }
 
@@ -406,11 +403,11 @@ loadBmsModels()
 
 <template>
   <div class="flex-vertical-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
-    <NCard title="OTA升级包管理" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
+    <NCard :title="bt('auto.s_d50a49fae4')" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
       <NTabs v-model:value="activeTab" type="line" animated>
-        <NTabPane :name="DEVICE_KIND_BMS" tab="BMS升级包" />
-        <NTabPane :name="DEVICE_KIND_METER" tab="仪表升级包" />
-        <NTabPane :name="DEVICE_KIND_4G_MODULE" tab="4G模块升级包" />
+        <NTabPane :name="DEVICE_KIND_BMS" :tab="bt('auto.s_96b721c7f1')" />
+        <NTabPane :name="DEVICE_KIND_METER" :tab="bt('auto.s_0a0ca8d002')" />
+        <NTabPane :name="DEVICE_KIND_4G_MODULE" :tab="bt('auto.s_3751b81511')" />
       </NTabs>
 
       <NForm
@@ -420,14 +417,14 @@ loadBmsModels()
         label-width="auto"
         class="mb-4 flex flex-wrap gap-4 items-end"
       >
-        <NFormItem label="升级包名称">
-          <NInput v-model:value="searchForm.name" placeholder="支持模糊搜索" style="width: 220px" clearable />
+        <NFormItem :label="bt('auto.s_9d9540e486')">
+          <NInput v-model:value="searchForm.name" :placeholder="bt('auto.s_f33cb868c8')" style="width: 220px" clearable />
         </NFormItem>
         <NFormItem>
           <NSpace>
-            <NButton type="primary" @click="handleSearch">查询</NButton>
-            <NButton @click="handleReset">重置</NButton>
-            <NButton type="success" @click="openCreate">新增升级包</NButton>
+            <NButton type="primary" @click="handleSearch">{{ bt('auto.s_bee912d79e') }}</NButton>
+            <NButton @click="handleReset">{{ bt('auto.s_4b9c3271dc') }}</NButton>
+            <NButton type="success" @click="openCreate">{{ bt('auto.s_1e07bb77be') }}</NButton>
           </NSpace>
         </NFormItem>
       </NForm>
@@ -449,31 +446,31 @@ loadBmsModels()
       :style="{ width: form.device_kind === DEVICE_KIND_BMS ? '920px' : '720px' }"
     >
       <NForm label-placement="left" label-width="120" :model="form">
-        <NFormItem label="升级包名称" required>
+        <NFormItem :label="bt('auto.s_9d9540e486')" required>
           <NInput v-model:value="form.name" />
         </NFormItem>
         <template v-if="form.device_kind === DEVICE_KIND_BMS || form.device_kind === DEVICE_KIND_4G_MODULE">
-          <NFormItem label="版本号" required>
-            <NInput v-model:value="form.version" placeholder="例如：1.0.1" />
+          <NFormItem :label="bt('auto.s_d0b2958432')" required>
+            <NInput v-model:value="form.version" :placeholder="bt('auto.s_5dca2568a4')" />
           </NFormItem>
         </template>
         <template v-if="form.device_kind === DEVICE_KIND_BMS">
-          <NFormItem label="目标版本">
-            <NInput v-model:value="form.target_version" placeholder="可选" />
+          <NFormItem :label="bt('auto.s_bc15bf0b06')">
+            <NInput v-model:value="form.target_version" :placeholder="bt('auto.s_c20cba8992')" />
           </NFormItem>
-          <NFormItem label="模块">
-            <NInput v-model:value="form.module" placeholder="可选" />
+          <NFormItem :label="bt('auto.s_fac54c3430')">
+            <NInput v-model:value="form.module" :placeholder="bt('auto.s_c20cba8992')" />
           </NFormItem>
-          <NFormItem label="包类型" required>
+          <NFormItem :label="bt('auto.s_52d9520ee1')" required>
             <NSelect
               v-model:value="form.package_type"
               :options="[
-                { label: '差分', value: 1 },
-                { label: '整包', value: 2 }
+                { label: bt('auto.s_db45871e79'), value: 1 },
+                { label: bt('auto.s_82e6566781'), value: 2 }
               ]"
             />
           </NFormItem>
-          <NFormItem label="签名算法" required>
+          <NFormItem :label="bt('auto.s_a82af18739')" required>
             <NSelect
               v-model:value="form.signature_type"
               :options="[
@@ -483,10 +480,10 @@ loadBmsModels()
             />
           </NFormItem>
         </template>
-        <NFormItem v-if="form.device_kind === DEVICE_KIND_4G_MODULE" label="是否最新固件">
-          <NCheckbox v-model:checked="form.is_latest">是</NCheckbox>
+        <NFormItem v-if="form.device_kind === DEVICE_KIND_4G_MODULE" :label="bt('auto.s_71ba0bc268')">
+          <NCheckbox v-model:checked="form.is_latest">{{ bt('auto.s_0a60ac8f02') }}</NCheckbox>
         </NFormItem>
-        <NFormItem label="升级包固件" required>
+        <NFormItem :label="bt('auto.s_e92670f776')" required>
           <FilePicker
             v-model="form.package_url"
             biz-type="upgradePackage"
@@ -495,37 +492,37 @@ loadBmsModels()
             value-mode="url"
           />
           <div style="color: #999; font-size: 12px; margin-top: 6px">
-            支持扩展名：.bin/.tar/.gz/.zip/.gzip/.apk/.dav/.pack
+            {{ bt('pages.ota.extensionHint') }}
           </div>
         </NFormItem>
-        <NFormItem v-if="form.device_kind !== DEVICE_KIND_BMS" label="说明">
+        <NFormItem v-if="form.device_kind !== DEVICE_KIND_BMS" :label="bt('auto.s_f411d0f1f9')">
           <NInput v-model:value="form.description" type="textarea" />
         </NFormItem>
         <template v-if="form.device_kind === DEVICE_KIND_BMS">
-          <NFormItem label="BMS型号约束">
+          <NFormItem :label="bt('auto.s_e96355e54a')">
             <NSelect
               v-model:value="form.battery_model_id"
               :options="bmsModelOptions"
-              placeholder="可选"
+              :placeholder="bt('auto.s_c20cba8992')"
               clearable
               filterable
             />
           </NFormItem>
-          <NFormItem label="批号约束">
-            <NInput v-model:value="form.batch_number" placeholder="可选，对应 device_batteries.batch_number" />
+          <NFormItem :label="bt('auto.s_3546dde727')">
+            <NInput v-model:value="form.batch_number" :placeholder="bt('auto.s_9a15e5c82e')" />
           </NFormItem>
-          <NFormItem label="序列号约束">
-            <NInput v-model:value="form.item_uuid" placeholder="可选，对应 device_batteries.item_uuid" />
+          <NFormItem :label="bt('auto.s_f461d11622')">
+            <NInput v-model:value="form.item_uuid" :placeholder="bt('auto.s_32bd0453e4')" />
           </NFormItem>
-          <NFormItem label="备注">
+          <NFormItem :label="bt('auto.s_2432b57515')">
             <NInput v-model:value="form.remark" />
           </NFormItem>
         </template>
       </NForm>
       <template #action>
         <NSpace justify="end">
-          <NButton @click="showModal = false">取消</NButton>
-          <NButton type="primary" :loading="saving" @click="submit">保存</NButton>
+          <NButton @click="showModal = false">{{ bt('auto.s_625fb26b4b') }}</NButton>
+          <NButton type="primary" :loading="saving" @click="submit">{{ bt('auto.s_be5fbbe34c') }}</NButton>
         </NSpace>
       </template>
     </NModal>

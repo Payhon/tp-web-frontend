@@ -1,4 +1,5 @@
 <script setup lang="tsx">
+import { bt } from '@/views/bms/_shared/i18n'
 import { computed, h, onMounted, ref, watch } from 'vue'
 import {
   NButton,
@@ -301,7 +302,7 @@ async function fetchOtaTaskDetail() {
     otaTaskDetailList.value = res?.data?.list || []
     otaTaskDetailStats.value = res?.data?.statistics || []
   } catch (e: any) {
-    message.error(e?.message || '获取OTA任务详情失败')
+    message.error(e?.message || bt('auto.s_ac4b94d896'))
     otaTaskDetailList.value = []
     otaTaskDetailStats.value = []
   } finally {
@@ -310,18 +311,18 @@ async function fetchOtaTaskDetail() {
 }
 
 const onlineOptions = [
-  { label: '在线', value: 1 },
-  { label: '离线', value: 0 }
+  { label: bt('auto.s_68905cf391'), value: 1 },
+  { label: bt('auto.s_50d4a8502e'), value: 0 }
 ]
 
 const activationOptions = [
-  { label: '已激活', value: 'ACTIVE' },
-  { label: '未激活', value: 'INACTIVE' }
+  { label: bt('auto.s_f6ebf8f5e0'), value: 'ACTIVE' },
+  { label: bt('auto.s_d70e9bdf18'), value: 'INACTIVE' }
 ]
 
 const warrantyOptions = [
-  { label: '在保', value: 'IN' },
-  { label: '过保', value: 'OVER' }
+  { label: bt('auto.s_142f3c93b3'), value: 'IN' },
+  { label: bt('auto.s_4362652257'), value: 'OVER' }
 ]
 
 function onlineTagType(isOnline: number) {
@@ -334,14 +335,14 @@ function activationTagType(status?: string | null) {
 }
 
 function activationLabel(status?: string | null) {
-  if (status === 'ACTIVE') return '已激活'
-  if (status === 'INACTIVE') return '未激活'
+  if (status === 'ACTIVE') return bt('auto.s_f6ebf8f5e0')
+  if (status === 'INACTIVE') return bt('auto.s_d70e9bdf18')
   return '--'
 }
 
 function currentStatusLabel(row: BatteryItem) {
   const parts = [activationLabel(row.activation_status)]
-  parts.push(row.is_online === 1 ? '在线' : '离线')
+  parts.push(row.is_online === 1 ? bt('auto.s_68905cf391') : bt('auto.s_50d4a8502e'))
   return parts.join(' / ')
 }
 
@@ -417,31 +418,31 @@ function canShowFactoryRestoreAction(row: BatteryItem) {
 function getActionOptions(row: BatteryItem) {
   return filterMenuOptions([
     {
-      label: '查看详情',
+      label: bt('auto.s_5b48dbb8dc'),
       key: 'detail',
       icon: renderIcon(EyeOutline),
       permissionKey: 'bms_battery_list_detail'
     },
     {
-      label: '参数',
+      label: bt('auto.s_3d0a2df9ec'),
       key: 'params',
       icon: renderIcon(SettingsOutline),
       permissionKey: 'bms_battery_list_action_params'
     },
     {
-      label: '离线指令',
+      label: bt('auto.s_d3f156bcf0'),
       key: 'offline',
       icon: renderIcon(FlashOutline),
       permissionKey: 'bms_battery_list_action_offline_command'
     },
     {
-      label: '编辑 BMS 信息',
+      label: bt('auto.s_a14612b388'),
       key: 'edit',
       icon: renderIcon(CreateOutline),
       permissionKey: 'bms_battery_list_action_edit_bms_info'
     },
     {
-      label: '删除',
+      label: bt('auto.s_2f4aaddde3'),
       key: 'delete',
       icon: renderIcon(TrashOutline),
       permissionKey: 'bms_battery_list_action_delete'
@@ -451,12 +452,12 @@ function getActionOptions(row: BatteryItem) {
       key: 'divider-1'
     },
     {
-      label: '生命周期',
+      label: bt('auto.s_176808a1b5'),
       key: 'lifecycle',
       icon: renderIcon(ListOutline),
       children: [
         {
-          label: '出厂',
+          label: bt('auto.s_539d3e5db4'),
           key: 'lifecycle.factory',
           icon: renderIcon(CubeOutline),
           permissionKey: 'bms_battery_list_action_lifecycle_factory'
@@ -464,7 +465,7 @@ function getActionOptions(row: BatteryItem) {
         ...(canShowFactoryRestoreAction(row)
           ? [
               {
-                label: '恢复出厂',
+                label: bt('auto.s_2f6f278e3c'),
                 key: 'lifecycle.factoryRestore',
                 icon: renderIcon(ReturnUpBackOutline),
                 permissionKey: 'bms_battery_list_action_lifecycle_factory_restore'
@@ -472,19 +473,19 @@ function getActionOptions(row: BatteryItem) {
             ]
           : []),
         {
-          label: '信息补全',
+          label: bt('auto.s_bf7b2d5361'),
           key: 'lifecycle.infoComplete',
           icon: renderIcon(ListOutline),
           permissionKey: 'bms_battery_list_action_lifecycle_info_complete'
         },
         {
-          label: '激活',
+          label: bt('auto.s_83a991d77c'),
           key: 'lifecycle.activate',
           icon: renderIcon(CheckmarkCircleOutline),
           permissionKey: 'bms_battery_list_action_lifecycle_activate'
         },
         {
-          label: '调拨',
+          label: bt('auto.s_59ab62ddae'),
           key: 'lifecycle.transfer',
           icon: renderIcon(SwapHorizontalOutline),
           permissionKey: 'bms_battery_list_action_lifecycle_transfer',
@@ -493,7 +494,7 @@ function getActionOptions(row: BatteryItem) {
         ...(canShowRollbackAction(row)
           ? [
               {
-                label: '回退',
+                label: bt('auto.s_c3cb48b69a'),
                 key: 'lifecycle.rollback',
                 icon: renderIcon(ReturnUpBackOutline),
                 permissionKey: 'bms_battery_list_action_lifecycle_rollback'
@@ -508,37 +509,37 @@ function getActionOptions(row: BatteryItem) {
 function getBatchActionOptions() {
   return filterMenuOptions([
     {
-      label: `批量出厂(${selectedCount.value})`,
+      label: `${bt('auto.s_51af1c7e1e')}(${selectedCount.value})`,
       key: 'batch.factory',
       icon: renderIcon(CubeOutline),
       permissionKey: 'bms_battery_list_batch_factory_out'
     },
     {
-      label: `电池信息补全(${selectedCount.value})`,
+      label: `${bt('auto.s_c9c2396d84')}(${selectedCount.value})`,
       key: 'batch.infoComplete',
       icon: renderIcon(ListOutline),
       permissionKey: 'bms_battery_list_batch_info_complete'
     },
     {
-      label: `批量分配经销商(${selectedCount.value})`,
+      label: `${bt('auto.s_3886905b9c')}(${selectedCount.value})`,
       key: 'batch.assignDealer',
       icon: renderIcon(StorefrontOutline),
       permissionKey: 'bms_battery_list_batch_assign_dealer'
     },
     {
-      label: `批量设置标签(${selectedCount.value})`,
+      label: `${bt('auto.s_e6fae0e464')}(${selectedCount.value})`,
       key: 'batch.tag',
       icon: renderIcon(PricetagsOutline),
       permissionKey: 'bms_battery_list_batch_tag'
     },
     {
-      label: `批量下发指令(${selectedCount.value})`,
+      label: `${bt('auto.s_4d46ae103d')}(${selectedCount.value})`,
       key: 'batch.command',
       icon: renderIcon(FlashOutline),
       permissionKey: 'bms_battery_list_batch_command'
     },
     {
-      label: `批量OTA推送(${selectedCount.value})`,
+      label: `${bt('auto.s_26e6fda3e4')}(${selectedCount.value})`,
       key: 'batch.ota',
       icon: renderIcon(CloudUploadOutline),
       permissionKey: 'bms_battery_list_batch_ota'
@@ -557,7 +558,7 @@ function handleActionSelect(key: string, row: BatteryItem) {
   if (key === 'lifecycle.infoComplete') openCompleteInfoModal([row])
   if (key === 'lifecycle.transfer') {
     if (isStoreOrgUser.value) {
-      message.warning('当前机构无可调拨下级机构')
+      message.warning(bt('auto.s_dad74257ab'))
       return
     }
     openTransferModal(row)
@@ -612,18 +613,18 @@ const searchForm = ref<{
 const showAdvancedSearch = ref(false)
 
 const textSearchFieldOptions: Array<{ label: string; value: typeof searchForm.value.search_field }> = [
-  { label: '序列号', value: 'device_number' },
-  { label: '批号', value: 'batch_number' },
-  { label: 'BMS型号', value: 'battery_model_name' },
-  { label: '产品规格', value: 'product_spec' },
-  { label: '蓝牙模块MAC', value: 'ble_mac' },
-  { label: '设备身份MAC', value: 'identity_ble_mac' },
-  { label: '4G卡ID', value: 'comm_chip_id' }
+  { label: bt('auto.s_7079d2e6c4'), value: 'device_number' },
+  { label: bt('auto.s_b09f4ca805'), value: 'batch_number' },
+  { label: bt('auto.s_c44c1028d5'), value: 'battery_model_name' },
+  { label: bt('auto.s_2b4784210d'), value: 'product_spec' },
+  { label: bt('auto.s_7342dbc8fd'), value: 'ble_mac' },
+  { label: bt('auto.s_5542d0a58d'), value: 'identity_ble_mac' },
+  { label: bt('auto.s_1978e7fc85'), value: 'comm_chip_id' }
 ]
 
 const textSearchPlaceholder = computed(() => {
   const current = textSearchFieldOptions.find(item => item.value === searchForm.value.search_field)
-  return current ? `请输入${current.label}` : '请输入搜索内容'
+  return current ? bt('pages.batteryList.inputCurrentLabel', { label: current.label }) : bt('auto.s_063e9a054a')
 })
 
 const userOrgType = computed(() => String((authStore.userInfo as any)?.org_type || '').toUpperCase())
@@ -645,7 +646,7 @@ const ownerOrgTypeOptions = computed(() => {
     types.push('STORE')
   }
   return types.map(type => ({
-    label: type === 'PACK_FACTORY' ? 'PACK厂' : type === 'DEALER' ? '经销商' : '门店',
+    label: type === 'PACK_FACTORY' ? bt('auto.s_7b50c41556') : type === 'DEALER' ? bt('auto.s_9019dc8029') : bt('auto.s_a7da92344c'),
     value: type
   }))
 })
@@ -675,48 +676,48 @@ const createColumns = (): DataTableColumns<BatteryItem> => [
     multiple: true,
     fixed: 'left'
   },
-  { key: 'device_number', title: '序列号', minWidth: 150, fixed: 'left' },
-  { key: 'batch_number', title: '批号', minWidth: 140, render: row => row.batch_number || '--' },
-  { key: 'battery_model_name', title: 'BMS型号', minWidth: 140, render: row => row.battery_model_name || '--' },
-  { key: 'product_spec', title: '产品规格', minWidth: 140, render: row => row.product_spec || '--' },
-  { key: 'cell_brand_name', title: '电芯品牌', minWidth: 140, render: row => row.cell_brand_name || '--' },
+  { key: 'device_number', title: bt('auto.s_7079d2e6c4'), minWidth: 150, fixed: 'left' },
+  { key: 'batch_number', title: bt('auto.s_b09f4ca805'), minWidth: 140, render: row => row.batch_number || '--' },
+  { key: 'battery_model_name', title: bt('auto.s_c44c1028d5'), minWidth: 140, render: row => row.battery_model_name || '--' },
+  { key: 'product_spec', title: bt('auto.s_2b4784210d'), minWidth: 140, render: row => row.product_spec || '--' },
+  { key: 'cell_brand_name', title: bt('auto.s_b7f1936e90'), minWidth: 140, render: row => row.cell_brand_name || '--' },
   {
     key: 'pack_battery_model_name',
-    title: '电池型号',
+    title: bt('auto.s_ca62d89383'),
     minWidth: 160,
     render: row => row.pack_battery_model_name || '--'
   },
-  { key: 'ble_mac', title: '蓝牙模块MAC', minWidth: 160, render: row => row.ble_mac || '--' },
-  { key: 'identity_ble_mac', title: '设备身份MAC', minWidth: 160, render: row => row.identity_ble_mac || '--' },
-  { key: 'comm_chip_id', title: '4G卡ID', minWidth: 160, render: row => row.comm_chip_id || '--' },
-  { key: 'production_date', title: '出厂日期', minWidth: 120, render: row => row.production_date || '--' },
+  { key: 'ble_mac', title: bt('auto.s_7342dbc8fd'), minWidth: 160, render: row => row.ble_mac || '--' },
+  { key: 'identity_ble_mac', title: bt('auto.s_5542d0a58d'), minWidth: 160, render: row => row.identity_ble_mac || '--' },
+  { key: 'comm_chip_id', title: bt('auto.s_1978e7fc85'), minWidth: 160, render: row => row.comm_chip_id || '--' },
+  { key: 'production_date', title: bt('auto.s_fbe2fcd983'), minWidth: 120, render: row => row.production_date || '--' },
   {
     key: 'owner_org_name',
-    title: '归属机构',
+    title: bt('auto.s_6ce6f1493b'),
     minWidth: 160,
-    render: row => row.owner_org_name || row.dealer_name || <NTag type="info">厂家库存</NTag>
+    render: row => row.owner_org_name || row.dealer_name || <NTag type="info">{bt('auto.s_a14d2ac1e0')}</NTag>
   },
-  { key: 'user_phone', title: '终端用户', minWidth: 140, render: row => row.user_phone || '--' },
+  { key: 'user_phone', title: bt('auto.s_5ddfa01711'), minWidth: 140, render: row => row.user_phone || '--' },
   {
     key: 'activation_status',
-    title: '激活状态',
+    title: bt('auto.s_ffecc9f0be'),
     minWidth: 110,
     render: row => <NTag type={activationTagType(row.activation_status)}>{activationLabel(row.activation_status)}</NTag>
   },
-  { key: 'activation_date', title: '激活时间', minWidth: 160, render: row => row.activation_date || '--' },
+  { key: 'activation_date', title: bt('auto.s_94d02ed943'), minWidth: 160, render: row => row.activation_date || '--' },
   {
     key: 'is_online',
-    title: '在线状态',
+    title: bt('auto.s_e639862a11'),
     minWidth: 110,
-    render: row => <NTag type={onlineTagType(row.is_online)}>{row.is_online === 1 ? '在线' : '离线'}</NTag>
+    render: row => <NTag type={onlineTagType(row.is_online)}>{row.is_online === 1 ? bt('auto.s_68905cf391') : bt('auto.s_50d4a8502e')}</NTag>
   },
   { key: 'soc', title: 'SOC(%)', minWidth: 100, render: row => row.soc ?? '--' },
   { key: 'soh', title: 'SOH(%)', minWidth: 100, render: row => row.soh ?? '--' },
-  { key: 'warranty_expire_date', title: '质保到期', minWidth: 120, render: row => row.warranty_expire_date || '--' },
-  { key: 'current_version', title: '固件版本', minWidth: 120, render: row => row.current_version || '--' },
+  { key: 'warranty_expire_date', title: bt('auto.s_f65c27925f'), minWidth: 120, render: row => row.warranty_expire_date || '--' },
+  { key: 'current_version', title: bt('auto.s_a81e282698'), minWidth: 120, render: row => row.current_version || '--' },
   {
     key: 'actions',
-    title: '操作',
+    title: bt('auto.s_2b6bc0f293'),
     minWidth: 140,
     fixed: 'right',
     render: row => {
@@ -727,7 +728,7 @@ const createColumns = (): DataTableColumns<BatteryItem> => [
         <NDropdown options={options as any} trigger="click" onSelect={(key: string) => handleActionSelect(key, row)}>
           <NButton size="small" quaternary>
             {{
-              default: () => '操作',
+              default: () => bt('auto.s_2b6bc0f293'),
               icon: () => (
                 <NIcon>
                   <EllipsisHorizontal />
@@ -802,12 +803,12 @@ async function handleExport() {
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `电池列表_${dayjs().format('YYYYMMDDHHmmss')}.xlsx`
+    link.download = bt('pages.batteryList.exportFileName', { time: dayjs().format('YYYYMMDDHHmmss') })
     link.click()
     window.URL.revokeObjectURL(url)
-    message.success('导出成功')
+    message.success(bt('auto.s_105c8a51fe'))
   } catch (error: any) {
-    message.error(error?.message || '导出失败')
+    message.error(error?.message || bt('auto.s_dd51ab5026'))
   }
 }
 
@@ -828,7 +829,7 @@ async function openEditSingleModal(row: BatteryItem) {
     singleEditData.value = res?.data || null
     showSingleModal.value = true
   } catch (e: any) {
-    message.error(e?.message || '加载 BMS 信息失败')
+    message.error(e?.message || bt('auto.s_1a874c0598'))
   }
 }
 
@@ -851,36 +852,36 @@ async function handleSingleSubmit(form: any) {
     }
     if (singleModalMode.value === 'edit' && singleEditData.value?.device_id) {
       await updateSingleBattery(singleEditData.value.device_id, payload)
-      message.success('编辑成功')
+      message.success(bt('auto.s_3bb47b6799'))
     } else {
       await createSingleBattery(payload)
-      message.success('添加成功')
+      message.success(bt('auto.s_3fdaeadf0e'))
     }
     showSingleModal.value = false
     singleEditData.value = null
     getData()
   } catch (e: any) {
-    message.error(e?.message || (singleModalMode.value === 'edit' ? '编辑失败' : '添加失败'))
+    message.error(e?.message || (singleModalMode.value === 'edit' ? bt('auto.s_9304e8f4c3') : bt('auto.s_6452a05591')))
   }
 }
 
 function handleDeleteBattery(row: BatteryItem) {
   dialog.warning({
-    title: '确认删除电池',
-    content: `删除后该电池及其关联业务数据都会被删除，且不可恢复。是否继续删除「${row.device_number || '--'}」？`,
-    positiveText: '确认删除',
-    negativeText: '取消',
+    title: bt('auto.s_006da9f339'),
+    content: bt('pages.batteryList.deleteContent', { device: row.device_number || '--' }),
+    positiveText: bt('auto.s_631cd22018'),
+    negativeText: bt('auto.s_625fb26b4b'),
     onPositiveClick: async () => {
       try {
         await deleteBattery(row.device_id)
-        message.success('删除成功')
+        message.success(bt('auto.s_0007d170de'))
         if (selectedRowKeys.value.includes(row.device_id)) {
           selectedRowKeys.value = selectedRowKeys.value.filter(id => id !== row.device_id)
           delete selectedRowsMap.value[row.device_id]
         }
         getData()
       } catch (e: any) {
-        message.error(e?.message || '删除失败')
+        message.error(e?.message || bt('auto.s_acf0664a54'))
       }
     }
   })
@@ -913,7 +914,7 @@ const transferOrgTypeOptions = computed(() => {
   }
 
   return types.map(type => ({
-    label: type === 'PACK_FACTORY' ? 'PACK厂' : type === 'DEALER' ? '经销商' : '门店',
+    label: type === 'PACK_FACTORY' ? bt('auto.s_7b50c41556') : type === 'DEALER' ? bt('auto.s_9019dc8029') : bt('auto.s_a7da92344c'),
     value: type
   }))
 })
@@ -961,7 +962,7 @@ async function openFactoryModal(row: BatteryItem) {
 
 async function handleBatchFactory() {
   if (selectedCount.value === 0) {
-    message.warning('请先选择要出厂的电池')
+    message.warning(bt('auto.s_10c820a5d7'))
     return
   }
   factoryMode.value = 'batch'
@@ -980,13 +981,13 @@ async function handleBatchFactory() {
 async function openTransferModal(row: BatteryItem) {
   const defaultTargetType = transferOrgTypeOptions.value[0]?.value as 'PACK_FACTORY' | 'DEALER' | 'STORE' | undefined
   if (!defaultTargetType) {
-    message.warning('当前机构无可调拨下级机构')
+    message.warning(bt('auto.s_dad74257ab'))
     return
   }
   transferForm.value = {
     device_id: row.device_id,
     device_number: row.device_number,
-    from_org_name: row.owner_org_name || row.dealer_name || '厂家',
+    from_org_name: row.owner_org_name || row.dealer_name || bt('auto.s_8284e8dacc'),
     from_org_type: row.owner_org_type || '',
     to_org_type: defaultTargetType,
     to_org_id: null,
@@ -1012,20 +1013,20 @@ async function openRollbackModal(row: BatteryItem) {
     const res: any = await getBatteryRollbackPreview({ device_id: row.device_id })
     const preview = res?.data || {}
     if (!preview?.can_rollback) {
-      message.warning(preview?.reason || '当前电池不支持回退')
+      message.warning(preview?.reason || bt('auto.s_aae649a243'))
       return
     }
     rollbackForm.value = {
       device_id: preview.device_id || row.device_id,
       device_number: preview.device_number || row.device_number,
-      current_org_name: preview.current_org_name || row.owner_org_name || row.dealer_name || '当前机构',
+      current_org_name: preview.current_org_name || row.owner_org_name || row.dealer_name || bt('auto.s_5b80f24aa3'),
       rollback_to_org_id: preview.rollback_to_org_id || null,
       rollback_to_org_name: preview.rollback_to_org_name || '',
       remark: ''
     }
     showRollbackModal.value = true
   } catch (e: any) {
-    message.error(e?.message || '加载回退目标失败')
+    message.error(e?.message || bt('auto.s_12f754509f'))
   } finally {
     rollbackLoading.value = false
   }
@@ -1038,11 +1039,11 @@ async function confirmFactoryRestore() {
       device_id: factoryRestoreForm.value.device_id,
       remark: factoryRestoreForm.value.remark?.trim() ? factoryRestoreForm.value.remark.trim() : undefined
     })
-    message.success('恢复出厂成功')
+    message.success(bt('auto.s_a55835d018'))
     showFactoryRestoreModal.value = false
     getData()
   } catch (e: any) {
-    message.error(e?.message || '恢复出厂失败')
+    message.error(e?.message || bt('auto.s_ffff0f93f9'))
   } finally {
     factoryRestoreLoading.value = false
   }
@@ -1066,7 +1067,7 @@ function openActivateModal(row: BatteryItem) {
 
 function openCompleteInfoModal(rows: BatteryItem[]) {
   if (!rows.length) {
-    message.warning('请先选择要补全的电池')
+    message.warning(bt('auto.s_856fa04dd8'))
     return
   }
   completeInfoRows.value = rows
@@ -1080,7 +1081,7 @@ function openCompleteInfoModal(rows: BatteryItem[]) {
 
 async function confirmFactoryOut() {
   if (!factoryForm.value.to_org_id) {
-    message.warning('请选择出厂目标')
+    message.warning(bt('auto.s_40ab475cea'))
     return
   }
   factoryLoading.value = true
@@ -1094,15 +1095,19 @@ async function confirmFactoryOut() {
       })
       const r = res?.data
       if (r) {
-        const msg = `批量出厂完成：总计 ${r.total} 台，成功 ${r.success} 台，失败 ${r.failed} 台`
+        const msg = bt('pages.batteryList.batchFactoryResult', {
+          total: r.total,
+          success: r.success,
+          failed: r.failed
+        })
         if (r.failed > 0 && r.failures?.length) {
           const failures = r.failures.map((f: any) => `${f.device_number || f.device_id}：${f.message}`).join('\n')
-          message.warning(msg + '\n失败明细：\n' + failures, { duration: 10000 })
+          message.warning(`${msg}\n${bt('pages.batteryList.failureDetails', { details: failures })}`, { duration: 10000 })
         } else {
           message.success(msg)
         }
       } else {
-        message.success('批量出厂成功')
+        message.success(bt('auto.s_0a3906de02'))
       }
       clearSelection()
     } else {
@@ -1111,12 +1116,12 @@ async function confirmFactoryOut() {
         to_org_id: factoryForm.value.to_org_id,
         remark
       })
-      message.success('出厂成功')
+      message.success(bt('auto.s_61c37b955a'))
     }
     showFactoryModal.value = false
     getData()
   } catch (e: any) {
-    message.error(e?.message || (factoryMode.value === 'batch' ? '批量出厂失败' : '出厂失败'))
+    message.error(e?.message || (factoryMode.value === 'batch' ? bt('auto.s_c7832b0f75') : bt('auto.s_016a41a45d')))
   } finally {
     factoryLoading.value = false
   }
@@ -1124,7 +1129,7 @@ async function confirmFactoryOut() {
 
 async function confirmTransfer() {
   if (!transferForm.value.to_org_id) {
-    message.warning('请选择调拨目标')
+    message.warning(bt('auto.s_a52513d5c8'))
     return
   }
   transferLoading.value = true
@@ -1134,11 +1139,11 @@ async function confirmTransfer() {
       to_org_id: transferForm.value.to_org_id,
       remark: transferForm.value.remark?.trim() ? transferForm.value.remark.trim() : undefined
     })
-    message.success('调拨成功')
+    message.success(bt('auto.s_986d239b72'))
     showTransferModal.value = false
     getData()
   } catch (e: any) {
-    message.error(e?.message || '调拨失败')
+    message.error(e?.message || bt('auto.s_7ff235650d'))
   } finally {
     transferLoading.value = false
   }
@@ -1146,7 +1151,7 @@ async function confirmTransfer() {
 
 async function confirmRollback() {
   if (!rollbackForm.value.rollback_to_org_id) {
-    message.warning('当前电池没有可回退的目标机构')
+    message.warning(bt('auto.s_5ca512db4f'))
     return
   }
   rollbackLoading.value = true
@@ -1155,11 +1160,11 @@ async function confirmRollback() {
       device_id: rollbackForm.value.device_id,
       remark: rollbackForm.value.remark?.trim() ? rollbackForm.value.remark.trim() : undefined
     })
-    message.success('回退成功')
+    message.success(bt('auto.s_742b8fabf6'))
     showRollbackModal.value = false
     getData()
   } catch (e: any) {
-    message.error(e?.message || '回退失败')
+    message.error(e?.message || bt('auto.s_7e80aa54b3'))
   } finally {
     rollbackLoading.value = false
   }
@@ -1167,7 +1172,7 @@ async function confirmRollback() {
 
 async function confirmActivate() {
   if (!activateForm.value.user_id) {
-    message.warning('请选择要绑定的APP用户')
+    message.warning(bt('auto.s_d5c7d7ec80'))
     return
   }
   activateLoading.value = true
@@ -1177,11 +1182,11 @@ async function confirmActivate() {
       user_id: activateForm.value.user_id,
       remark: activateForm.value.remark?.trim() ? activateForm.value.remark.trim() : undefined
     })
-    message.success('激活成功')
+    message.success(bt('auto.s_240dec1fb2'))
     showActivateModal.value = false
     getData()
   } catch (e: any) {
-    message.error(e?.message || '激活失败')
+    message.error(e?.message || bt('auto.s_912efdba9d'))
   } finally {
     activateLoading.value = false
   }
@@ -1189,7 +1194,7 @@ async function confirmActivate() {
 
 function handleBatchCompleteInfo() {
   if (selectedCount.value === 0) {
-    message.warning('请先选择要补全的电池')
+    message.warning(bt('auto.s_856fa04dd8'))
     return
   }
   openCompleteInfoModal(selectedRows.value)
@@ -1197,11 +1202,11 @@ function handleBatchCompleteInfo() {
 
 async function confirmCompleteInfo() {
   if (!completeInfoForm.value.cell_brand_seq_no) {
-    message.warning('请选择电芯品牌')
+    message.warning(bt('auto.s_3cb8d707db'))
     return
   }
   if (!completeInfoForm.value.battery_model_seq_no) {
-    message.warning('请选择电池型号')
+    message.warning(bt('auto.s_bb89a8596d'))
     return
   }
 
@@ -1212,12 +1217,12 @@ async function confirmCompleteInfo() {
       cell_brand_seq_no: completeInfoForm.value.cell_brand_seq_no,
       battery_model_seq_no: completeInfoForm.value.battery_model_seq_no
     })
-    message.success('电池信息补全成功')
+    message.success(bt('auto.s_57cde3445b'))
     showCompleteInfoModal.value = false
     clearSelection()
     getData()
   } catch (error: any) {
-    message.error(error?.message || '电池信息补全失败')
+    message.error(error?.message || bt('auto.s_9c5e959bb3'))
   } finally {
     completeInfoLoading.value = false
   }
@@ -1226,7 +1231,7 @@ async function confirmCompleteInfo() {
 // 批量分配经销商
 function handleBatchAssign() {
   if (selectedCount.value === 0) {
-    message.warning('请先选择要分配的电池')
+    message.warning(bt('auto.s_696436339e'))
     return
   }
   showBatchAssignModal.value = true
@@ -1234,7 +1239,7 @@ function handleBatchAssign() {
 
 async function handleBatchTag() {
   if (selectedCount.value === 0) {
-    message.warning('请先选择要设置标签的电池')
+    message.warning(bt('auto.s_06854285b0'))
     return
   }
   // lazy load tags
@@ -1252,7 +1257,7 @@ async function handleBatchTag() {
 
 async function handleBatchCommand() {
   if (selectedCount.value === 0) {
-    message.warning('请先选择要下发指令的电池')
+    message.warning(bt('auto.s_84d89952cf'))
     return
   }
   showBatchCmdModal.value = true
@@ -1283,7 +1288,7 @@ async function handleBatchCommand() {
 
 async function handleBatchOta() {
   if (selectedCount.value === 0) {
-    message.warning('请先选择要推送OTA的电池')
+    message.warning(bt('auto.s_0107c5d1ee'))
     return
   }
   showBatchOtaModal.value = true
@@ -1310,7 +1315,7 @@ async function handleBatchOta() {
 
 async function confirmBatchOta() {
   if (!batchOtaForm.value.ota_upgrade_package_id) {
-    message.warning('请选择升级包')
+    message.warning(bt('auto.s_c9004a9e85'))
     return
   }
   batchOtaLoading.value = true
@@ -1323,15 +1328,20 @@ async function confirmBatchOta() {
     const r = res?.data
     if (r) {
       lastOtaTaskId.value = r.task_id || ''
-      const msg = `已创建OTA任务${r.task_id ? `（${r.task_id}）` : ''}：总计 ${r.total} 台，受理 ${r.accepted} 台，拒绝 ${r.rejected} 台`
+      const msg = bt('pages.batteryList.otaCreated', {
+        taskId: r.task_id ? `(${r.task_id})` : '',
+        total: r.total,
+        accepted: r.accepted,
+        rejected: r.rejected
+      })
       if (r.rejected > 0 && r.failures?.length) {
         const failures = r.failures.map((f: any) => `${f.device_number || f.device_id}：${f.message}`).join('\n')
-        message.warning(msg + '\n拒绝明细：\n' + failures, { duration: 10000 })
+        message.warning(`${msg}\n${bt('pages.batteryList.rejectDetails', { details: failures })}`, { duration: 10000 })
       } else {
         message.success(msg)
       }
     } else {
-      message.success('批量OTA推送已提交')
+      message.success(bt('auto.s_368a09b873'))
     }
     showBatchOtaModal.value = false
     // 不清空选择，方便继续操作；但多数情况下推送后清空更合理
@@ -1340,7 +1350,7 @@ async function confirmBatchOta() {
       openOtaTaskDetail(lastOtaTaskId.value)
     }
   } catch (e: any) {
-    message.error(e?.message || '批量OTA推送失败')
+    message.error(e?.message || bt('auto.s_e7fce7fea2'))
   } finally {
     batchOtaLoading.value = false
   }
@@ -1355,7 +1365,7 @@ function handleBatchCmdSelect(v: string) {
 
 async function confirmBatchCommand() {
   if (!batchCmdForm.value.identify) {
-    message.warning('请选择指令')
+    message.warning(bt('auto.s_48deaf43fe'))
     return
   }
   batchCmdLoading.value = true
@@ -1368,20 +1378,24 @@ async function confirmBatchCommand() {
     })
     const r = res?.data
     if (r) {
-      const msg = `下发完成：总计 ${r.total} 台，成功 ${r.success} 台，失败 ${r.failed} 台`
+      const msg = bt('pages.batteryList.commandResult', {
+        total: r.total,
+        success: r.success,
+        failed: r.failed
+      })
       if (r.failed > 0 && r.failures?.length) {
         const failures = r.failures.map((f: any) => `${f.device_number || f.device_id}：${f.message}`).join('\n')
-        message.warning(msg + '\n失败明细：\n' + failures, { duration: 10000 })
+        message.warning(`${msg}\n${bt('pages.batteryList.failureDetails', { details: failures })}`, { duration: 10000 })
       } else {
         message.success(msg)
       }
     } else {
-      message.success('批量下发成功')
+      message.success(bt('auto.s_f083484dcb'))
     }
     showBatchCmdModal.value = false
     clearSelection()
   } catch (e: any) {
-    message.error(e?.message || '批量下发失败')
+    message.error(e?.message || bt('auto.s_ea171450f9'))
   } finally {
     batchCmdLoading.value = false
   }
@@ -1389,7 +1403,7 @@ async function confirmBatchCommand() {
 
 async function confirmBatchAssign() {
   if (!batchAssignForm.value.dealer_id) {
-    message.warning('请选择经销商')
+    message.warning(bt('auto.s_79a6bb6071'))
     return
   }
 
@@ -1399,13 +1413,13 @@ async function confirmBatchAssign() {
       device_ids: selectedRowKeys.value,
       dealer_id: batchAssignForm.value.dealer_id
     })
-    message.success('批量分配成功')
+    message.success(bt('auto.s_ea98411a91'))
     showBatchAssignModal.value = false
     clearSelection()
     batchAssignForm.value.dealer_id = null
     getData()
   } catch (error: any) {
-    message.error(error?.message || '批量分配失败')
+    message.error(error?.message || bt('auto.s_01290ebc65'))
   } finally {
     batchAssignLoading.value = false
   }
@@ -1419,14 +1433,14 @@ async function confirmBatchTag() {
       tag_ids: batchTagForm.value.tag_ids,
       mode: batchTagForm.value.mode
     })
-    message.success('标签设置成功')
+    message.success(bt('auto.s_6fa72b2218'))
     showBatchTagModal.value = false
     clearSelection()
     batchTagForm.value.tag_ids = []
     batchTagForm.value.mode = 'REPLACE'
     getData()
   } catch (error: any) {
-    message.error(error?.message || '标签设置失败')
+    message.error(error?.message || bt('auto.s_4a6bfa7adc'))
   } finally {
     batchTagLoading.value = false
   }
@@ -1474,7 +1488,7 @@ function handleOfflineCmdSelect(v: string) {
 async function confirmOfflineCmd() {
   if (!offlineCmdForm.value.device_id) return
   if (!offlineCmdForm.value.identify) {
-    message.warning('请选择指令')
+    message.warning(bt('auto.s_48deaf43fe'))
     return
   }
   offlineCmdLoading.value = true
@@ -1485,10 +1499,10 @@ async function confirmOfflineCmd() {
       identify: offlineCmdForm.value.identify,
       value: offlineCmdForm.value.value?.trim() ? offlineCmdForm.value.value.trim() : undefined
     })
-    message.success('离线指令已存储（设备上线后自动执行）')
+    message.success(bt('auto.s_73862d9201'))
     showOfflineCmdModal.value = false
   } catch (e: any) {
-    message.error(e?.message || '存储失败')
+    message.error(e?.message || bt('auto.s_8b01aee608'))
   } finally {
     offlineCmdLoading.value = false
   }
@@ -1618,7 +1632,7 @@ onMounted(async () => {
 
 <template>
   <div class="flex-vertical-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
-    <NCard title="电池列表" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
+    <NCard :title="bt('auto.s_120b88c907')" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
       <div class="battery-list-layout">
         <div class="battery-list-toolbar">
           <NForm :model="searchForm" label-placement="left" label-width="auto" class="battery-search-panel">
@@ -1639,91 +1653,93 @@ onMounted(async () => {
                 />
               </NFormItem>
 
-              <NFormItem label="BMS型号" path="battery_model_id" class="battery-search-item">
+              <NFormItem :label="bt('auto.s_c44c1028d5')" path="battery_model_id" class="battery-search-item">
                 <NSelect
                   v-model:value="searchForm.battery_model_id"
                   :options="bmsModelOptions"
-                  placeholder="请选择BMS型号"
+                  :placeholder="bt('auto.s_1d3a241383')"
                   clearable
                   class="battery-search-control"
                 />
               </NFormItem>
 
               <div class="battery-search-actions">
-                <NButton type="primary" @click="handleSearch">查询</NButton>
-                <NButton @click="handleReset">重置</NButton>
+                <NButton type="primary" @click="handleSearch">{{ bt('auto.s_bee912d79e') }}</NButton>
+                <NButton @click="handleReset">{{ bt('auto.s_4b9c3271dc') }}</NButton>
                 <NButton text type="primary" @click="showAdvancedSearch = !showAdvancedSearch">
                   {{
                     showAdvancedSearch
-                      ? '收起高级'
-                      : `高级筛选${activeAdvancedFilterCount ? `(${activeAdvancedFilterCount})` : ''}`
+                      ? bt('auto.s_5e0e0c6169')
+                      : bt('pages.batteryList.advancedFilter', {
+                          count: activeAdvancedFilterCount ? `(${activeAdvancedFilterCount})` : ''
+                        })
                   }}
                 </NButton>
               </div>
             </div>
 
             <div v-show="showAdvancedSearch" class="battery-search-advanced">
-              <NFormItem v-if="canFilterByOrgType" label="机构类型" path="owner_org_type" class="battery-search-item">
+              <NFormItem v-if="canFilterByOrgType" :label="bt('auto.s_f835eef9e8')" path="owner_org_type" class="battery-search-item">
                 <NSelect
                   v-model:value="searchForm.owner_org_type"
                   :options="ownerOrgTypeOptions"
-                  placeholder="请选择类型"
+                  :placeholder="bt('auto.s_95f11c5690')"
                   clearable
                   class="battery-search-control"
                   @update:value="handleOwnerOrgTypeChange"
                 />
               </NFormItem>
 
-              <NFormItem v-if="canFilterByOrgType" label="归属机构" path="owner_org_id" class="battery-search-item">
+              <NFormItem v-if="canFilterByOrgType" :label="bt('auto.s_6ce6f1493b')" path="owner_org_id" class="battery-search-item">
                 <NSelect
                   v-model:value="searchForm.owner_org_id"
                   :options="ownerOrgOptions"
-                  placeholder="请选择机构"
+                  :placeholder="bt('auto.s_2c919d5bda')"
                   clearable
                   class="battery-search-control battery-search-control-wide"
                 />
               </NFormItem>
 
-              <NFormItem label="电芯品牌" path="cell_brand_seq_no" class="battery-search-item">
+              <NFormItem :label="bt('auto.s_b7f1936e90')" path="cell_brand_seq_no" class="battery-search-item">
                 <NSelect
                   v-model:value="searchForm.cell_brand_seq_no"
                   :options="cellBrandOptions"
-                  placeholder="请选择电芯品牌"
+                  :placeholder="bt('auto.s_3cb8d707db')"
                   clearable
                   class="battery-search-control"
                 />
               </NFormItem>
 
-              <NFormItem label="电池型号" path="battery_model_seq_no" class="battery-search-item">
+              <NFormItem :label="bt('auto.s_ca62d89383')" path="battery_model_seq_no" class="battery-search-item">
                 <BatteryModelSelect
                   v-model="searchForm.battery_model_seq_no"
                   :allow-create="false"
                   class="battery-search-control battery-search-control-wide"
-                  placeholder="请选择电池型号"
+                  :placeholder="bt('auto.s_bb89a8596d')"
                 />
               </NFormItem>
 
-              <NFormItem label="在线状态" path="is_online" class="battery-search-item">
+              <NFormItem :label="bt('auto.s_e639862a11')" path="is_online" class="battery-search-item">
                 <NSelect
                   v-model:value="searchForm.is_online"
                   :options="onlineOptions"
-                  placeholder="请选择"
+                  :placeholder="bt('auto.s_708c9d6d2a')"
                   clearable
                   class="battery-search-control"
                 />
               </NFormItem>
 
-              <NFormItem label="激活状态" path="activation_status" class="battery-search-item">
+              <NFormItem :label="bt('auto.s_ffecc9f0be')" path="activation_status" class="battery-search-item">
                 <NSelect
                   v-model:value="searchForm.activation_status"
                   :options="activationOptions"
-                  placeholder="请选择"
+                  :placeholder="bt('auto.s_708c9d6d2a')"
                   clearable
                   class="battery-search-control"
                 />
               </NFormItem>
 
-              <NFormItem label="出厂日期" path="production_range" class="battery-search-item">
+              <NFormItem :label="bt('auto.s_fbe2fcd983')" path="production_range" class="battery-search-item">
                 <NDatePicker
                   v-model:value="searchForm.production_range"
                   type="daterange"
@@ -1732,11 +1748,11 @@ onMounted(async () => {
                 />
               </NFormItem>
 
-              <NFormItem label="质保状态" path="warranty_status" class="battery-search-item">
+              <NFormItem :label="bt('auto.s_0184fa443d')" path="warranty_status" class="battery-search-item">
                 <NSelect
                   v-model:value="searchForm.warranty_status"
                   :options="warrantyOptions"
-                  placeholder="请选择"
+                  :placeholder="bt('auto.s_708c9d6d2a')"
                   clearable
                   class="battery-search-control"
                 />
@@ -1750,16 +1766,16 @@ onMounted(async () => {
                 <template #icon>
                   <NIcon><DownloadOutline /></NIcon>
                 </template>
-                导出
+                {{ bt('auto.s_55405ea6ff') }}
               </NButton>
               <NButton v-ui-permission="'bms_battery_list_add'" type="primary" @click="openSingleModal">
-                + 新增 BMS
+                {{ bt('common.addWithName', { name: 'BMS' }) }}
               </NButton>
               <NButton v-ui-permission="'bms_battery_list_import'" @click="openImportModal">
                 <template #icon>
                   <NIcon><CloudDownloadOutline /></NIcon>
                 </template>
-                导入
+                {{ bt('auto.s_8d9a071ee2') }}
               </NButton>
             </NSpace>
 
@@ -1773,7 +1789,7 @@ onMounted(async () => {
                 <template #icon>
                   <NIcon><ListOutline /></NIcon>
                 </template>
-                {{ `批量操作${selectedCount ? `(${selectedCount})` : ''}` }}
+                {{ bt('pages.batteryList.batchAction', { count: selectedCount ? `(${selectedCount})` : '' }) }}
               </NButton>
             </NDropdown>
           </NSpace>
@@ -1813,24 +1829,26 @@ onMounted(async () => {
     <NModal
       v-model:show="showBatchAssignModal"
       preset="dialog"
-      title="批量分配经销商"
-      positive-text="确认"
-      negative-text="取消"
+      :title="bt('auto.s_3886905b9c')"
+      :positive-text="bt('auto.s_e83a256e4f')"
+      :negative-text="bt('auto.s_625fb26b4b')"
       :loading="batchAssignLoading"
       @positive-click="confirmBatchAssign"
     >
       <NForm :model="batchAssignForm" label-placement="left" label-width="100px">
-        <NFormItem label="经销商" path="dealer_id" required>
+        <NFormItem :label="bt('auto.s_9019dc8029')" path="dealer_id" required>
           <NSelect
             v-model:value="batchAssignForm.dealer_id"
             :options="dealerOptions"
-            placeholder="请选择经销商"
+            :placeholder="bt('auto.s_79a6bb6071')"
             clearable
             style="width: 100%"
           />
         </NFormItem>
         <NFormItem>
-          <div style="color: #999; font-size: 12px">已选择 {{ selectedCount }} 个电池，将分配给选中的经销商</div>
+          <div style="color: #999; font-size: 12px">
+            {{ bt('common.selectedBatteriesAssign', { count: selectedCount }) }}
+          </div>
         </NFormItem>
       </NForm>
     </NModal>
@@ -1838,35 +1856,35 @@ onMounted(async () => {
     <NModal
       v-model:show="showBatchTagModal"
       preset="dialog"
-      title="批量设置标签"
-      positive-text="确认"
-      negative-text="取消"
+      :title="bt('auto.s_e6fae0e464')"
+      :positive-text="bt('auto.s_e83a256e4f')"
+      :negative-text="bt('auto.s_625fb26b4b')"
       :loading="batchTagLoading"
       @positive-click="confirmBatchTag"
     >
       <NForm :model="batchTagForm" label-placement="left" label-width="100px">
-        <NFormItem label="设置方式" path="mode" required>
+        <NFormItem :label="bt('auto.s_b2abcf3d39')" path="mode" required>
           <NSelect
             v-model:value="batchTagForm.mode"
             :options="[
-              { label: '覆盖（替换原标签）', value: 'REPLACE' },
-              { label: '追加（保留原标签）', value: 'APPEND' }
+              { label: bt('auto.s_87286a2f69'), value: 'REPLACE' },
+              { label: bt('auto.s_40542181bf'), value: 'APPEND' }
             ]"
             style="width: 100%"
           />
         </NFormItem>
-        <NFormItem label="标签" path="tag_ids">
+        <NFormItem :label="bt('auto.s_14d342362f')" path="tag_ids">
           <NSelect
             v-model:value="batchTagForm.tag_ids"
             :options="tagOptions"
-            placeholder="请选择标签（可多选；留空表示清空标签）"
+            :placeholder="bt('auto.s_00254e54a7')"
             multiple
             clearable
             style="width: 100%"
           />
         </NFormItem>
         <NFormItem>
-          <div style="color: #999; font-size: 12px">已选择 {{ selectedCount }} 个电池</div>
+          <div style="color: #999; font-size: 12px">{{ bt('common.selectedBatteries', { count: selectedCount }) }}</div>
         </NFormItem>
       </NForm>
     </NModal>
@@ -1874,48 +1892,55 @@ onMounted(async () => {
     <NModal
       v-model:show="showFactoryModal"
       preset="dialog"
-      :title="factoryMode === 'batch' ? '批量出厂' : '电池出厂'"
-      positive-text="确认出厂"
-      negative-text="取消"
+      :title="factoryMode === 'batch' ? bt('auto.s_51af1c7e1e') : bt('auto.s_736c321cf9')"
+      :positive-text="bt('auto.s_d3d7ea5cd9')"
+      :negative-text="bt('auto.s_625fb26b4b')"
       :loading="factoryLoading"
       @positive-click="confirmFactoryOut"
     >
       <NForm :model="factoryForm" label-placement="left" label-width="100px">
         <template v-if="factoryMode === 'batch'">
-          <NFormItem label="已选电池">
-            <div style="color: #666">{{ factoryForm.device_ids.length }} 台</div>
+          <NFormItem :label="bt('auto.s_63843f5a90')">
+            <div style="color: #666">{{ bt('common.unitCount', { count: factoryForm.device_ids.length }) }}</div>
           </NFormItem>
-          <NFormItem label="基础信息">
+          <NFormItem :label="bt('auto.s_6ea1fe6baa')">
             <div class="complete-info-summary">
               <div v-for="item in selectedRows" :key="item.device_id" class="complete-info-row">
-                <div>序列号：{{ item.device_number }}</div>
-                <div>归属机构：{{ item.owner_org_name || item.dealer_name || '厂家库存' }}</div>
-                <div>出厂日期：{{ item.production_date || '--' }}</div>
-                <div>当前状态：{{ currentStatusLabel(item) }}</div>
+                <div>{{ bt('common.labelWithValue', { label: bt('auto.s_7079d2e6c4'), value: item.device_number }) }}</div>
+                <div>
+                  {{
+                    bt('common.labelWithValue', {
+                      label: bt('auto.s_6ce6f1493b'),
+                      value: item.owner_org_name || item.dealer_name || bt('auto.s_a14d2ac1e0')
+                    })
+                  }}
+                </div>
+                <div>{{ bt('common.labelWithValue', { label: bt('auto.s_fbe2fcd983'), value: item.production_date || '--' }) }}</div>
+                <div>{{ bt('common.labelWithValue', { label: bt('auto.s_6bf1f392c0'), value: currentStatusLabel(item) }) }}</div>
               </div>
             </div>
           </NFormItem>
         </template>
-        <NFormItem v-else label="电池编号">
+        <NFormItem v-else :label="bt('auto.s_90ccdfe522')">
           <NInput v-model:value="factoryForm.device_number" disabled />
         </NFormItem>
-        <NFormItem label="出厂到" path="to_org_type" required>
+        <NFormItem :label="bt('auto.s_2a7d59e32b')" path="to_org_type" required>
           <NRadioGroup v-model:value="factoryForm.to_org_type" @update:value="handleFactoryOrgTypeChange">
-            <NRadioButton value="PACK_FACTORY">PACK厂</NRadioButton>
-            <NRadioButton value="DEALER">经销商</NRadioButton>
+            <NRadioButton value="PACK_FACTORY">{{ bt('auto.s_7b50c41556') }}</NRadioButton>
+            <NRadioButton value="DEALER">{{ bt('auto.s_9019dc8029') }}</NRadioButton>
           </NRadioGroup>
         </NFormItem>
-        <NFormItem label="目标机构" path="to_org_id" required>
+        <NFormItem :label="bt('auto.s_206ad5fbd2')" path="to_org_id" required>
           <NSelect
             v-model:value="factoryForm.to_org_id"
             :options="factoryTargetOptions"
-            placeholder="请选择目标机构"
+            :placeholder="bt('auto.s_5933d0b01e')"
             clearable
             style="width: 100%"
           />
         </NFormItem>
-        <NFormItem label="备注">
-          <NInput v-model:value="factoryForm.remark" placeholder="可选" />
+        <NFormItem :label="bt('auto.s_2432b57515')">
+          <NInput v-model:value="factoryForm.remark" :placeholder="bt('auto.s_c20cba8992')" />
         </NFormItem>
       </NForm>
     </NModal>
@@ -1923,37 +1948,37 @@ onMounted(async () => {
     <NModal
       v-model:show="showTransferModal"
       preset="dialog"
-      title="电池调拨"
-      positive-text="确认调拨"
-      negative-text="取消"
+      :title="bt('auto.s_0cccb8acdf')"
+      :positive-text="bt('auto.s_16e2eab6ee')"
+      :negative-text="bt('auto.s_625fb26b4b')"
       :loading="transferLoading"
       @positive-click="confirmTransfer"
     >
       <NForm :model="transferForm" label-placement="left" label-width="100px">
-        <NFormItem label="电池编号">
+        <NFormItem :label="bt('auto.s_90ccdfe522')">
           <NInput v-model:value="transferForm.device_number" disabled />
         </NFormItem>
-        <NFormItem label="当前机构">
+        <NFormItem :label="bt('auto.s_5b80f24aa3')">
           <NInput v-model:value="transferForm.from_org_name" disabled />
         </NFormItem>
-        <NFormItem label="调拨到" path="to_org_type" required>
+        <NFormItem :label="bt('auto.s_62a44be140')" path="to_org_type" required>
           <NRadioGroup v-model:value="transferForm.to_org_type" @update:value="handleTransferOrgTypeChange">
             <NRadioButton v-for="item in transferOrgTypeOptions" :key="item.value" :value="item.value">
               {{ item.label }}
             </NRadioButton>
           </NRadioGroup>
         </NFormItem>
-        <NFormItem label="目标机构" path="to_org_id" required>
+        <NFormItem :label="bt('auto.s_206ad5fbd2')" path="to_org_id" required>
           <NSelect
             v-model:value="transferForm.to_org_id"
             :options="transferTargetOptions"
-            placeholder="请选择目标机构"
+            :placeholder="bt('auto.s_5933d0b01e')"
             clearable
             style="width: 100%"
           />
         </NFormItem>
-        <NFormItem label="备注">
-          <NInput v-model:value="transferForm.remark" placeholder="可选" />
+        <NFormItem :label="bt('auto.s_2432b57515')">
+          <NInput v-model:value="transferForm.remark" :placeholder="bt('auto.s_c20cba8992')" />
         </NFormItem>
       </NForm>
     </NModal>
@@ -1961,27 +1986,27 @@ onMounted(async () => {
     <NModal
       v-model:show="showFactoryRestoreModal"
       preset="dialog"
-      title="恢复出厂"
-      positive-text="确认恢复"
-      negative-text="取消"
+      :title="bt('auto.s_2f6f278e3c')"
+      :positive-text="bt('auto.s_841e5e8912')"
+      :negative-text="bt('auto.s_625fb26b4b')"
       :loading="factoryRestoreLoading"
       @positive-click="confirmFactoryRestore"
     >
       <NForm :model="factoryRestoreForm" label-placement="left" label-width="100px">
-        <NFormItem label="电池编号">
+        <NFormItem :label="bt('auto.s_90ccdfe522')">
           <NInput v-model:value="factoryRestoreForm.device_number" disabled />
         </NFormItem>
-        <NFormItem label="当前机构">
+        <NFormItem :label="bt('auto.s_5b80f24aa3')">
           <NInput v-model:value="factoryRestoreForm.current_org_name" disabled />
         </NFormItem>
-        <NFormItem label="恢复到">
-          <NInput value="厂家库存" disabled />
+        <NFormItem :label="bt('auto.s_26e3fd57e7')">
+          <NInput :value="bt('auto.s_a14d2ac1e0')" disabled />
         </NFormItem>
         <NFormItem>
-          <div style="color: #666">该操作会将电池退回厂家库存，并写入组织转移记录和电池操作日志。</div>
+          <div style="color: #666">{{ bt('auto.s_74632e9735') }}</div>
         </NFormItem>
-        <NFormItem label="备注">
-          <NInput v-model:value="factoryRestoreForm.remark" placeholder="可选" />
+        <NFormItem :label="bt('auto.s_2432b57515')">
+          <NInput v-model:value="factoryRestoreForm.remark" :placeholder="bt('auto.s_c20cba8992')" />
         </NFormItem>
       </NForm>
     </NModal>
@@ -1989,27 +2014,27 @@ onMounted(async () => {
     <NModal
       v-model:show="showRollbackModal"
       preset="dialog"
-      title="电池回退"
-      positive-text="确认回退"
-      negative-text="取消"
+      :title="bt('auto.s_251cfcb39a')"
+      :positive-text="bt('auto.s_6a793b2956')"
+      :negative-text="bt('auto.s_625fb26b4b')"
       :loading="rollbackLoading"
       @positive-click="confirmRollback"
     >
       <NForm :model="rollbackForm" label-placement="left" label-width="100px">
-        <NFormItem label="电池编号">
+        <NFormItem :label="bt('auto.s_90ccdfe522')">
           <NInput v-model:value="rollbackForm.device_number" disabled />
         </NFormItem>
-        <NFormItem label="当前机构">
+        <NFormItem :label="bt('auto.s_5b80f24aa3')">
           <NInput v-model:value="rollbackForm.current_org_name" disabled />
         </NFormItem>
-        <NFormItem label="回退给">
+        <NFormItem :label="bt('auto.s_a0713840dd')">
           <NInput v-model:value="rollbackForm.rollback_to_org_name" disabled />
         </NFormItem>
         <NFormItem>
-          <div style="color: #666">当前电池将回退给最近一次调拨来源机构，确认后会写入新的调拨记录和电池操作日志。</div>
+          <div style="color: #666">{{ bt('auto.s_2a387bf218') }}</div>
         </NFormItem>
-        <NFormItem label="备注">
-          <NInput v-model:value="rollbackForm.remark" placeholder="可选" />
+        <NFormItem :label="bt('auto.s_2432b57515')">
+          <NInput v-model:value="rollbackForm.remark" :placeholder="bt('auto.s_c20cba8992')" />
         </NFormItem>
       </NForm>
     </NModal>
@@ -2017,17 +2042,17 @@ onMounted(async () => {
     <NModal
       v-model:show="showActivateModal"
       preset="dialog"
-      title="电池激活"
-      positive-text="确认激活"
-      negative-text="取消"
+      :title="bt('auto.s_90a738e2f3')"
+      :positive-text="bt('auto.s_4366cd37a7')"
+      :negative-text="bt('auto.s_625fb26b4b')"
       :loading="activateLoading"
       @positive-click="confirmActivate"
     >
       <NForm :model="activateForm" label-placement="left" label-width="100px">
-        <NFormItem label="电池编号">
+        <NFormItem :label="bt('auto.s_90ccdfe522')">
           <NInput v-model:value="activateForm.device_number" disabled />
         </NFormItem>
-        <NFormItem label="当前状态">
+        <NFormItem :label="bt('auto.s_6bf1f392c0')">
           <div class="flex items-center gap-8px">
             <NTag type="info">{{ activationLabel(activateCurrent.status) }}</NTag>
             <span v-if="activateCurrent.status === 'ACTIVE'" style="color: #666; font-size: 12px">
@@ -2037,11 +2062,11 @@ onMounted(async () => {
             </span>
           </div>
         </NFormItem>
-        <NFormItem label="绑定用户" path="user_id" required>
+        <NFormItem :label="bt('auto.s_951d19e263')" path="user_id" required>
           <EndUserSelect v-model="activateForm.user_id" />
         </NFormItem>
-        <NFormItem label="备注">
-          <NInput v-model:value="activateForm.remark" placeholder="可选" />
+        <NFormItem :label="bt('auto.s_2432b57515')">
+          <NInput v-model:value="activateForm.remark" :placeholder="bt('auto.s_c20cba8992')" />
         </NFormItem>
       </NForm>
     </NModal>
@@ -2049,40 +2074,40 @@ onMounted(async () => {
     <NModal
       v-model:show="showCompleteInfoModal"
       preset="dialog"
-      title="电池信息补全"
-      positive-text="确认补全"
-      negative-text="取消"
+      :title="bt('auto.s_c9c2396d84')"
+      :positive-text="bt('auto.s_e7513d9dcb')"
+      :negative-text="bt('auto.s_625fb26b4b')"
       :loading="completeInfoLoading"
       @positive-click="confirmCompleteInfo"
     >
       <NForm :model="completeInfoForm" label-placement="left" label-width="100px">
-        <NFormItem label="已选电池">
-          <div style="color: #666">{{ completeInfoRows.length }} 台</div>
+        <NFormItem :label="bt('auto.s_63843f5a90')">
+          <div style="color: #666">{{ bt('common.unitCount', { count: completeInfoRows.length }) }}</div>
         </NFormItem>
-        <NFormItem label="基础信息">
+        <NFormItem :label="bt('auto.s_6ea1fe6baa')">
           <div class="complete-info-summary">
             <div v-for="item in completeInfoRows" :key="item.device_id" class="complete-info-row">
-              <div>序列号：{{ item.device_number }}</div>
-              <div>MAC地址：{{ item.ble_mac || '--' }}</div>
-              <div>出厂日期：{{ item.production_date || '--' }}</div>
-              <div>当前状态：{{ currentStatusLabel(item) }}</div>
+              <div>{{ bt('common.labelWithValue', { label: bt('auto.s_7079d2e6c4'), value: item.device_number }) }}</div>
+              <div>{{ bt('common.labelWithValue', { label: 'MAC', value: item.ble_mac || '--' }) }}</div>
+              <div>{{ bt('common.labelWithValue', { label: bt('auto.s_fbe2fcd983'), value: item.production_date || '--' }) }}</div>
+              <div>{{ bt('common.labelWithValue', { label: bt('auto.s_6bf1f392c0'), value: currentStatusLabel(item) }) }}</div>
             </div>
           </div>
         </NFormItem>
-        <NFormItem label="电芯品牌" path="cell_brand_seq_no" required>
+        <NFormItem :label="bt('auto.s_b7f1936e90')" path="cell_brand_seq_no" required>
           <NSelect
             v-model:value="completeInfoForm.cell_brand_seq_no"
             :options="cellBrandOptions"
-            placeholder="请选择电芯品牌"
+            :placeholder="bt('auto.s_3cb8d707db')"
             clearable
             style="width: 100%"
           />
         </NFormItem>
-        <NFormItem label="电池型号" path="battery_model_seq_no" required>
+        <NFormItem :label="bt('auto.s_ca62d89383')" path="battery_model_seq_no" required>
           <BatteryModelSelect
             v-model="completeInfoForm.battery_model_seq_no"
             :allow-create="true"
-            placeholder="请选择电池型号"
+            :placeholder="bt('auto.s_bb89a8596d')"
           />
         </NFormItem>
       </NForm>
@@ -2091,37 +2116,37 @@ onMounted(async () => {
     <NModal
       v-model:show="showOfflineCmdModal"
       preset="dialog"
-      title="离线指令（设备离线时存储，上线后执行）"
-      positive-text="确认存储"
-      negative-text="取消"
+      :title="bt('auto.s_a658b74e2b')"
+      :positive-text="bt('auto.s_695b5e841a')"
+      :negative-text="bt('auto.s_625fb26b4b')"
       :loading="offlineCmdLoading"
       @positive-click="confirmOfflineCmd"
     >
       <NForm :model="offlineCmdForm" label-placement="left" label-width="100px">
-        <NFormItem label="指令" path="identify" required>
+        <NFormItem :label="bt('auto.s_eb18b1e89c')" path="identify" required>
           <NSelect
             v-model:value="offlineCmdForm.identify"
             :options="offlineCmdOptions"
-            placeholder="请选择指令"
+            :placeholder="bt('auto.s_48deaf43fe')"
             clearable
             style="width: 100%"
             @update:value="handleOfflineCmdSelect"
           />
         </NFormItem>
-        <NFormItem v-if="offlineCmdHint" label="参数说明">
+        <NFormItem v-if="offlineCmdHint" :label="bt('auto.s_21f2fa80eb')">
           <div style="color: #999; font-size: 12px; white-space: pre-wrap">{{ offlineCmdHint }}</div>
         </NFormItem>
-        <NFormItem label="参数(JSON)" path="value">
+        <NFormItem :label="bt('auto.s_e19150f403')" path="value">
           <NInput
             v-model:value="offlineCmdForm.value"
             type="textarea"
-            :placeholder="'可选：JSON 字符串，例如：{} 或 {&quot;mode&quot;:1}'"
+            :placeholder="bt('auto.s_d01e1a05c7')"
             :autosize="{ minRows: 3, maxRows: 8 }"
           />
         </NFormItem>
         <NFormItem>
           <div style="color: #999; font-size: 12px">
-            提示：离线指令仅用于设备离线时存储；上线后会自动执行并在“离线指令”页面查看结果。
+            {{ bt('pages.batteryList.offlineHint') }}
           </div>
         </NFormItem>
       </NForm>
@@ -2130,37 +2155,37 @@ onMounted(async () => {
     <NModal
       v-model:show="showBatchCmdModal"
       preset="dialog"
-      title="批量下发指令（仅在线设备）"
-      positive-text="确认下发"
-      negative-text="取消"
+      :title="bt('auto.s_4d46ae103d')"
+      :positive-text="bt('auto.s_35e127ec44')"
+      :negative-text="bt('auto.s_625fb26b4b')"
       :loading="batchCmdLoading"
       @positive-click="confirmBatchCommand"
     >
       <NForm :model="batchCmdForm" label-placement="left" label-width="100px">
-        <NFormItem label="指令" path="identify" required>
+        <NFormItem :label="bt('auto.s_eb18b1e89c')" path="identify" required>
           <NSelect
             v-model:value="batchCmdForm.identify"
             :options="batchCmdOptions"
-            placeholder="请选择指令（基于第一个设备加载物模型命令）"
+            :placeholder="bt('auto.s_af0cef0028')"
             clearable
             style="width: 100%"
             @update:value="handleBatchCmdSelect"
           />
         </NFormItem>
-        <NFormItem v-if="batchCmdHint" label="参数说明">
+        <NFormItem v-if="batchCmdHint" :label="bt('auto.s_21f2fa80eb')">
           <div style="color: #999; font-size: 12px; white-space: pre-wrap">{{ batchCmdHint }}</div>
         </NFormItem>
-        <NFormItem label="参数(JSON)" path="value">
+        <NFormItem :label="bt('auto.s_e19150f403')" path="value">
           <NInput
             v-model:value="batchCmdForm.value"
             type="textarea"
-            :placeholder="'可选：JSON 字符串，例如：{} 或 {&quot;mode&quot;:1}'"
+            :placeholder="bt('auto.s_d01e1a05c7')"
             :autosize="{ minRows: 3, maxRows: 8 }"
           />
         </NFormItem>
         <NFormItem>
           <div style="color: #999; font-size: 12px">
-            提示：离线设备会被跳过并返回失败原因；如需离线执行请使用“离线指令”。
+            {{ bt('pages.batteryList.batchCommandHint') }}
           </div>
         </NFormItem>
       </NForm>
@@ -2169,42 +2194,42 @@ onMounted(async () => {
     <NModal
       v-model:show="showBatchOtaModal"
       preset="dialog"
-      title="批量OTA推送"
-      positive-text="确认推送"
-      negative-text="取消"
+      :title="bt('auto.s_26e6fda3e4')"
+      :positive-text="bt('auto.s_03741bdd14')"
+      :negative-text="bt('auto.s_625fb26b4b')"
       :loading="batchOtaLoading"
       @positive-click="confirmBatchOta"
     >
       <NForm :model="batchOtaForm" label-placement="left" label-width="100px">
-        <NFormItem label="升级包" path="ota_upgrade_package_id" required>
+        <NFormItem :label="bt('auto.s_d02bd59f32')" path="ota_upgrade_package_id" required>
           <NSelect
             v-model:value="batchOtaForm.ota_upgrade_package_id"
             :options="otaPkgOptions"
-            placeholder="请选择升级包"
+            :placeholder="bt('auto.s_c9004a9e85')"
             clearable
             filterable
             style="width: 100%"
           />
         </NFormItem>
-        <NFormItem label="任务名称">
-          <NInput v-model:value="batchOtaForm.name" placeholder="可选：不填则自动生成" />
+        <NFormItem :label="bt('auto.s_78caf7115c')">
+          <NInput v-model:value="batchOtaForm.name" :placeholder="bt('auto.s_456639925f')" />
         </NFormItem>
         <NFormItem>
           <div style="color: #999; font-size: 12px">
-            提示：系统会为每台设备创建升级任务详情并立即推送；离线/升级中设备会在任务详情中显示失败原因。
+            {{ bt('pages.batteryList.batchOtaHint') }}
           </div>
         </NFormItem>
       </NForm>
     </NModal>
 
-    <NModal v-model:show="showOtaTaskDetailModal" preset="card" title="OTA任务详情" style="width: 980px">
+    <NModal v-model:show="showOtaTaskDetailModal" preset="card" :title="bt('auto.s_aea34a08f5')" style="width: 980px">
       <template v-if="otaTaskDetailLoading">
-        <div style="padding: 12px">加载中...</div>
+        <div style="padding: 12px">{{ bt('auto.s_26b5bd4947') }}</div>
       </template>
       <template v-else>
         <div style="margin-bottom: 12px; color: #666; font-size: 12px">
-          任务ID：{{ lastOtaTaskId }}
-          <NButton size="tiny" style="margin-left: 8px" @click="fetchOtaTaskDetail">刷新</NButton>
+          {{ bt('common.taskId', { id: lastOtaTaskId }) }}
+          <NButton size="tiny" style="margin-left: 8px" @click="fetchOtaTaskDetail">{{ bt('auto.s_694fc5efa9') }}</NButton>
         </div>
         <div v-if="otaTaskDetailStats?.length" style="margin-bottom: 12px">
           <span
@@ -2212,18 +2237,18 @@ onMounted(async () => {
             :key="s.status"
             style="margin-right: 12px; color: #666; font-size: 12px"
           >
-            状态{{ s.status }}：{{ s.count }}
+            {{ bt('common.statusCount', { status: s.status, count: s.count }) }}
           </span>
         </div>
         <NDataTable
           :columns="[
-            { key: 'device_number', title: '序列号', minWidth: 140 },
-            { key: 'name', title: '设备名称', minWidth: 140 },
-            { key: 'current_version', title: '当前版本', minWidth: 120 },
-            { key: 'version', title: '目标版本', minWidth: 120 },
-            { key: 'status', title: '状态', minWidth: 100 },
-            { key: 'status_description', title: '状态描述', minWidth: 180 },
-            { key: 'updated_at', title: '更新时间', minWidth: 160 }
+            { key: 'device_number', title: bt('auto.s_7079d2e6c4'), minWidth: 140 },
+            { key: 'name', title: bt('auto.s_9f694f603c'), minWidth: 140 },
+            { key: 'current_version', title: bt('auto.s_9b601b8efa'), minWidth: 120 },
+            { key: 'version', title: bt('auto.s_bc15bf0b06'), minWidth: 120 },
+            { key: 'status', title: bt('auto.s_3fea7ca76c'), minWidth: 100 },
+            { key: 'status_description', title: bt('auto.s_920f05031b'), minWidth: 180 },
+            { key: 'updated_at', title: bt('auto.s_a001a226fd'), minWidth: 160 }
           ]"
           :data="otaTaskDetailList"
           :row-key="row => row.id"

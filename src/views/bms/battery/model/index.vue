@@ -1,4 +1,5 @@
 <script setup lang="tsx">
+import { bt } from '@/views/bms/_shared/i18n'
 import { computed, onMounted, ref } from 'vue'
 import { NButton, NCard, NDataTable, NInput, NInputNumber, NPopconfirm, NSpace, NSelect, useMessage } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
@@ -83,15 +84,15 @@ function validateRow(row: BatteryModelRow): { seqNo: number; name: string; orgId
   const orgId = row.draftOrgId ? String(row.draftOrgId).trim() : ''
 
   if (!Number.isInteger(seqNo) || seqNo < 1 || seqNo > 255) {
-    message.warning('序号必须是 1~255 的整数')
+    message.warning(bt('auto.s_739763a4f8'))
     return null
   }
   if (!name) {
-    message.warning('请输入型号')
+    message.warning(bt('auto.s_bf3afc290c'))
     return null
   }
   if (isTenantAdmin.value && !orgId) {
-    message.warning('请选择PACK厂家')
+    message.warning(bt('auto.s_b888630fc8'))
     return null
   }
   return { seqNo, name, orgId: orgId || undefined }
@@ -120,14 +121,14 @@ async function saveRow(row: BatteryModelRow) {
   try {
     if (row.isNew) {
       await createBatteryModel({ seq_no: payload.seqNo, name: payload.name, org_id: payload.orgId })
-      message.success('新增成功')
+      message.success(bt('auto.s_a5bfd70d4a'))
     } else {
       await updateBatteryModel(row.id, { seq_no: payload.seqNo, name: payload.name, org_id: payload.orgId })
-      message.success('更新成功')
+      message.success(bt('auto.s_55aa6366c0'))
     }
     await fetchData()
   } catch (e: any) {
-    message.error(e?.message || '保存失败')
+    message.error(e?.message || bt('auto.s_6de920b4e4'))
   } finally {
     savingId.value = null
   }
@@ -135,11 +136,11 @@ async function saveRow(row: BatteryModelRow) {
 
 function handleAdd() {
   if (data.value.some(item => item.isNew)) {
-    message.warning('请先保存当前新增行')
+    message.warning(bt('auto.s_5a0d0f4b9a'))
     return
   }
   if (isTenantAdmin.value && orgOptions.value.length === 0) {
-    message.warning('当前没有可选的PACK厂家')
+    message.warning(bt('auto.s_d0f8d45e10'))
     return
   }
 
@@ -171,17 +172,17 @@ async function handleDelete(row: BatteryModelRow) {
 
   try {
     await deleteBatteryModel(row.id)
-    message.success('删除成功')
+    message.success(bt('auto.s_0007d170de'))
     await fetchData()
   } catch (e: any) {
-    message.error(e?.message || '删除失败')
+    message.error(e?.message || bt('auto.s_acf0664a54'))
   }
 }
 
 const columns: DataTableColumns<BatteryModelRow> = [
   {
     key: 'seq_no',
-    title: '序号',
+    title: bt('auto.s_faaadc447b'),
     width: 120,
     render: row => {
       if (row.editing) {
@@ -202,7 +203,7 @@ const columns: DataTableColumns<BatteryModelRow> = [
   },
   {
     key: 'name',
-    title: '型号',
+    title: bt('auto.s_ac4190dfda'),
     minWidth: 260,
     render: row => {
       if (row.editing) {
@@ -211,7 +212,7 @@ const columns: DataTableColumns<BatteryModelRow> = [
             value={row.draftName}
             maxlength={64}
             showCount
-            placeholder="请输入型号"
+            placeholder={bt('auto.s_bf3afc290c')}
             onKeydown={event => handleNameEnter(row, event)}
             onUpdateValue={value => {
               row.draftName = value
@@ -224,7 +225,7 @@ const columns: DataTableColumns<BatteryModelRow> = [
   },
   {
     key: 'org_name',
-    title: '机构',
+    title: bt('auto.s_b77053aabc'),
     minWidth: 180,
     render: row => {
       if (row.editing && isTenantAdmin.value) {
@@ -232,7 +233,7 @@ const columns: DataTableColumns<BatteryModelRow> = [
           <NSelect
             value={row.draftOrgId}
             options={orgOptions.value}
-            placeholder="请选择PACK厂家"
+            placeholder={bt('auto.s_b888630fc8')}
             onUpdateValue={value => handleOrgChange(row, value)}
           />
         )
@@ -240,38 +241,30 @@ const columns: DataTableColumns<BatteryModelRow> = [
       return row.org_name || '--'
     }
   },
-  { key: 'created_at', title: '创建时间', minWidth: 180 },
+  { key: 'created_at', title: bt('auto.s_eca37cb072'), minWidth: 180 },
   {
     key: 'actions',
-    title: '操作',
+    title: bt('auto.s_2b6bc0f293'),
     width: 220,
     render: row => {
       const saving = savingId.value === row.id
       if (row.editing) {
         return (
           <NSpace>
-            <NButton size="small" type="primary" loading={saving} onClick={() => saveRow(row)}>
-              保存
-            </NButton>
-            <NButton size="small" onClick={() => cancelEdit(row)}>
-              取消
-            </NButton>
+            <NButton size="small" type="primary" loading={saving} onClick={() => saveRow(row)}>{bt('auto.s_be5fbbe34c')}</NButton>
+            <NButton size="small" onClick={() => cancelEdit(row)}>{bt('auto.s_625fb26b4b')}</NButton>
           </NSpace>
         )
       }
 
       return (
         <NSpace>
-          <NButton size="small" type="primary" onClick={() => startEdit(row)}>
-            编辑
-          </NButton>
+          <NButton size="small" type="primary" onClick={() => startEdit(row)}>{bt('auto.s_95b351c862')}</NButton>
           <NPopconfirm onPositiveClick={() => handleDelete(row)}>
             {{
-              default: () => '确认删除该电池型号吗？',
+              default: () => bt('auto.s_e834753718'),
               trigger: () => (
-                <NButton size="small" type="error">
-                  删除
-                </NButton>
+                <NButton size="small" type="error">{bt('auto.s_2f4aaddde3')}</NButton>
               )
             }}
           </NPopconfirm>
@@ -294,7 +287,7 @@ async function fetchData() {
       draftOrgId: item.org_id ?? null
     }))
   } catch (e: any) {
-    message.error(e?.message || '获取列表失败')
+    message.error(e?.message || bt('auto.s_fe9d24d531'))
     data.value = []
   } finally {
     loading.value = false
@@ -316,7 +309,7 @@ async function fetchPackFactoryOptions() {
     }))
   } catch (e: any) {
     orgOptions.value = []
-    message.error(e?.message || '获取PACK厂家列表失败')
+    message.error(e?.message || bt('auto.s_31cdd36dea'))
   }
 }
 
@@ -327,9 +320,9 @@ onMounted(async () => {
 
 <template>
   <div class="flex-vertical-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
-    <NCard title="电池型号管理" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
+    <NCard :title="bt('auto.s_930a1e0a72')" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
       <div class="mb-4">
-        <NButton type="primary" @click="handleAdd">+ 新增电池型号</NButton>
+        <NButton type="primary" @click="handleAdd">{{ bt('auto.s_098743c537') }}</NButton>
       </div>
 
       <NDataTable :columns="columns" :data="data" :loading="loading" :pagination="false" :row-key="row => row.id" />

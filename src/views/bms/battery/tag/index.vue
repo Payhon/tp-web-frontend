@@ -1,4 +1,5 @@
 <script setup lang="tsx">
+import { bt } from '@/views/bms/_shared/i18n'
 import { computed, ref } from 'vue'
 import {
   NButton,
@@ -32,10 +33,10 @@ const searchForm = ref<{ name: string; scene: string }>({ name: '', scene: '' })
 
 function createColumns(): DataTableColumns<TagItem> {
   return [
-    { key: 'name', title: '标签名称', minWidth: 180 },
+    { key: 'name', title: bt('auto.s_341fe804cc'), minWidth: 180 },
     {
       key: 'color',
-      title: '颜色',
+      title: bt('auto.s_6b36c6f7ec'),
       minWidth: 140,
       render: row => (
         <div class="flex items-center gap-8px">
@@ -44,26 +45,22 @@ function createColumns(): DataTableColumns<TagItem> {
         </div>
       )
     },
-    { key: 'scene', title: '适用场景', minWidth: 180, render: row => row.scene || '--' },
-    { key: 'device_count', title: '关联设备数', minWidth: 120 },
-    { key: 'created_at', title: '创建时间', minWidth: 160 },
+    { key: 'scene', title: bt('auto.s_62b37e9905'), minWidth: 180, render: row => row.scene || '--' },
+    { key: 'device_count', title: bt('auto.s_966ed3cc29'), minWidth: 120 },
+    { key: 'created_at', title: bt('auto.s_eca37cb072'), minWidth: 160 },
     {
       key: 'operate',
-      title: '操作',
+      title: bt('auto.s_2b6bc0f293'),
       minWidth: 200,
       fixed: 'right',
       render: row => (
         <NSpace>
-          <NButton size="small" type="primary" onClick={() => openEdit(row)}>
-            编辑
-          </NButton>
+          <NButton size="small" type="primary" onClick={() => openEdit(row)}>{bt('auto.s_95b351c862')}</NButton>
           <NPopconfirm onPositiveClick={() => handleDelete(row)}>
             {{
-              default: () => '确认删除？（关联关系将被清理）',
+              default: () => bt('auto.s_5d0076f51d'),
               trigger: () => (
-                <NButton size="small" type="error">
-                  删除
-                </NButton>
+                <NButton size="small" type="error">{bt('auto.s_2f4aaddde3')}</NButton>
               )
             }}
           </NPopconfirm>
@@ -116,7 +113,7 @@ const form = ref<{ id?: string; name: string; scene: string; color: string | nul
   color: null
 })
 
-const title = computed(() => (modalType.value === 'create' ? '新增标签' : '编辑标签'))
+const title = computed(() => (modalType.value === 'create' ? bt('auto.s_a1d3bf8853') : bt('auto.s_4f3b1f6754')))
 
 function openCreate() {
   modalType.value = 'create'
@@ -132,7 +129,7 @@ function openEdit(row: TagItem) {
 
 async function submit() {
   if (!form.value.name.trim()) {
-    message.warning('请输入标签名称')
+    message.warning(bt('auto.s_6f81f3f145'))
     return
   }
   saving.value = true
@@ -144,15 +141,15 @@ async function submit() {
     }
     if (modalType.value === 'create') {
       await createBatteryTag(payload)
-      message.success('创建成功')
+      message.success(bt('auto.s_04a691b377'))
     } else if (form.value.id) {
       await updateBatteryTag(form.value.id, payload)
-      message.success('更新成功')
+      message.success(bt('auto.s_55aa6366c0'))
     }
     modalVisible.value = false
     handleSearch()
   } catch (e: any) {
-    message.error(e?.message || '保存失败')
+    message.error(e?.message || bt('auto.s_6de920b4e4'))
   } finally {
     saving.value = false
   }
@@ -161,10 +158,10 @@ async function submit() {
 async function handleDelete(row: TagItem) {
   try {
     await deleteBatteryTag(row.id)
-    message.success('删除成功')
+    message.success(bt('auto.s_0007d170de'))
     handleSearch()
   } catch (e: any) {
-    message.error(e?.message || '删除失败')
+    message.error(e?.message || bt('auto.s_acf0664a54'))
   }
 }
 
@@ -173,7 +170,7 @@ getData()
 
 <template>
   <div class="flex-vertical-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
-    <NCard title="标签管理" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
+    <NCard :title="bt('auto.s_2ec512a4e3')" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
       <NForm
         inline
         :model="searchForm"
@@ -181,17 +178,17 @@ getData()
         label-width="auto"
         class="mb-4 flex flex-wrap gap-4 items-end"
       >
-        <NFormItem label="标签名称">
-          <NInput v-model:value="searchForm.name" placeholder="支持模糊搜索" style="width: 220px" clearable />
+        <NFormItem :label="bt('auto.s_341fe804cc')">
+          <NInput v-model:value="searchForm.name" :placeholder="bt('auto.s_f33cb868c8')" style="width: 220px" clearable />
         </NFormItem>
-        <NFormItem label="适用场景">
-          <NInput v-model:value="searchForm.scene" placeholder="如：户外使用/快充型" style="width: 220px" clearable />
+        <NFormItem :label="bt('auto.s_62b37e9905')">
+          <NInput v-model:value="searchForm.scene" :placeholder="bt('auto.s_0a9b22b715')" style="width: 220px" clearable />
         </NFormItem>
         <NFormItem>
           <NSpace>
-            <NButton type="primary" @click="handleSearch">查询</NButton>
-            <NButton @click="handleReset">重置</NButton>
-            <NButton type="success" @click="openCreate">新增标签</NButton>
+            <NButton type="primary" @click="handleSearch">{{ bt('auto.s_bee912d79e') }}</NButton>
+            <NButton @click="handleReset">{{ bt('auto.s_4b9c3271dc') }}</NButton>
+            <NButton type="success" @click="openCreate">{{ bt('auto.s_a1d3bf8853') }}</NButton>
           </NSpace>
         </NFormItem>
       </NForm>
@@ -208,20 +205,20 @@ getData()
 
     <NModal v-model:show="modalVisible" preset="card" :title="title" style="width: 640px">
       <NForm label-placement="left" label-width="120" :model="form">
-        <NFormItem label="标签名称" required>
-          <NInput v-model:value="form.name" placeholder="例如：户外使用" />
+        <NFormItem :label="bt('auto.s_341fe804cc')" required>
+          <NInput v-model:value="form.name" :placeholder="bt('auto.s_a1d5128820')" />
         </NFormItem>
-        <NFormItem label="适用场景">
-          <NInput v-model:value="form.scene" placeholder="可选，例如：快充型" />
+        <NFormItem :label="bt('auto.s_62b37e9905')">
+          <NInput v-model:value="form.scene" :placeholder="bt('auto.s_1022da11fe')" />
         </NFormItem>
-        <NFormItem label="颜色">
+        <NFormItem :label="bt('auto.s_6b36c6f7ec')">
           <NColorPicker v-model:value="form.color" :modes="['hex']" />
         </NFormItem>
       </NForm>
       <template #action>
         <NSpace justify="end">
-          <NButton @click="modalVisible = false">取消</NButton>
-          <NButton type="primary" :loading="saving" @click="submit">保存</NButton>
+          <NButton @click="modalVisible = false">{{ bt('auto.s_625fb26b4b') }}</NButton>
+          <NButton type="primary" :loading="saving" @click="submit">{{ bt('auto.s_be5fbbe34c') }}</NButton>
         </NSpace>
       </template>
     </NModal>

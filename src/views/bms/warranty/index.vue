@@ -1,4 +1,5 @@
 <script setup lang="tsx">
+import { bt } from '@/views/bms/_shared/i18n'
 import { ref, computed } from 'vue'
 import {
   NButton,
@@ -57,61 +58,57 @@ function createColumns(): DataTableColumns<WarrantyItem> {
   return [
     {
       key: 'device_number',
-      title: '设备编号',
+      title: bt('auto.s_cf05392308'),
       minWidth: 150
     },
     {
       key: 'device_name',
-      title: '设备名称',
+      title: bt('auto.s_9f694f603c'),
       minWidth: 140
     },
     {
       key: 'type',
-      title: '申请类型',
+      title: bt('auto.s_719e1bff45'),
       minWidth: 100,
       render: row => <NTag>{typeLabel(row.type)}</NTag>
     },
     {
       key: 'user_name',
-      title: '申请人',
+      title: bt('auto.s_8ac8da8362'),
       minWidth: 120,
       render: row => row.user_name || '--'
     },
     {
       key: 'user_phone',
-      title: '联系电话',
+      title: bt('auto.s_09a1f6985a'),
       minWidth: 130
     },
     {
       key: 'status',
-      title: '状态',
+      title: bt('auto.s_3fea7ca76c'),
       minWidth: 110,
       render: row => <NTag type={statusTagType(row.status)}>{statusLabel(row.status)}</NTag>
     },
     {
       key: 'handler_name',
-      title: '处理人',
+      title: bt('auto.s_4c8c9d4f5d'),
       minWidth: 120,
       render: row => row.handler_name || '--'
     },
     {
       key: 'created_at',
-      title: '创建时间',
+      title: bt('auto.s_eca37cb072'),
       minWidth: 160
     },
     {
       key: 'operate',
-      title: '操作',
+      title: bt('auto.s_2b6bc0f293'),
       minWidth: 180,
       align: 'center',
       render: row => (
         <NSpace>
-          <NButton size="small" type="primary" onClick={() => handleView(row.id)}>
-            查看
-          </NButton>
-          <NButton size="small" type="success" onClick={() => handleProcess(row.id)}>
-            处理
-          </NButton>
+          <NButton size="small" type="primary" onClick={() => handleView(row.id)}>{bt('auto.s_607e7a4f37')}</NButton>
+          <NButton size="small" type="success" onClick={() => handleProcess(row.id)}>{bt('auto.s_7b1d15e557')}</NButton>
         </NSpace>
       )
     }
@@ -154,17 +151,17 @@ const searchForm = ref<{
 })
 
 const typeOptions = [
-  { label: '维修', value: 'REPAIR' },
-  { label: '退货', value: 'RETURN' },
-  { label: '换货', value: 'EXCHANGE' }
+  { label: bt('auto.s_324712a311'), value: 'REPAIR' },
+  { label: bt('auto.s_9627644f81'), value: 'RETURN' },
+  { label: bt('auto.s_bb9cd53da8'), value: 'EXCHANGE' }
 ]
 
 const statusOptions = [
-  { label: '待审核', value: 'PENDING' },
-  { label: '已通过', value: 'APPROVED' },
-  { label: '已驳回', value: 'REJECTED' },
-  { label: '处理中', value: 'PROCESSING' },
-  { label: '已完成', value: 'COMPLETED' }
+  { label: bt('auto.s_5cb424765c'), value: 'PENDING' },
+  { label: bt('auto.s_ecfa64c174'), value: 'APPROVED' },
+  { label: bt('auto.s_dbf36ddc55'), value: 'REJECTED' },
+  { label: bt('auto.s_5d459d550a'), value: 'PROCESSING' },
+  { label: bt('auto.s_fad5222ca0'), value: 'COMPLETED' }
 ]
 
 const handleSearch = () => {
@@ -214,15 +211,15 @@ function statusTagType(status: string): 'info' | 'success' | 'warning' | 'error'
 function statusLabel(status: string): string {
   switch (status) {
     case 'PENDING':
-      return '待审核'
+      return bt('auto.s_5cb424765c')
     case 'APPROVED':
-      return '已通过'
+      return bt('auto.s_ecfa64c174')
     case 'REJECTED':
-      return '已驳回'
+      return bt('auto.s_dbf36ddc55')
     case 'PROCESSING':
-      return '处理中'
+      return bt('auto.s_5d459d550a')
     case 'COMPLETED':
-      return '已完成'
+      return bt('auto.s_fad5222ca0')
     default:
       return status
   }
@@ -231,11 +228,11 @@ function statusLabel(status: string): string {
 function typeLabel(type: string): string {
   switch (type) {
     case 'REPAIR':
-      return '维修'
+      return bt('auto.s_324712a311')
     case 'RETURN':
-      return '退货'
+      return bt('auto.s_9627644f81')
     case 'EXCHANGE':
-      return '换货'
+      return bt('auto.s_bb9cd53da8')
     default:
       return type
   }
@@ -277,7 +274,7 @@ const handleProcess = async (id: string) => {
 
 const handleProcessSubmit = async () => {
   if (!processForm.value.status) {
-    message.warning('请选择处理状态')
+    message.warning(bt('auto.s_9e471ba44d'))
     return
   }
 
@@ -287,7 +284,7 @@ const handleProcessSubmit = async () => {
       status: processForm.value.status,
       result_info: processForm.value.result ? { remark: processForm.value.result } : undefined
     })
-    message.success('处理成功')
+    message.success(bt('auto.s_3ba621d736'))
     processVisible.value = false
     getData()
   } catch (error) {
@@ -312,9 +309,9 @@ const detailResultText = computed(() => {
 
 <template>
   <div class="flex-vertical-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
-    <NCard title="维保中心" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
+    <NCard :title="bt('auto.s_9185bb6280')" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
       <NTabs v-model:value="activeTab" type="line" animated>
-        <NTabPane name="apply" tab="售后申请（维修/退换货）">
+        <NTabPane name="apply" :tab="bt('auto.s_4fb8af4576')">
           <!-- 搜索区域 -->
           <NForm
             inline
@@ -323,39 +320,39 @@ const detailResultText = computed(() => {
             label-width="auto"
             class="mb-4 flex flex-wrap gap-4 items-end"
           >
-            <NFormItem label="设备编号" path="device_number">
+            <NFormItem :label="bt('auto.s_cf05392308')" path="device_number">
               <NInput
                 v-model:value="searchForm.device_number"
-                placeholder="请输入设备编号"
+                :placeholder="bt('auto.s_52b2a2bd92')"
                 style="width: 220px"
                 clearable
               />
             </NFormItem>
-            <NFormItem label="申请类型" path="type">
+            <NFormItem :label="bt('auto.s_719e1bff45')" path="type">
               <NSelect
                 v-model:value="searchForm.type"
                 :options="typeOptions"
-                placeholder="请选择申请类型"
+                :placeholder="bt('auto.s_c9e2692ba3')"
                 clearable
                 style="width: 200px"
               />
             </NFormItem>
-            <NFormItem label="状态" path="status">
+            <NFormItem :label="bt('auto.s_3fea7ca76c')" path="status">
               <NSelect
                 v-model:value="searchForm.status"
                 :options="statusOptions"
-                placeholder="请选择状态"
+                :placeholder="bt('auto.s_e1c965efff')"
                 clearable
                 style="width: 200px"
               />
             </NFormItem>
-            <NFormItem label="创建时间" path="create_time">
+            <NFormItem :label="bt('auto.s_eca37cb072')" path="create_time">
               <NDatePicker v-model:value="searchForm.create_time" type="datetimerange" clearable style="width: 320px" />
             </NFormItem>
             <NFormItem>
               <NSpace>
-                <NButton type="primary" @click="handleSearch">查询</NButton>
-                <NButton @click="handleReset">重置</NButton>
+                <NButton type="primary" @click="handleSearch">{{ bt('auto.s_bee912d79e') }}</NButton>
+                <NButton @click="handleReset">{{ bt('auto.s_4b9c3271dc') }}</NButton>
               </NSpace>
             </NFormItem>
           </NForm>
@@ -371,54 +368,54 @@ const detailResultText = computed(() => {
           />
         </NTabPane>
 
-        <NTabPane name="battery_maintenance" tab="电池维保记录（手动）">
+        <NTabPane name="battery_maintenance" :tab="bt('auto.s_48c341c746')">
           <BatteryMaintenance />
         </NTabPane>
       </NTabs>
     </NCard>
 
     <!-- 详情弹窗 -->
-    <NModal v-model:show="detailVisible" preset="card" title="维保详情" style="width: 640px">
+    <NModal v-model:show="detailVisible" preset="card" :title="bt('auto.s_2715a04c10')" style="width: 640px">
       <n-spin :show="detailLoading">
         <div v-if="detailData">
           <p>
-            <strong>设备编号：</strong>
+            <strong>{{ bt('auto.s_2909a48bc6') }}</strong>
             {{ detailData.device_number }}
           </p>
           <p>
-            <strong>设备名称：</strong>
+            <strong>{{ bt('auto.s_36c039a7e3') }}</strong>
             {{ detailData.device_name }}
           </p>
           <p>
-            <strong>申请类型：</strong>
+            <strong>{{ bt('auto.s_17c1454547') }}</strong>
             {{ typeLabel(detailData.type) }}
           </p>
           <p>
-            <strong>申请人：</strong>
+            <strong>{{ bt('auto.s_1635c93a29') }}</strong>
             {{ detailData.user_name || '--' }}（{{ detailData.user_phone }}）
           </p>
           <p>
-            <strong>状态：</strong>
+            <strong>{{ bt('auto.s_bec98b4d6a') }}</strong>
             <NTag :type="statusTagType(detailData.status)">{{ statusLabel(detailData.status) }}</NTag>
           </p>
           <p>
-            <strong>处理人：</strong>
+            <strong>{{ bt('auto.s_ef4406db97') }}</strong>
             {{ detailData.handler_name || '--' }}
           </p>
           <p>
-            <strong>创建时间：</strong>
+            <strong>{{ bt('auto.s_312f45014a') }}</strong>
             {{ detailData.created_at }}
           </p>
           <p>
-            <strong>更新时间：</strong>
+            <strong>{{ bt('auto.s_780fb9f3d0') }}</strong>
             {{ detailData.updated_at }}
           </p>
           <p class="mt-2">
-            <strong>问题描述：</strong>
+            <strong>{{ bt('auto.s_9d277bc2c8') }}</strong>
           </p>
           <p>{{ detailData.description || '--' }}</p>
           <p v-if="detailResultText" class="mt-2">
-            <strong>处理结果：</strong>
+            <strong>{{ bt('auto.s_e266667794') }}</strong>
           </p>
           <p v-if="detailResultText">{{ detailResultText }}</p>
         </div>
@@ -426,29 +423,29 @@ const detailResultText = computed(() => {
     </NModal>
 
     <!-- 处理弹窗 -->
-    <NModal v-model:show="processVisible" preset="card" title="处理维保申请" style="width: 520px">
+    <NModal v-model:show="processVisible" preset="card" :title="bt('auto.s_cc2417624c')" style="width: 520px">
       <NForm :model="processForm">
-        <NFormItem label="处理状态" path="status" required>
+        <NFormItem :label="bt('auto.s_21b31425c3')" path="status" required>
           <NSelect
             v-model:value="processForm.status"
             :options="statusOptions"
-            placeholder="请选择处理状态"
+            :placeholder="bt('auto.s_9e471ba44d')"
             style="width: 260px"
           />
         </NFormItem>
-        <NFormItem label="处理说明" path="result">
+        <NFormItem :label="bt('auto.s_79a5432662')" path="result">
           <NInput
             v-model:value="processForm.result"
             type="textarea"
-            placeholder="请输入处理结果说明"
+            :placeholder="bt('auto.s_ae4e496a26')"
             :autosize="{ minRows: 3, maxRows: 5 }"
           />
         </NFormItem>
       </NForm>
       <template #action>
         <NSpace justify="end">
-          <NButton @click="processVisible = false">取消</NButton>
-          <NButton type="primary" :loading="processing" @click="handleProcessSubmit">确定</NButton>
+          <NButton @click="processVisible = false">{{ bt('auto.s_625fb26b4b') }}</NButton>
+          <NButton type="primary" :loading="processing" @click="handleProcessSubmit">{{ bt('auto.s_38cf16f220') }}</NButton>
         </NSpace>
       </template>
     </NModal>

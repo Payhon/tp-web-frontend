@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { bt } from '@/views/bms/_shared/i18n'
 import { ref, watch, computed } from 'vue'
 import { NModal, NForm, NFormItem, NInput, NButton, NSpace } from 'naive-ui'
 
@@ -25,12 +26,12 @@ const formData = ref({
 })
 
 const rules = {
-  name: { required: true, message: '请输入经销商名称', trigger: 'blur' },
-  contact_person: { required: true, message: '请输入联系人', trigger: 'blur' },
-  phone: { required: true, message: '请输入联系电话', trigger: 'blur' }
+  name: { required: true, message: bt('auto.s_821901d3ee'), trigger: 'blur' },
+  contact_person: { required: true, message: bt('auto.s_9e3f21b389'), trigger: 'blur' },
+  phone: { required: true, message: bt('auto.s_7b540b8035'), trigger: 'blur' }
 }
 
-const title = computed(() => (props.type === 'add' ? '新增经销商' : '编辑经销商'))
+const title = computed(() => (props.type === 'add' ? bt('auto.s_28ce8259ee') : bt('auto.s_b196ada7f3')))
 
 watch(
   () => props.visible,
@@ -78,38 +79,38 @@ const handleSubmit = () => {
       label-width="100"
       require-mark-placement="right-hanging"
     >
-      <NFormItem label="经销商名称" path="name">
-        <NInput v-model:value="formData.name" placeholder="请输入经销商名称" />
+      <NFormItem :label="bt('auto.s_fe080071ea')" path="name">
+        <NInput v-model:value="formData.name" :placeholder="bt('auto.s_821901d3ee')" />
       </NFormItem>
-      <NFormItem label="联系人" path="contact_person">
-        <NInput v-model:value="formData.contact_person" placeholder="请输入联系人" />
+      <NFormItem :label="bt('auto.s_52409da520')" path="contact_person">
+        <NInput v-model:value="formData.contact_person" :placeholder="bt('auto.s_9e3f21b389')" />
       </NFormItem>
-      <NFormItem label="联系电话" path="phone">
-        <NInput v-model:value="formData.phone" placeholder="请输入联系电话" />
+      <NFormItem :label="bt('auto.s_09a1f6985a')" path="phone">
+        <NInput v-model:value="formData.phone" :placeholder="bt('auto.s_7b540b8035')" />
       </NFormItem>
-      <NFormItem label="邮箱" path="email">
-        <NInput v-model:value="formData.email" placeholder="请输入邮箱" />
+      <NFormItem :label="bt('auto.s_3bc5e602b2')" path="email">
+        <NInput v-model:value="formData.email" :placeholder="bt('auto.s_dbf6d02ab9')" />
       </NFormItem>
-      <NFormItem label="省份" path="province">
-        <NInput v-model:value="formData.province" placeholder="请输入省份" />
+      <NFormItem :label="bt('auto.s_d7009d07f0')" path="province">
+        <NInput v-model:value="formData.province" :placeholder="bt('auto.s_9257d8e3e4')" />
       </NFormItem>
-      <NFormItem label="城市" path="city">
-        <NInput v-model:value="formData.city" placeholder="请输入城市" />
+      <NFormItem :label="bt('auto.s_f7d29dfae0')" path="city">
+        <NInput v-model:value="formData.city" :placeholder="bt('auto.s_60d56130c5')" />
       </NFormItem>
-      <NFormItem label="区县" path="district">
-        <NInput v-model:value="formData.district" placeholder="请输入区县" />
+      <NFormItem :label="bt('auto.s_569c49687f')" path="district">
+        <NInput v-model:value="formData.district" :placeholder="bt('auto.s_8fe4dbbd1f')" />
       </NFormItem>
-      <NFormItem label="详细地址" path="address">
-        <NInput v-model:value="formData.address" placeholder="请输入详细地址" />
+      <NFormItem :label="bt('auto.s_61a0ec8a09')" path="address">
+        <NInput v-model:value="formData.address" :placeholder="bt('auto.s_80d6852f33')" />
       </NFormItem>
-      <NFormItem label="备注" path="remark">
-        <NInput v-model:value="formData.remark" type="textarea" placeholder="请输入备注" />
+      <NFormItem :label="bt('auto.s_2432b57515')" path="remark">
+        <NInput v-model:value="formData.remark" type="textarea" :placeholder="bt('auto.s_3cac634296')" />
       </NFormItem>
     </NForm>
     <template #footer>
       <NSpace justify="end">
-        <NButton @click="handleClose">取消</NButton>
-        <NButton type="primary" @click="handleSubmit">确定</NButton>
+        <NButton @click="handleClose">{{ bt('auto.s_625fb26b4b') }}</NButton>
+        <NButton type="primary" @click="handleSubmit">{{ bt('auto.s_38cf16f220') }}</NButton>
       </NSpace>
     </template>
   </NModal>

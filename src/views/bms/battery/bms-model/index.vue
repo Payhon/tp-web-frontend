@@ -1,4 +1,5 @@
 <script setup lang="tsx">
+import { bt } from '@/views/bms/_shared/i18n'
 import { onMounted, reactive, ref } from 'vue'
 import { NButton, NCard, NDataTable, NForm, NFormItem, NInput, NPopconfirm, NSpace, useMessage } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
@@ -53,36 +54,32 @@ const pagination = reactive({
 })
 
 const columns: DataTableColumns<BmsModelRow> = [
-  { key: 'name', title: '型号名称', minWidth: 160 },
+  { key: 'name', title: bt('auto.s_ad635a9565'), minWidth: 160 },
   {
     key: 'device_config_name',
-    title: '关联设备模板',
+    title: bt('auto.s_ab13e1f9d8'),
     minWidth: 180,
     render: row => row.device_config_name || row.device_config_id || '--'
   },
-  { key: 'voltage_rated', title: '额定电压(V)', width: 120, render: row => row.voltage_rated ?? '--' },
-  { key: 'capacity_rated', title: '额定容量(Ah)', width: 130, render: row => row.capacity_rated ?? '--' },
-  { key: 'cell_count', title: '电芯串数', width: 100, render: row => row.cell_count ?? '--' },
-  { key: 'nominal_power', title: '标称功率(W)', width: 130, render: row => row.nominal_power ?? '--' },
-  { key: 'warranty_months', title: '质保(月)', width: 100, render: row => row.warranty_months ?? '--' },
-  { key: 'description', title: '描述', minWidth: 180, render: row => row.description || '--' },
-  { key: 'created_at', title: '创建时间', width: 180, render: row => row.created_at || '--' },
+  { key: 'voltage_rated', title: bt('auto.s_23218d96f8'), width: 120, render: row => row.voltage_rated ?? '--' },
+  { key: 'capacity_rated', title: bt('auto.s_f8862f498a'), width: 130, render: row => row.capacity_rated ?? '--' },
+  { key: 'cell_count', title: bt('auto.s_9001698fc1'), width: 100, render: row => row.cell_count ?? '--' },
+  { key: 'nominal_power', title: bt('auto.s_46d9f2eb39'), width: 130, render: row => row.nominal_power ?? '--' },
+  { key: 'warranty_months', title: bt('auto.s_0853ef8711'), width: 100, render: row => row.warranty_months ?? '--' },
+  { key: 'description', title: bt('auto.s_3bdd08adab'), minWidth: 180, render: row => row.description || '--' },
+  { key: 'created_at', title: bt('auto.s_eca37cb072'), width: 180, render: row => row.created_at || '--' },
   {
     key: 'actions',
-    title: '操作',
+    title: bt('auto.s_2b6bc0f293'),
     width: 160,
     render: row => (
       <NSpace>
-        <NButton size="small" type="primary" onClick={() => handleEdit(row)}>
-          编辑
-        </NButton>
+        <NButton size="small" type="primary" onClick={() => handleEdit(row)}>{bt('auto.s_95b351c862')}</NButton>
         <NPopconfirm onPositiveClick={() => handleDelete(row.id)}>
           {{
-            default: () => '确认删除该 BMS 型号吗？',
+            default: () => bt('auto.s_431c1dedab'),
             trigger: () => (
-              <NButton size="small" type="error">
-                删除
-              </NButton>
+              <NButton size="small" type="error">{bt('auto.s_2f4aaddde3')}</NButton>
             )
           }}
         </NPopconfirm>
@@ -117,13 +114,13 @@ function handleEdit(row: BmsModelRow) {
 async function handleDelete(id: string) {
   try {
     await deleteBatteryBmsModel(id)
-    message.success('删除成功')
+    message.success(bt('auto.s_0007d170de'))
     if (data.value.length === 1 && pagination.page > 1) {
       pagination.page -= 1
     }
     await fetchData()
   } catch (e: any) {
-    message.error(e?.message || '删除失败')
+    message.error(e?.message || bt('auto.s_acf0664a54'))
   }
 }
 
@@ -131,15 +128,15 @@ async function handleSubmit(formData: any) {
   try {
     if (modalType.value === 'add') {
       await createBatteryBmsModel(formData)
-      message.success('新增成功')
+      message.success(bt('auto.s_a5bfd70d4a'))
     } else if (currentRow.value?.id) {
       await updateBatteryBmsModel(currentRow.value.id, formData)
-      message.success('更新成功')
+      message.success(bt('auto.s_55aa6366c0'))
     }
     modalVisible.value = false
     await fetchData()
   } catch (e: any) {
-    message.error(e?.message || '保存失败')
+    message.error(e?.message || bt('auto.s_6de920b4e4'))
   }
 }
 
@@ -162,7 +159,7 @@ async function fetchData() {
   } catch (e: any) {
     data.value = []
     pagination.itemCount = 0
-    message.error(e?.message || '获取列表失败')
+    message.error(e?.message || bt('auto.s_fe9d24d531'))
   } finally {
     loading.value = false
   }
@@ -175,21 +172,21 @@ onMounted(() => {
 
 <template>
   <div class="flex-vertical-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
-    <NCard title="BMS 型号管理" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
+    <NCard :title="bt('auto.s_683e6192f3')" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
       <NForm :model="queryForm" inline class="mb-4">
-        <NFormItem label="型号名称">
-          <NInput v-model:value="queryForm.name" placeholder="请输入型号名称" clearable />
+        <NFormItem :label="bt('auto.s_ad635a9565')">
+          <NInput v-model:value="queryForm.name" :placeholder="bt('auto.s_72b407497e')" clearable />
         </NFormItem>
         <NFormItem>
           <NSpace>
-            <NButton type="primary" @click="handleSearch">查询</NButton>
-            <NButton @click="handleReset">重置</NButton>
+            <NButton type="primary" @click="handleSearch">{{ bt('auto.s_bee912d79e') }}</NButton>
+            <NButton @click="handleReset">{{ bt('auto.s_4b9c3271dc') }}</NButton>
           </NSpace>
         </NFormItem>
       </NForm>
 
       <div class="mb-4">
-        <NButton type="primary" @click="handleAdd">新增 BMS 型号</NButton>
+        <NButton type="primary" @click="handleAdd">{{ bt('auto.s_9369cf0afd') }}</NButton>
       </div>
 
       <NDataTable
@@ -206,7 +203,7 @@ onMounted(() => {
       v-model:visible="modalVisible"
       :type="modalType"
       :data="currentRow"
-      entity-name="BMS型号"
+      :entity-name="bt('auto.s_c44c1028d5')"
       @submit="handleSubmit"
     />
   </div>

@@ -1,4 +1,5 @@
 <script setup lang="tsx">
+import { bt } from '@/views/bms/_shared/i18n'
 import { ref } from 'vue'
 import {
   NButton,
@@ -42,11 +43,11 @@ const searchForm = ref({
 })
 
 const statusOptions = [
-  { label: '待执行', value: 'PENDING' },
-  { label: '已下发(等待结果)', value: 'SENT' },
-  { label: '已执行(成功)', value: 'SUCCESS' },
-  { label: '执行失败', value: 'FAILED' },
-  { label: '已撤销', value: 'CANCELLED' }
+  { label: bt('auto.s_6139a6998b'), value: 'PENDING' },
+  { label: bt('auto.s_31ad9b0011'), value: 'SENT' },
+  { label: bt('auto.s_fb11059057'), value: 'SUCCESS' },
+  { label: bt('auto.s_1c83d79715'), value: 'FAILED' },
+  { label: bt('auto.s_50239f4fee'), value: 'CANCELLED' }
 ]
 
 function statusTagType(status: OfflineCmdItem['status']) {
@@ -59,42 +60,38 @@ function statusTagType(status: OfflineCmdItem['status']) {
 
 function statusLabel(status: OfflineCmdItem['status']) {
   const map: Record<string, string> = {
-    PENDING: '待执行',
-    SENT: '已下发',
-    SUCCESS: '已执行(成功)',
-    FAILED: '执行失败',
-    CANCELLED: '已撤销'
+    PENDING: bt('auto.s_6139a6998b'),
+    SENT: bt('auto.s_49799437d0'),
+    SUCCESS: bt('auto.s_fb11059057'),
+    FAILED: bt('auto.s_1c83d79715'),
+    CANCELLED: bt('auto.s_50239f4fee')
   }
   return map[status] || status
 }
 
 function createColumns(): DataTableColumns<OfflineCmdItem> {
   return [
-    { key: 'device_number', title: '设备序列号', minWidth: 160 },
-    { key: 'command_type', title: '指令类型', minWidth: 160, render: r => r.command_type || '--' },
+    { key: 'device_number', title: bt('auto.s_4419e8a1ba'), minWidth: 160 },
+    { key: 'command_type', title: bt('auto.s_9e7d7ccfb7'), minWidth: 160, render: r => r.command_type || '--' },
     {
       key: 'status',
-      title: '执行状态',
+      title: bt('auto.s_b56fe3d184'),
       minWidth: 140,
       render: r => <NTag type={statusTagType(r.status)}>{statusLabel(r.status)}</NTag>
     },
-    { key: 'created_at', title: '下发时间', minWidth: 160 },
-    { key: 'operator_name', title: '操作人', minWidth: 120, render: r => r.operator_name || '--' },
-    { key: 'executed_at', title: '执行时间', minWidth: 160, render: r => r.executed_at || '--' },
-    { key: 'error_message', title: '失败原因', minWidth: 200, render: r => r.error_message || '--' },
+    { key: 'created_at', title: bt('auto.s_e8c30dca69'), minWidth: 160 },
+    { key: 'operator_name', title: bt('auto.s_f9ac4b2aa6'), minWidth: 120, render: r => r.operator_name || '--' },
+    { key: 'executed_at', title: bt('auto.s_70b3635aa3'), minWidth: 160, render: r => r.executed_at || '--' },
+    { key: 'error_message', title: bt('auto.s_13d5f24381'), minWidth: 200, render: r => r.error_message || '--' },
     {
       key: 'actions',
-      title: '操作',
+      title: bt('auto.s_2b6bc0f293'),
       minWidth: 220,
       fixed: 'right',
       render: r => (
         <NSpace>
-          <NButton size="small" type="primary" onClick={() => openDetail(r)}>
-            详情
-          </NButton>
-          <NButton size="small" type="warning" disabled={r.status !== 'PENDING'} onClick={() => doCancel(r)}>
-            撤销
-          </NButton>
+          <NButton size="small" type="primary" onClick={() => openDetail(r)}>{bt('auto.s_f26225bde6')}</NButton>
+          <NButton size="small" type="warning" disabled={r.status !== 'PENDING'} onClick={() => doCancel(r)}>{bt('auto.s_bd9fcf46b4')}</NButton>
         </NSpace>
       )
     }
@@ -138,10 +135,10 @@ function handleReset() {
 async function doCancel(row: OfflineCmdItem) {
   try {
     await cancelOfflineCommand(row.id)
-    message.success('撤销成功')
+    message.success(bt('auto.s_8e05b0c1b6'))
     getData()
   } catch (e: any) {
-    message.error(e?.message || '撤销失败')
+    message.error(e?.message || bt('auto.s_a8301ae83a'))
   }
 }
 
@@ -157,7 +154,7 @@ async function openDetail(row: OfflineCmdItem) {
     const res: any = await getOfflineCommandDetail(row.id)
     detail.value = res?.data
   } catch (e: any) {
-    message.error(e?.message || '获取详情失败')
+    message.error(e?.message || bt('auto.s_181421dd8a'))
     detail.value = null
   } finally {
     detailLoading.value = false
@@ -169,7 +166,7 @@ getData()
 
 <template>
   <div class="flex-vertical-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
-    <NCard title="离线指令" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
+    <NCard :title="bt('auto.s_d3f156bcf0')" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
       <NForm
         inline
         :model="searchForm"
@@ -177,19 +174,19 @@ getData()
         label-width="auto"
         class="mb-4 flex flex-wrap gap-4 items-end"
       >
-        <NFormItem label="设备序列号">
-          <NInput v-model:value="searchForm.device_number" placeholder="支持模糊搜索" style="width: 220px" clearable />
+        <NFormItem :label="bt('auto.s_4419e8a1ba')">
+          <NInput v-model:value="searchForm.device_number" :placeholder="bt('auto.s_f33cb868c8')" style="width: 220px" clearable />
         </NFormItem>
-        <NFormItem label="指令类型">
-          <NInput v-model:value="searchForm.command_type" placeholder="支持模糊搜索" style="width: 220px" clearable />
+        <NFormItem :label="bt('auto.s_9e7d7ccfb7')">
+          <NInput v-model:value="searchForm.command_type" :placeholder="bt('auto.s_f33cb868c8')" style="width: 220px" clearable />
         </NFormItem>
-        <NFormItem label="状态">
+        <NFormItem :label="bt('auto.s_3fea7ca76c')">
           <NSelect v-model:value="searchForm.status" :options="statusOptions" clearable style="width: 220px" />
         </NFormItem>
         <NFormItem>
           <NSpace>
-            <NButton type="primary" @click="handleSearch">查询</NButton>
-            <NButton @click="handleReset">重置</NButton>
+            <NButton type="primary" @click="handleSearch">{{ bt('auto.s_bee912d79e') }}</NButton>
+            <NButton @click="handleReset">{{ bt('auto.s_4b9c3271dc') }}</NButton>
           </NSpace>
         </NFormItem>
       </NForm>
@@ -204,24 +201,24 @@ getData()
       />
     </NCard>
 
-    <NModal v-model:show="showDetail" preset="card" title="离线指令详情" style="width: 860px">
+    <NModal v-model:show="showDetail" preset="card" :title="bt('auto.s_74380878eb')" style="width: 860px">
       <template v-if="detailLoading">
-        <div style="padding: 12px">加载中...</div>
+        <div style="padding: 12px">{{ bt('auto.s_26b5bd4947') }}</div>
       </template>
       <template v-else>
         <NDescriptions bordered label-placement="left" :column="2">
-          <NDescriptionsItem label="设备序列号">{{ detail?.device_number || '--' }}</NDescriptionsItem>
-          <NDescriptionsItem label="指令类型">{{ detail?.command_type || '--' }}</NDescriptionsItem>
+          <NDescriptionsItem :label="bt('auto.s_4419e8a1ba')">{{ detail?.device_number || '--' }}</NDescriptionsItem>
+          <NDescriptionsItem :label="bt('auto.s_9e7d7ccfb7')">{{ detail?.command_type || '--' }}</NDescriptionsItem>
           <NDescriptionsItem label="Identify">{{ detail?.identify || '--' }}</NDescriptionsItem>
-          <NDescriptionsItem label="状态">{{ detail?.status || '--' }}</NDescriptionsItem>
-          <NDescriptionsItem label="下发时间">{{ detail?.created_at || '--' }}</NDescriptionsItem>
-          <NDescriptionsItem label="操作人">{{ detail?.operator_name || '--' }}</NDescriptionsItem>
-          <NDescriptionsItem label="执行时间">{{ detail?.executed_at || '--' }}</NDescriptionsItem>
-          <NDescriptionsItem label="失败原因">{{ detail?.error_message || '--' }}</NDescriptionsItem>
+          <NDescriptionsItem :label="bt('auto.s_3fea7ca76c')">{{ detail?.status || '--' }}</NDescriptionsItem>
+          <NDescriptionsItem :label="bt('auto.s_e8c30dca69')">{{ detail?.created_at || '--' }}</NDescriptionsItem>
+          <NDescriptionsItem :label="bt('auto.s_f9ac4b2aa6')">{{ detail?.operator_name || '--' }}</NDescriptionsItem>
+          <NDescriptionsItem :label="bt('auto.s_70b3635aa3')">{{ detail?.executed_at || '--' }}</NDescriptionsItem>
+          <NDescriptionsItem :label="bt('auto.s_13d5f24381')">{{ detail?.error_message || '--' }}</NDescriptionsItem>
           <NDescriptionsItem label="Payload" :span="2">
             <pre style="white-space: pre-wrap; word-break: break-all; margin: 0">{{ detail?.payload || '--' }}</pre>
           </NDescriptionsItem>
-          <NDescriptionsItem label="设备响应" :span="2">
+          <NDescriptionsItem :label="bt('auto.s_b688d62966')" :span="2">
             <pre style="white-space: pre-wrap; word-break: break-all; margin: 0">{{
               detail?.command_log_rsp_data || '--'
             }}</pre>

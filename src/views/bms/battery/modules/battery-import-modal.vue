@@ -1,4 +1,5 @@
 <script setup lang="tsx">
+import { bt } from '@/views/bms/_shared/i18n'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { NButton, NCard, NDataTable, NModal, NProgress, NSpace, NTag, NText, NUpload, useMessage } from 'naive-ui'
 import type { UploadCustomRequestOptions } from 'naive-ui'
@@ -67,11 +68,11 @@ async function downloadTemplate() {
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = '电池导入模板.xlsx'
+    link.download = bt('auto.s_2333e57fcb')
     link.click()
     window.URL.revokeObjectURL(url)
   } catch (e: any) {
-    message.error(e?.message || '模板下载失败')
+    message.error(e?.message || bt('auto.s_4a6fad3b77'))
   }
 }
 
@@ -95,7 +96,7 @@ async function fetchStatusAndLogs() {
     }
   } catch (e: any) {
     stopPolling()
-    message.error(e?.message || '获取导入进度失败')
+    message.error(e?.message || bt('auto.s_fab59d1773'))
   }
 }
 
@@ -116,27 +117,27 @@ async function customUploadRequest(options: UploadCustomRequestOptions) {
 
     const res: any = await importBatteryList(file)
     const id = res?.data?.job_id
-    if (!id) throw new Error('未返回 job_id')
+    if (!id) throw new Error(bt('auto.s_5e857692c1'))
     jobId.value = id
     startPolling()
     options.onFinish()
   } catch (e: any) {
     options.onError()
-    message.error(e?.message || '导入失败')
+    message.error(e?.message || bt('auto.s_fddcd7c6e4'))
   }
 }
 
 const logColumns = [
-  { key: 'created_at', title: '时间', minWidth: 150 },
+  { key: 'created_at', title: bt('auto.s_19fcb9eb25'), minWidth: 150 },
   {
     key: 'level',
-    title: '级别',
+    title: bt('auto.s_e78e4b2dc4'),
     minWidth: 80,
     render: (row: any) => <NTag type={row.level === 'ERROR' ? 'error' : 'default'}>{row.level}</NTag>
   },
-  { key: 'row_number', title: '行', minWidth: 70, render: (row: any) => row.row_number ?? '-' },
-  { key: 'device_number', title: '电池编号', minWidth: 160, render: (row: any) => row.device_number || '-' },
-  { key: 'message', title: '内容', minWidth: 260, ellipsis: { tooltip: true } }
+  { key: 'row_number', title: bt('auto.s_2d5aef4f24'), minWidth: 70, render: (row: any) => row.row_number ?? '-' },
+  { key: 'device_number', title: bt('auto.s_90ccdfe522'), minWidth: 160, render: (row: any) => row.device_number || '-' },
+  { key: 'message', title: bt('auto.s_2d711b09bd'), minWidth: 260, ellipsis: { tooltip: true } }
 ]
 
 function handleClose() {
@@ -170,27 +171,26 @@ onBeforeUnmount(() => stopPolling())
 </script>
 
 <template>
-  <NModal :show="visible" preset="card" style="width: 860px" title="导入电池" @close="handleClose">
+  <NModal :show="visible" preset="card" style="width: 860px" :title="bt('auto.s_6aced82193')" @close="handleClose">
     <NSpace vertical size="large">
       <NCard size="small" :bordered="false">
-        <NText>请先下载并填写导入模板，确保必填字段完整：</NText>
-        <NButton text type="primary" class="ml-8px" @click="downloadTemplate">下载导入 Excel 模板</NButton>
+        <NText>{{ bt('auto.s_0851083950') }}</NText>
+        <NButton text type="primary" class="ml-8px" @click="downloadTemplate">{{ bt('auto.s_7dbea0737f') }}</NButton>
         <div class="mt-8px text-12px text-gray-500">
-          必填：电池序列号ID（对应
-          devices.device_number）、批号、产品规格、订单编号、BMS通讯类型（蓝牙/4G/蓝牙+4G）；可选：电池型号（按名称匹配）、蓝牙Mac、4G通讯卡ID、出厂日期、质保到期。
+          {{ bt('pages.import.requiredHint') }}
         </div>
       </NCard>
 
       <NCard size="small" :bordered="false">
         <NUpload :max="1" accept=".xlsx,.xls" :default-upload="false" :custom-request="customUploadRequest">
-          <NButton type="primary">选择并上传 Excel</NButton>
+          <NButton type="primary">{{ bt('auto.s_abdb34a63e') }}</NButton>
         </NUpload>
       </NCard>
 
       <NCard v-if="jobId" size="small" :bordered="false">
         <NSpace align="center" justify="space-between" class="mb-10px">
           <NSpace align="center">
-            <NTag type="info">任务：{{ jobId }}</NTag>
+            <NTag type="info">{{ bt('common.task', { id: jobId }) }}</NTag>
             <NTag
               v-if="jobStatus.status"
               :type="jobStatus.status === 'FAILED' ? 'error' : jobStatus.status === 'SUCCESS' ? 'success' : 'warning'"
@@ -198,19 +198,18 @@ onBeforeUnmount(() => stopPolling())
               {{ jobStatus.status }}
             </NTag>
             <NText class="text-12px text-gray-500">
-              {{ jobStatus.processed_rows }}/{{ jobStatus.total_rows }}（成功 {{ jobStatus.success_rows }}，失败
-              {{ jobStatus.failed_rows }}）
+              {{ bt('common.importProgress', { processed: jobStatus.processed_rows, total: jobStatus.total_rows, success: jobStatus.success_rows, failed: jobStatus.failed_rows }) }}
             </NText>
           </NSpace>
           <NButton v-if="!polling && (jobStatus.status === 'SUCCESS' || jobStatus.status === 'FAILED')" @click="reset">
-            重新导入
+            {{ bt('auto.s_83aed6aa22') }}
           </NButton>
         </NSpace>
 
         <NProgress type="line" :percentage="percent" :show-indicator="true" />
 
         <div v-if="jobStatus.status === 'FAILED' && jobStatus.error_message" class="mt-10px text-12px text-red-600">
-          任务失败：{{ jobStatus.error_message }}
+          {{ bt('common.importFailed', { message: jobStatus.error_message }) }}
         </div>
 
         <div class="mt-12px">

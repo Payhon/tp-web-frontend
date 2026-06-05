@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { bt } from '@/views/bms/_shared/i18n'
 import { computed, onMounted, ref, watch } from 'vue'
 import { NButton, NForm, NFormItem, NInput, NInputNumber, NModal, NSelect, NSpace, useMessage } from 'naive-ui'
 import { getDeviceConfigList } from '@/service/api/device'
@@ -28,15 +29,15 @@ const formData = ref({
 })
 
 const rules = {
-  name: { required: true, message: '请输入型号名称', trigger: 'blur' },
-  device_config_id: { required: true, message: '请选择关联设备模板', trigger: ['blur', 'change'] },
-  voltage_rated: { required: true, type: 'number', message: '请输入额定电压', trigger: 'blur' },
-  capacity_rated: { required: true, type: 'number', message: '请输入额定容量', trigger: 'blur' },
-  cell_count: { required: true, type: 'number', message: '请输入电芯串数', trigger: 'blur' }
+  name: { required: true, message: bt('auto.s_72b407497e'), trigger: 'blur' },
+  device_config_id: { required: true, message: bt('auto.s_844f266270'), trigger: ['blur', 'change'] },
+  voltage_rated: { required: true, type: 'number', message: bt('auto.s_3bd0e715c1'), trigger: 'blur' },
+  capacity_rated: { required: true, type: 'number', message: bt('auto.s_736011ec04'), trigger: 'blur' },
+  cell_count: { required: true, type: 'number', message: bt('auto.s_e44b7e0945'), trigger: 'blur' }
 }
 
-const entityName = computed(() => props.entityName || '电池型号')
-const title = computed(() => (props.type === 'add' ? `新增${entityName.value}` : `编辑${entityName.value}`))
+const entityName = computed(() => props.entityName || bt('auto.s_ca62d89383'))
+const title = computed(() => bt(props.type === 'add' ? 'common.addEntity' : 'common.editEntity', { entity: entityName.value }))
 
 async function fetchDeviceConfigs() {
   try {
@@ -48,7 +49,7 @@ async function fetchDeviceConfigs() {
     }))
   } catch (e: any) {
     deviceConfigOptions.value = []
-    message.error(e?.message || '获取设备模板列表失败')
+    message.error(e?.message || bt('auto.s_5e5bc81529'))
   }
 }
 
@@ -101,40 +102,40 @@ const handleSubmit = () => {
       label-width="120"
       require-mark-placement="right-hanging"
     >
-      <NFormItem label="型号名称" path="name">
-        <NInput v-model:value="formData.name" placeholder="请输入型号名称" />
+      <NFormItem :label="bt('auto.s_ad635a9565')" path="name">
+        <NInput v-model:value="formData.name" :placeholder="bt('auto.s_72b407497e')" />
       </NFormItem>
-      <NFormItem label="关联设备模板" path="device_config_id">
+      <NFormItem :label="bt('auto.s_ab13e1f9d8')" path="device_config_id">
         <NSelect
           v-model:value="formData.device_config_id"
           filterable
           :options="deviceConfigOptions"
-          placeholder="请选择设备模板"
+          :placeholder="bt('auto.s_7522eafe6e')"
         />
       </NFormItem>
-      <NFormItem label="额定电压(V)" path="voltage_rated">
-        <NInputNumber v-model:value="formData.voltage_rated" placeholder="请输入额定电压" :precision="2" />
+      <NFormItem :label="bt('auto.s_23218d96f8')" path="voltage_rated">
+        <NInputNumber v-model:value="formData.voltage_rated" :placeholder="bt('auto.s_3bd0e715c1')" :precision="2" />
       </NFormItem>
-      <NFormItem label="额定容量(Ah)" path="capacity_rated">
-        <NInputNumber v-model:value="formData.capacity_rated" placeholder="请输入额定容量" :precision="2" />
+      <NFormItem :label="bt('auto.s_f8862f498a')" path="capacity_rated">
+        <NInputNumber v-model:value="formData.capacity_rated" :placeholder="bt('auto.s_736011ec04')" :precision="2" />
       </NFormItem>
-      <NFormItem label="电芯串数" path="cell_count">
-        <NInputNumber v-model:value="formData.cell_count" placeholder="请输入电芯串数" :precision="0" />
+      <NFormItem :label="bt('auto.s_9001698fc1')" path="cell_count">
+        <NInputNumber v-model:value="formData.cell_count" :placeholder="bt('auto.s_e44b7e0945')" :precision="0" />
       </NFormItem>
-      <NFormItem label="标称功率(W)" path="nominal_power">
-        <NInputNumber v-model:value="formData.nominal_power" placeholder="请输入标称功率" :precision="2" />
+      <NFormItem :label="bt('auto.s_46d9f2eb39')" path="nominal_power">
+        <NInputNumber v-model:value="formData.nominal_power" :placeholder="bt('auto.s_0f3c9af363')" :precision="2" />
       </NFormItem>
-      <NFormItem label="质保期(月)" path="warranty_months">
-        <NInputNumber v-model:value="formData.warranty_months" placeholder="请输入质保期" :precision="0" />
+      <NFormItem :label="bt('auto.s_b410dd9928')" path="warranty_months">
+        <NInputNumber v-model:value="formData.warranty_months" :placeholder="bt('auto.s_2d1d3f1f13')" :precision="0" />
       </NFormItem>
-      <NFormItem label="描述" path="description">
-        <NInput v-model:value="formData.description" type="textarea" placeholder="请输入描述" />
+      <NFormItem :label="bt('auto.s_3bdd08adab')" path="description">
+        <NInput v-model:value="formData.description" type="textarea" :placeholder="bt('auto.s_11956a43e2')" />
       </NFormItem>
     </NForm>
     <template #footer>
       <NSpace justify="end">
-        <NButton @click="handleClose">取消</NButton>
-        <NButton type="primary" @click="handleSubmit">确定</NButton>
+        <NButton @click="handleClose">{{ bt('auto.s_625fb26b4b') }}</NButton>
+        <NButton type="primary" @click="handleSubmit">{{ bt('auto.s_38cf16f220') }}</NButton>
       </NSpace>
     </template>
   </NModal>

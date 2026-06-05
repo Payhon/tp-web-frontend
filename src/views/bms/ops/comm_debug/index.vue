@@ -1,4 +1,5 @@
 <script setup lang="tsx">
+import { bt } from '@/views/bms/_shared/i18n'
 import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import {
   NButton,
@@ -48,19 +49,19 @@ type LogItem = {
 const message = useMessage()
 
 const eventTypeOptions = [
-  { label: '全部', value: '' },
-  { label: '上行原始包', value: 'uplink_raw' },
-  { label: '上行解码', value: 'uplink_decoded' },
-  { label: '上行解析', value: 'uplink_parsed' },
-  { label: '上行异常', value: 'uplink_error' },
-  { label: '下行发布', value: 'downlink_publish' },
-  { label: '下行异常', value: 'downlink_error' }
+  { label: bt('auto.s_a8b0c20416'), value: '' },
+  { label: bt('auto.s_b1164a8781'), value: 'uplink_raw' },
+  { label: bt('auto.s_68ddc62b26'), value: 'uplink_decoded' },
+  { label: bt('auto.s_4e6f32cf19'), value: 'uplink_parsed' },
+  { label: bt('auto.s_f0dae6360d'), value: 'uplink_error' },
+  { label: bt('auto.s_61e195171f'), value: 'downlink_publish' },
+  { label: bt('auto.s_dcaef2c7f8'), value: 'downlink_error' }
 ]
 
 const statusOptions = [
-  { label: '全部', value: '' },
-  { label: '成功', value: 'success' },
-  { label: '失败', value: 'error' }
+  { label: bt('auto.s_a8b0c20416'), value: '' },
+  { label: bt('auto.s_330363dfc5'), value: 'success' },
+  { label: bt('auto.s_acd5cb847a'), value: 'error' }
 ]
 
 const range = ref<[number, number]>([moment().subtract(30, 'minutes').valueOf(), moment().valueOf()])
@@ -109,18 +110,18 @@ function pickerChange(value: [number, number] | null) {
 }
 
 const columns = computed<DataTableColumns<LogItem>>(() => [
-  { key: 'occurred_at', title: '时间', minWidth: 160 },
-  { key: 'device_id', title: '设备 ID', minWidth: 220 },
-  { key: 'device_number', title: '设备编号', minWidth: 160 },
+  { key: 'occurred_at', title: bt('auto.s_19fcb9eb25'), minWidth: 160 },
+  { key: 'device_id', title: bt('auto.s_9079376597'), minWidth: 220 },
+  { key: 'device_number', title: bt('auto.s_cf05392308'), minWidth: 160 },
   {
     key: 'event_type',
-    title: '类型',
+    title: bt('auto.s_226b091218'),
     minWidth: 130,
     render: row => renderEventType(row.event_type)
   },
   {
     key: 'direction',
-    title: '方向',
+    title: bt('auto.s_a465db53b8'),
     minWidth: 90,
     render: row => renderDirection(row.direction)
   },
@@ -133,44 +134,42 @@ const columns = computed<DataTableColumns<LogItem>>(() => [
   },
   {
     key: 'status',
-    title: '状态',
+    title: bt('auto.s_3fea7ca76c'),
     minWidth: 90,
     render: row => renderStatus(row.status)
   },
   {
     key: 'summary',
-    title: '摘要',
+    title: bt('auto.s_3ae14696f8'),
     minWidth: 220,
     ellipsis: { tooltip: true },
     render: row => row.error_message || row.message_id || row.payload_format || '-'
   },
   {
     key: 'actions',
-    title: '操作',
+    title: bt('auto.s_2b6bc0f293'),
     width: 100,
     render: row => (
-      <NButton text type="primary" onClick={() => openDetail(row)}>
-        详情
-      </NButton>
+      <NButton text type="primary" onClick={() => openDetail(row)}>{bt('auto.s_f26225bde6')}</NButton>
     )
   }
 ])
 
 function renderEventType(type: string) {
   const labelMap: Record<string, string> = {
-    uplink_raw: '上行原始包',
-    uplink_decoded: '上行解码',
-    uplink_parsed: '上行解析',
-    uplink_error: '上行异常',
-    downlink_publish: '下行发布',
-    downlink_error: '下行异常'
+    uplink_raw: bt('auto.s_b1164a8781'),
+    uplink_decoded: bt('auto.s_68ddc62b26'),
+    uplink_parsed: bt('auto.s_4e6f32cf19'),
+    uplink_error: bt('auto.s_f0dae6360d'),
+    downlink_publish: bt('auto.s_61e195171f'),
+    downlink_error: bt('auto.s_dcaef2c7f8')
   }
   return labelMap[type] || type || '-'
 }
 
 function renderDirection(direction: string) {
   const type = direction === 'outbound' ? 'warning' : 'info'
-  const label = direction === 'outbound' ? '下行' : direction === 'inbound' ? '上行' : direction || '-'
+  const label = direction === 'outbound' ? bt('auto.s_3e5b698b4c') : direction === 'inbound' ? bt('auto.s_e18c94a248') : direction || '-'
   return (
     <NTag size="small" type={type}>
       {label}
@@ -180,7 +179,7 @@ function renderDirection(direction: string) {
 
 function renderStatus(status: string) {
   const type = status === 'success' ? 'success' : status === 'error' ? 'error' : 'default'
-  const label = status === 'success' ? '成功' : status === 'error' ? '失败' : status || '-'
+  const label = status === 'success' ? bt('auto.s_330363dfc5') : status === 'error' ? bt('auto.s_acd5cb847a') : status || '-'
   return (
     <NTag size="small" type={type}>
       {label}
@@ -205,7 +204,7 @@ async function getTableData() {
     total.value = res?.data?.total || 0
     streamAfterId.value = tableData.value.reduce((max, item) => Math.max(max, item.id || 0), 0)
   } catch (e: any) {
-    message.error(e?.message || '获取通讯调试日志失败')
+    message.error(e?.message || bt('auto.s_65872bfc81'))
   }
 }
 
@@ -310,24 +309,24 @@ getTableData().then(() => {
 </script>
 
 <template>
-  <NCard title="通讯调试管理">
+  <NCard :title="bt('auto.s_52236a392e')">
     <NForm class="mb-12px" :inline="true" label-placement="left" :model="queryParams">
-      <NFormItem label="设备 ID">
-        <NInput v-model:value="queryParams.device_id" class="w-260px" placeholder="精确查询" />
+      <NFormItem :label="bt('auto.s_9079376597')">
+        <NInput v-model:value="queryParams.device_id" class="w-260px" :placeholder="bt('auto.s_0b42c81a7d')" />
       </NFormItem>
-      <NFormItem label="设备编号">
-        <NInput v-model:value="queryParams.device_number" class="w-220px" placeholder="支持模糊查询" />
+      <NFormItem :label="bt('auto.s_cf05392308')">
+        <NInput v-model:value="queryParams.device_number" class="w-220px" :placeholder="bt('auto.s_89113e653d')" />
       </NFormItem>
-      <NFormItem label="类型">
+      <NFormItem :label="bt('auto.s_226b091218')">
         <NSelect v-model:value="queryParams.event_type" class="w-160px" :options="eventTypeOptions" />
       </NFormItem>
-      <NFormItem label="状态">
+      <NFormItem :label="bt('auto.s_3fea7ca76c')">
         <NSelect v-model:value="queryParams.status" class="w-140px" :options="statusOptions" />
       </NFormItem>
-      <NFormItem label="时间范围">
+      <NFormItem :label="bt('auto.s_cd649f76d4')">
         <NDatePicker v-model:value="range" type="datetimerange" clearable separator="-" @update:value="pickerChange" />
       </NFormItem>
-      <NFormItem label="实时">
+      <NFormItem :label="bt('auto.s_2843e2f690')">
         <NSpace align="center">
           <NSwitch v-model:value="realtimeEnabled" />
           <NTag
@@ -336,21 +335,21 @@ getTableData().then(() => {
           >
             {{
               streamStatus === 'connected'
-                ? '已连接'
+                ? bt('auto.s_c5ea9c6a76')
                 : streamStatus === 'connecting'
-                  ? '连接中'
+                  ? bt('auto.s_00135f0840')
                   : streamStatus === 'error'
-                    ? '异常'
-                    : '未开启'
+                    ? bt('auto.s_c195df6308')
+                    : bt('auto.s_ea4a363d8f')
             }}
           </NTag>
         </NSpace>
       </NFormItem>
       <NFormItem>
-        <NButton type="primary" @click="handleQuery">查询</NButton>
+        <NButton type="primary" @click="handleQuery">{{ bt('auto.s_bee912d79e') }}</NButton>
       </NFormItem>
       <NFormItem>
-        <NButton @click="handleReset">重置</NButton>
+        <NButton @click="handleReset">{{ bt('auto.s_4b9c3271dc') }}</NButton>
       </NFormItem>
     </NForm>
 
@@ -364,22 +363,22 @@ getTableData().then(() => {
     />
 
     <NDrawer v-model:show="detailVisible" :width="720">
-      <NDrawerContent title="日志详情" closable>
+      <NDrawerContent :title="bt('auto.s_e0d9b6f4a4')" closable>
         <template v-if="currentRow">
           <NDescriptions label-placement="left" :column="1" bordered class="mb-16px">
-            <NDescriptionsItem label="时间">{{ currentRow.occurred_at }}</NDescriptionsItem>
-            <NDescriptionsItem label="设备 ID">{{ currentRow.device_id }}</NDescriptionsItem>
-            <NDescriptionsItem label="设备编号">{{ currentRow.device_number || '-' }}</NDescriptionsItem>
-            <NDescriptionsItem label="类型">{{ renderEventType(currentRow.event_type) }}</NDescriptionsItem>
-            <NDescriptionsItem label="方向">{{ currentRow.direction || '-' }}</NDescriptionsItem>
+            <NDescriptionsItem :label="bt('auto.s_19fcb9eb25')">{{ currentRow.occurred_at }}</NDescriptionsItem>
+            <NDescriptionsItem :label="bt('auto.s_9079376597')">{{ currentRow.device_id }}</NDescriptionsItem>
+            <NDescriptionsItem :label="bt('auto.s_cf05392308')">{{ currentRow.device_number || '-' }}</NDescriptionsItem>
+            <NDescriptionsItem :label="bt('auto.s_226b091218')">{{ renderEventType(currentRow.event_type) }}</NDescriptionsItem>
+            <NDescriptionsItem :label="bt('auto.s_a465db53b8')">{{ currentRow.direction || '-' }}</NDescriptionsItem>
             <NDescriptionsItem label="Topic">{{ currentRow.mqtt_topic || '-' }}</NDescriptionsItem>
             <NDescriptionsItem label="QoS">{{ currentRow.qos ?? '-' }}</NDescriptionsItem>
             <NDescriptionsItem label="Message ID">{{ currentRow.message_id || '-' }}</NDescriptionsItem>
-            <NDescriptionsItem label="状态">{{ currentRow.status }}</NDescriptionsItem>
-            <NDescriptionsItem label="错误信息">{{ currentRow.error_message || '-' }}</NDescriptionsItem>
+            <NDescriptionsItem :label="bt('auto.s_3fea7ca76c')">{{ currentRow.status }}</NDescriptionsItem>
+            <NDescriptionsItem :label="bt('auto.s_4604d50234')">{{ currentRow.error_message || '-' }}</NDescriptionsItem>
           </NDescriptions>
 
-          <div class="mb-12px text-14px font-600">原始 Payload</div>
+          <div class="mb-12px text-14px font-600">{{ bt('auto.s_d42db0111c') }}</div>
           <NCode
             :code="currentRow.payload_raw || '-'"
             language="json"
@@ -388,7 +387,7 @@ getTableData().then(() => {
             class="mb-16px block max-h-260px overflow-auto"
           />
 
-          <div class="mb-12px text-14px font-600">解析摘要</div>
+          <div class="mb-12px text-14px font-600">{{ bt('auto.s_d8cc4e5da1') }}</div>
           <NCode
             :code="currentRow.parsed_summary ? JSON.stringify(currentRow.parsed_summary, null, 2) : '-'"
             language="json"

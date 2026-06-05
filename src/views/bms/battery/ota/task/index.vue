@@ -1,4 +1,5 @@
 <script setup lang="tsx">
+import { bt } from '@/views/bms/_shared/i18n'
 import { ref } from 'vue'
 import { NButton, NCard, NDataTable, NForm, NFormItem, NSelect, NSpace, NTag, useMessage } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
@@ -45,20 +46,18 @@ async function loadPackages() {
 
 function createColumns(): DataTableColumns<OtaTaskItem> {
   return [
-    { key: 'name', title: '任务名称', minWidth: 200 },
-    { key: 'device_count', title: '设备数', minWidth: 90, render: r => <NTag type="info">{r.device_count ?? 0}</NTag> },
-    { key: 'created_at', title: '创建时间', minWidth: 160 },
-    { key: 'remark', title: '备注', minWidth: 160, render: r => r.remark || '--' },
+    { key: 'name', title: bt('auto.s_78caf7115c'), minWidth: 200 },
+    { key: 'device_count', title: bt('auto.s_ca55443aba'), minWidth: 90, render: r => <NTag type="info">{r.device_count ?? 0}</NTag> },
+    { key: 'created_at', title: bt('auto.s_eca37cb072'), minWidth: 160 },
+    { key: 'remark', title: bt('auto.s_2432b57515'), minWidth: 160, render: r => r.remark || '--' },
     {
       key: 'actions',
-      title: '操作',
+      title: bt('auto.s_2b6bc0f293'),
       minWidth: 140,
       fixed: 'right',
       render: r => (
         <NSpace>
-          <NButton size="small" type="primary" onClick={() => goDetail(r)}>
-            查看详情
-          </NButton>
+          <NButton size="small" type="primary" onClick={() => goDetail(r)}>{bt('auto.s_5b48dbb8dc')}</NButton>
         </NSpace>
       )
     }
@@ -85,7 +84,7 @@ const { data, loading, pagination, columns, getData, updateSearchParams } = useT
 
 function handleSearch() {
   if (!searchForm.value.ota_upgrade_package_id) {
-    message.warning('请先选择升级包')
+    message.warning(bt('auto.s_8cc0d779fb'))
     return
   }
   updateSearchParams({
@@ -109,7 +108,7 @@ loadPackages()
 
 <template>
   <div class="flex-vertical-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
-    <NCard title="OTA升级任务管理" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
+    <NCard :title="bt('auto.s_66f067aa52')" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
       <NForm
         inline
         :model="searchForm"
@@ -117,7 +116,7 @@ loadPackages()
         label-width="auto"
         class="mb-4 flex flex-wrap gap-4 items-end"
       >
-        <NFormItem label="升级包" required>
+        <NFormItem :label="bt('auto.s_d02bd59f32')" required>
           <NSelect
             v-model:value="searchForm.ota_upgrade_package_id"
             :options="pkgOptions"
@@ -128,7 +127,7 @@ loadPackages()
         </NFormItem>
         <NFormItem>
           <NSpace>
-            <NButton type="primary" @click="handleSearch">查询</NButton>
+            <NButton type="primary" @click="handleSearch">{{ bt('auto.s_bee912d79e') }}</NButton>
           </NSpace>
         </NFormItem>
       </NForm>

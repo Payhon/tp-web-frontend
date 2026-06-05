@@ -1,4 +1,5 @@
 <script setup lang="tsx">
+import { bt } from '@/views/bms/_shared/i18n'
 import { computed, h, ref } from 'vue'
 import {
   NButton,
@@ -55,21 +56,21 @@ type RoleOption = {
 }
 
 const authorityOptions = [
-  { label: '全部', value: '' },
-  { label: '租户后台账号', value: 'TENANT_ADMIN' },
-  { label: '机构后台账号', value: 'TENANT_USER' }
+  { label: bt('auto.s_a8b0c20416'), value: '' },
+  { label: bt('auto.s_d9e9f3a411'), value: 'TENANT_ADMIN' },
+  { label: bt('auto.s_7cfa6d1891'), value: 'TENANT_USER' }
 ]
 
 const isMainOptions = [
-  { label: '全部', value: null },
-  { label: '主账号', value: 1 },
-  { label: '子账号', value: 0 }
+  { label: bt('auto.s_a8b0c20416'), value: null },
+  { label: bt('auto.s_0010795e51'), value: 1 },
+  { label: bt('auto.s_7cad89ba44'), value: 0 }
 ]
 
 const statusOptions = [
-  { label: '全部', value: '' },
-  { label: '启用', value: 'N' },
-  { label: '禁用', value: 'F' }
+  { label: bt('auto.s_a8b0c20416'), value: '' },
+  { label: bt('auto.s_7854b52a88'), value: 'N' },
+  { label: bt('auto.s_710ad08b11'), value: 'F' }
 ]
 
 const orgOptions = ref<OrgOption[]>([])
@@ -135,13 +136,13 @@ function accountTypeLabel(row: any) {
   const userKind = row.user_kind
   const isMain = Number(row.is_main || 0)
   if (authority === 'TENANT_ADMIN' && userKind === 'ORG_USER') {
-    return isMain === 1 ? '租户主账号' : '租户后台管理员'
+    return isMain === 1 ? bt('auto.s_85764d6eb7') : bt('auto.s_43820b9934')
   }
   if (authority === 'TENANT_USER' && userKind === 'ORG_USER') {
-    return isMain === 1 ? '机构主账号' : '机构员工账号'
+    return isMain === 1 ? bt('auto.s_514d73ca26') : bt('auto.s_ab58493f1e')
   }
   if (authority === 'TENANT_USER' && userKind === 'END_USER') {
-    return '终端用户'
+    return bt('auto.s_5ddfa01711')
   }
   return authority || '--'
 }
@@ -189,19 +190,19 @@ function canDelete(row: any) {
 }
 
 function getToggleBlockedReason(row: any) {
-  if (isCurrentUser(row)) return '不能禁用当前登录账号'
-  if (isMainAccount(row)) return '主账号不支持在此处直接禁用'
+  if (isCurrentUser(row)) return bt('auto.s_08448939fb')
+  if (isMainAccount(row)) return bt('auto.s_c1d98f42ba')
   return ''
 }
 
 function getDeleteBlockedReason(row: any) {
-  if (isCurrentUser(row)) return '不能删除当前登录账号'
-  if (isMainAccount(row)) return '主账号不支持在此处直接删除'
+  if (isCurrentUser(row)) return bt('auto.s_13b06cb00e')
+  if (isMainAccount(row)) return bt('auto.s_ca202ab07a')
   return ''
 }
 
 function getRoleAssignBlockedReason(row: any) {
-  if (isMainAccount(row)) return '主账号默认拥有本层级基础权限，无需分配后台角色'
+  if (isMainAccount(row)) return bt('auto.s_5368a66ff8')
   return ''
 }
 
@@ -210,36 +211,36 @@ type UserActionKey = 'edit' | 'assignRoles' | 'resetPwd' | 'disable' | 'enable' 
 function buildActionOptions(row: any): DropdownOption[] {
   return [
     {
-      label: '编辑',
+      label: bt('auto.s_95b351c862'),
       key: 'edit',
       icon: renderDropdownIcon(CreateOutline)
     },
     {
-      label: '角色分配',
+      label: bt('auto.s_d2a708a427'),
       key: 'assignRoles',
       disabled: !canAssignRoles(row),
       icon: renderDropdownIcon(ShieldCheckmarkOutline)
     },
     {
-      label: '重置密码',
+      label: bt('auto.s_0719aa2bb0'),
       key: 'resetPwd',
       icon: renderDropdownIcon(KeyOutline)
     },
     row.status === 'N'
       ? {
-          label: '禁用',
+          label: bt('auto.s_710ad08b11'),
           key: 'disable',
           disabled: !canToggleStatus(row),
           icon: renderDropdownIcon(BanOutline)
         }
       : {
-          label: '解禁',
+          label: bt('auto.s_5e62471769'),
           key: 'enable',
           disabled: !canToggleStatus(row),
           icon: renderDropdownIcon(CheckmarkCircleOutline)
         },
     {
-      label: '删除',
+      label: bt('auto.s_2f4aaddde3'),
       key: 'delete',
       disabled: !canDelete(row),
       icon: renderDropdownIcon(TrashOutline)
@@ -267,39 +268,39 @@ const searchForm = ref<{
 
 function createColumns(): DataTableColumns<any> {
   return [
-    { key: 'phone_number', title: '手机号', minWidth: 140 },
-    { key: 'username', title: '用户名', minWidth: 160, render: row => row.username || '--' },
-    { key: 'name', title: '姓名', minWidth: 120, render: row => row.name || '--' },
+    { key: 'phone_number', title: bt('auto.s_8098e2b4e8'), minWidth: 140 },
+    { key: 'username', title: bt('auto.s_819767ada1'), minWidth: 160, render: row => row.username || '--' },
+    { key: 'name', title: bt('auto.s_60d0458ac6'), minWidth: 120, render: row => row.name || '--' },
     {
       key: 'account_type',
-      title: '账号类型',
+      title: bt('auto.s_c65d927694'),
       minWidth: 160,
       render: row => <NTag type={accountTypeTagType(row)}>{accountTypeLabel(row)}</NTag>
     },
     {
       key: 'org_name',
-      title: '所属机构',
+      title: bt('auto.s_ee51f92f41'),
       minWidth: 180,
       render: row => row.org_name || row.organization || '--'
     },
     {
       key: 'user_roles',
-      title: '已分配角色',
+      title: bt('auto.s_2a697fb459'),
       minWidth: 220,
       render: row => roleNameList(row.user_roles)
     },
     {
       key: 'status',
-      title: '状态',
+      title: bt('auto.s_3fea7ca76c'),
       minWidth: 100,
       render: row => (
-        <NTag type={row.status === 'N' ? 'success' : 'warning'}>{row.status === 'N' ? '启用' : '禁用'}</NTag>
+        <NTag type={row.status === 'N' ? 'success' : 'warning'}>{row.status === 'N' ? bt('auto.s_7854b52a88') : bt('auto.s_710ad08b11')}</NTag>
       )
     },
-    { key: 'created_at', title: '创建时间', minWidth: 180, render: row => String(row.created_at || '--') },
+    { key: 'created_at', title: bt('auto.s_eca37cb072'), minWidth: 180, render: row => String(row.created_at || '--') },
     {
       key: 'operate',
-      title: '操作',
+      title: bt('auto.s_2b6bc0f293'),
       minWidth: 140,
       fixed: 'right',
       render: row => (
@@ -310,7 +311,7 @@ function createColumns(): DataTableColumns<any> {
         >
           <NButton size="small" secondary type="primary">
             {{
-              default: () => '操作',
+              default: () => bt('auto.s_2b6bc0f293'),
               icon: () => (
                 <NIcon>
                   <ChevronDownOutline />
@@ -476,11 +477,11 @@ async function submit() {
   saving.value = true
   try {
     if (!form.value.phone_number || !form.value.email) {
-      message.warning('请填写手机号和邮箱')
+      message.warning(bt('auto.s_4b55a75b2c'))
       return
     }
     if (form.value.authority === 'TENANT_USER' && form.value.user_kind === 'ORG_USER' && !form.value.org_id) {
-      message.warning('机构后台账号必须选择所属机构')
+      message.warning(bt('auto.s_af1170e432'))
       return
     }
 
@@ -498,22 +499,22 @@ async function submit() {
 
     if (modalType.value === 'create') {
       if (!form.value.password || form.value.password.length < 6) {
-        message.warning('初始密码至少 6 位')
+        message.warning(bt('auto.s_0951e1d94c'))
         return
       }
       payload.password = form.value.password
       await addUser(payload)
-      message.success('创建成功')
+      message.success(bt('auto.s_04a691b377'))
     } else {
       payload.id = form.value.id
       payload.status = form.value.status
       await editUser(payload)
-      message.success('更新成功')
+      message.success(bt('auto.s_55aa6366c0'))
     }
     modalVisible.value = false
     handleSearch()
   } catch (e: any) {
-    message.error(e?.message || '保存失败')
+    message.error(e?.message || bt('auto.s_6de920b4e4'))
   } finally {
     saving.value = false
   }
@@ -547,7 +548,7 @@ function generateStrongPassword(length = 12) {
 
 function fillRandomResetPassword() {
   resetPassword.value = generateStrongPassword()
-  message.success('已生成随机密码')
+  message.success(bt('auto.s_2ff94ae968'))
 }
 
 const roleAssignOptions = computed(() => {
@@ -590,14 +591,14 @@ function handleActionSelect(key: string, row: any) {
       break
     case 'delete':
       if (!canDelete(row)) {
-        message.warning(getDeleteBlockedReason(row) || '当前账号不允许删除')
+        message.warning(getDeleteBlockedReason(row) || bt('auto.s_360afc6ab4'))
         return
       }
       window.$dialog?.warning({
-        title: '确认删除',
-        content: '确认删除该账号？',
-        positiveText: '删除',
-        negativeText: '取消',
+        title: bt('auto.s_631cd22018'),
+        content: bt('auto.s_2d67da85a2'),
+        positiveText: bt('auto.s_2f4aaddde3'),
+        negativeText: bt('auto.s_625fb26b4b'),
         onPositiveClick: () => handleDelete(row)
       })
       break
@@ -609,16 +610,16 @@ function handleActionSelect(key: string, row: any) {
 async function submitResetPwd() {
   if (!resetRow.value?.id) return
   if (!resetPassword.value || resetPassword.value.length < 6) {
-    message.warning('密码至少 6 位')
+    message.warning(bt('auto.s_441ea65131'))
     return
   }
   saving.value = true
   try {
     await editUser({ id: resetRow.value.id, password: resetPassword.value })
-    message.success('密码已重置')
+    message.success(bt('auto.s_2f1f1d2769'))
     resetVisible.value = false
   } catch (e: any) {
-    message.error(e?.message || '重置失败')
+    message.error(e?.message || bt('auto.s_4d71382234'))
   } finally {
     saving.value = false
   }
@@ -632,10 +633,10 @@ async function handleToggleStatus(row: any, status: 'N' | 'F') {
   }
   try {
     await editUser({ id: row.id, status })
-    message.success(status === 'N' ? '账号已解禁' : '账号已禁用')
+    message.success(status === 'N' ? bt('auto.s_414c3dfac4') : bt('auto.s_6bfb3ef71d'))
     handleSearch()
   } catch (e: any) {
-    message.error(e?.message || '操作失败')
+    message.error(e?.message || bt('auto.s_5fa802bef5'))
   }
 }
 
@@ -647,10 +648,10 @@ async function handleDelete(row: any) {
   }
   try {
     await delUser(row.id)
-    message.success('删除成功')
+    message.success(bt('auto.s_0007d170de'))
     handleSearch()
   } catch (e: any) {
-    message.error(e?.message || '删除失败')
+    message.error(e?.message || bt('auto.s_acf0664a54'))
   }
 }
 
@@ -662,11 +663,11 @@ async function submitRoleAssign() {
       id: roleAssignRow.value.id,
       userRoles: roleAssignValue.value
     })
-    message.success('角色分配已更新')
+    message.success(bt('auto.s_6c5e069860'))
     roleAssignVisible.value = false
     handleSearch()
   } catch (e: any) {
-    message.error(e?.message || '角色分配失败')
+    message.error(e?.message || bt('auto.s_ae3097dd3a'))
   } finally {
     saving.value = false
   }
@@ -679,7 +680,7 @@ getData()
 
 <template>
   <div class="flex-vertical-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
-    <NCard title="后台账号管理" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
+    <NCard :title="bt('auto.s_b62120711b')" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
       <NForm
         inline
         :model="searchForm"
@@ -687,32 +688,32 @@ getData()
         label-width="auto"
         class="mb-4 flex flex-wrap gap-4 items-end"
       >
-        <NFormItem label="手机号">
-          <NInput v-model:value="searchForm.phone_number" placeholder="手机号" style="width: 200px" clearable />
+        <NFormItem :label="bt('auto.s_8098e2b4e8')">
+          <NInput v-model:value="searchForm.phone_number" :placeholder="bt('auto.s_8098e2b4e8')" style="width: 200px" clearable />
         </NFormItem>
-        <NFormItem label="用户名">
-          <NInput v-model:value="searchForm.username" placeholder="用户名" style="width: 180px" clearable />
+        <NFormItem :label="bt('auto.s_819767ada1')">
+          <NInput v-model:value="searchForm.username" :placeholder="bt('auto.s_819767ada1')" style="width: 180px" clearable />
         </NFormItem>
-        <NFormItem label="姓名">
-          <NInput v-model:value="searchForm.name" placeholder="姓名" style="width: 180px" clearable />
+        <NFormItem :label="bt('auto.s_60d0458ac6')">
+          <NInput v-model:value="searchForm.name" :placeholder="bt('auto.s_60d0458ac6')" style="width: 180px" clearable />
         </NFormItem>
-        <NFormItem v-if="showAuthorityFilter" label="账号大类">
+        <NFormItem v-if="showAuthorityFilter" :label="bt('auto.s_b7a6446a6a')">
           <NSelect v-model:value="searchForm.authority" :options="authorityOptions" style="width: 180px" clearable />
         </NFormItem>
-        <NFormItem v-if="showIsMainFilter" label="主/子账号">
+        <NFormItem v-if="showIsMainFilter" :label="bt('auto.s_26bad6efc6')">
           <NSelect v-model:value="searchForm.is_main" :options="isMainOptions" style="width: 140px" clearable />
         </NFormItem>
-        <NFormItem v-if="showOrgFilter" label="所属机构">
+        <NFormItem v-if="showOrgFilter" :label="bt('auto.s_ee51f92f41')">
           <NSelect v-model:value="searchForm.org_id" :options="orgOptions" style="width: 240px" clearable />
         </NFormItem>
-        <NFormItem label="状态">
+        <NFormItem :label="bt('auto.s_3fea7ca76c')">
           <NSelect v-model:value="searchForm.status" :options="statusOptions" style="width: 140px" clearable />
         </NFormItem>
         <NFormItem>
           <NSpace>
-            <NButton type="primary" @click="handleSearch">查询</NButton>
-            <NButton @click="handleReset">重置</NButton>
-            <NButton type="success" :render-icon="addButtonIcon" @click="openCreate">新增后台账号</NButton>
+            <NButton type="primary" @click="handleSearch">{{ bt('auto.s_bee912d79e') }}</NButton>
+            <NButton @click="handleReset">{{ bt('auto.s_4b9c3271dc') }}</NButton>
+            <NButton type="success" :render-icon="addButtonIcon" @click="openCreate">{{ bt('auto.s_3840c26cd5') }}</NButton>
           </NSpace>
         </NFormItem>
       </NForm>
@@ -730,11 +731,11 @@ getData()
     <NModal
       v-model:show="modalVisible"
       preset="card"
-      :title="modalType === 'create' ? '新增后台账号' : '编辑后台账号'"
+      :title="modalType === 'create' ? bt('auto.s_3840c26cd5') : bt('auto.s_48b240a4b3')"
       style="width: 760px"
     >
       <NForm label-placement="left" label-width="120" :model="form">
-        <NFormItem label="账号大类" required>
+        <NFormItem :label="bt('auto.s_b7a6446a6a')" required>
           <NSelect
             v-model:value="form.authority"
             :options="authorityOptions.filter(item => item.value)"
@@ -750,77 +751,77 @@ getData()
             "
           />
         </NFormItem>
-        <NFormItem label="用户类型" required>
+        <NFormItem :label="bt('auto.s_d340e9a6b9')" required>
           <NSelect
             v-model:value="form.user_kind"
             :options="[
-              { label: '组织用户', value: 'ORG_USER' },
-              { label: '终端用户', value: 'END_USER' }
+              { label: bt('auto.s_7d4ed93aa4'), value: 'ORG_USER' },
+              { label: bt('auto.s_5ddfa01711'), value: 'END_USER' }
             ]"
             :disabled="form.authority === 'TENANT_ADMIN' || isOrgScopedUser"
           />
         </NFormItem>
-        <NFormItem label="主/子账号" required>
+        <NFormItem :label="bt('auto.s_26bad6efc6')" required>
           <NSelect
             v-model:value="form.is_main"
             :options="[
-              { label: '主账号', value: 1 },
-              { label: '子账号', value: 0 }
+              { label: bt('auto.s_0010795e51'), value: 1 },
+              { label: bt('auto.s_7cad89ba44'), value: 0 }
             ]"
             :disabled="isOrgScopedUser || (form.authority === 'TENANT_ADMIN' && modalType === 'edit')"
           />
         </NFormItem>
-        <NFormItem v-if="form.authority === 'TENANT_USER' && form.user_kind === 'ORG_USER'" label="所属机构" required>
+        <NFormItem v-if="form.authority === 'TENANT_USER' && form.user_kind === 'ORG_USER'" :label="bt('auto.s_ee51f92f41')" required>
           <NSelect
             v-model:value="form.org_id"
             :options="orgOptions"
-            placeholder="请选择机构"
+            :placeholder="bt('auto.s_2c919d5bda')"
             clearable
             :disabled="isOrgScopedUser && !showOrgFilter"
           />
         </NFormItem>
-        <NFormItem label="手机号" required>
-          <NInput v-model:value="form.phone_number" placeholder="手机号" />
+        <NFormItem :label="bt('auto.s_8098e2b4e8')" required>
+          <NInput v-model:value="form.phone_number" :placeholder="bt('auto.s_8098e2b4e8')" />
         </NFormItem>
-        <NFormItem label="邮箱" required>
-          <NInput v-model:value="form.email" placeholder="邮箱" />
+        <NFormItem :label="bt('auto.s_3bc5e602b2')" required>
+          <NInput v-model:value="form.email" :placeholder="bt('auto.s_3bc5e602b2')" />
         </NFormItem>
-        <NFormItem v-if="modalType === 'edit'" label="用户名">
-          <NInput v-model:value="form.username" placeholder="系统自动生成" readonly />
+        <NFormItem v-if="modalType === 'edit'" :label="bt('auto.s_819767ada1')">
+          <NInput v-model:value="form.username" :placeholder="bt('auto.s_da7b08118f')" readonly />
         </NFormItem>
-        <NFormItem label="姓名">
-          <NInput v-model:value="form.name" placeholder="姓名" />
+        <NFormItem :label="bt('auto.s_60d0458ac6')">
+          <NInput v-model:value="form.name" :placeholder="bt('auto.s_60d0458ac6')" />
         </NFormItem>
-        <NFormItem v-if="showRoleFieldInEditModal" label="分配角色">
+        <NFormItem v-if="showRoleFieldInEditModal" :label="bt('auto.s_1318cc070d')">
           <NSelect
             v-model:value="form.userRoles"
             multiple
             :options="filteredRoleOptions"
-            placeholder="可多选"
+            :placeholder="bt('auto.s_e3be7b8a45')"
             clearable
           />
         </NFormItem>
-        <NFormItem v-if="modalType === 'create'" label="初始密码" required>
-          <NInput v-model:value="form.password" placeholder="至少 6 位" />
+        <NFormItem v-if="modalType === 'create'" :label="bt('auto.s_763ffee1e9')" required>
+          <NInput v-model:value="form.password" :placeholder="bt('auto.s_002b6972a7')" />
         </NFormItem>
-        <NFormItem v-if="modalType === 'edit'" label="状态">
+        <NFormItem v-if="modalType === 'edit'" :label="bt('auto.s_3fea7ca76c')">
           <NSelect v-model:value="form.status" :options="statusOptions.filter(item => item.value)" />
         </NFormItem>
       </NForm>
 
       <template #action>
         <NSpace justify="end">
-          <NButton @click="modalVisible = false">取消</NButton>
-          <NButton type="primary" :loading="saving" @click="submit">保存</NButton>
+          <NButton @click="modalVisible = false">{{ bt('auto.s_625fb26b4b') }}</NButton>
+          <NButton type="primary" :loading="saving" @click="submit">{{ bt('auto.s_be5fbbe34c') }}</NButton>
         </NSpace>
       </template>
     </NModal>
 
-    <NModal v-model:show="resetVisible" preset="card" title="重置密码" style="width: 520px">
+    <NModal v-model:show="resetVisible" preset="card" :title="bt('auto.s_0719aa2bb0')" style="width: 520px">
       <NForm label-placement="left" label-width="120">
-        <NFormItem label="新密码" required>
+        <NFormItem :label="bt('auto.s_bf7da0bf02')" required>
           <NSpace style="width: 100%" :wrap-item="false">
-            <NInput v-model:value="resetPassword" type="password" show-password-on="click" placeholder="至少 6 位" />
+            <NInput v-model:value="resetPassword" type="password" show-password-on="click" :placeholder="bt('auto.s_002b6972a7')" />
             <NButton circle secondary type="primary" @click="fillRandomResetPassword">
               <template #icon>
                 <NIcon>
@@ -833,37 +834,37 @@ getData()
       </NForm>
       <template #action>
         <NSpace justify="end">
-          <NButton @click="resetVisible = false">取消</NButton>
-          <NButton type="primary" :loading="saving" @click="submitResetPwd">确定</NButton>
+          <NButton @click="resetVisible = false">{{ bt('auto.s_625fb26b4b') }}</NButton>
+          <NButton type="primary" :loading="saving" @click="submitResetPwd">{{ bt('auto.s_38cf16f220') }}</NButton>
         </NSpace>
       </template>
     </NModal>
 
-    <NModal v-model:show="roleAssignVisible" preset="card" title="角色分配" style="width: 620px">
+    <NModal v-model:show="roleAssignVisible" preset="card" :title="bt('auto.s_d2a708a427')" style="width: 620px">
       <NForm label-placement="left" label-width="120">
-        <NFormItem label="账号">
+        <NFormItem :label="bt('auto.s_7035c62fb0')">
           <span>{{ roleAssignRow?.username || roleAssignRow?.name || roleAssignRow?.phone_number || '--' }}</span>
         </NFormItem>
-        <NFormItem label="账号类型">
+        <NFormItem :label="bt('auto.s_c65d927694')">
           <span>{{ roleAssignRow ? accountTypeLabel(roleAssignRow) : '--' }}</span>
         </NFormItem>
-        <NFormItem label="所属机构">
+        <NFormItem :label="bt('auto.s_ee51f92f41')">
           <span>{{ roleAssignRow?.org_name || roleAssignRow?.organization || '--' }}</span>
         </NFormItem>
-        <NFormItem label="分配角色">
+        <NFormItem :label="bt('auto.s_1318cc070d')">
           <NSelect
             v-model:value="roleAssignValue"
             multiple
             :options="roleAssignOptions"
-            placeholder="请选择后台角色"
+            :placeholder="bt('auto.s_4a93b1538a')"
             clearable
           />
         </NFormItem>
       </NForm>
       <template #action>
         <NSpace justify="end">
-          <NButton @click="roleAssignVisible = false">取消</NButton>
-          <NButton type="primary" :loading="saving" @click="submitRoleAssign">保存</NButton>
+          <NButton @click="roleAssignVisible = false">{{ bt('auto.s_625fb26b4b') }}</NButton>
+          <NButton type="primary" :loading="saving" @click="submitRoleAssign">{{ bt('auto.s_be5fbbe34c') }}</NButton>
         </NSpace>
       </template>
     </NModal>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { bt } from '@/views/bms/_shared/i18n'
 import { computed, ref, watch } from 'vue'
 import {
   NButton,
@@ -42,8 +43,16 @@ const isDealerCreateStoreScene = computed(
 )
 const dealerParentDisplay = computed(() => {
   if (currentOrgName.value) return currentOrgName.value
-  return currentOrgId.value ? `当前机构 (${currentOrgId.value})` : '当前机构'
+  return currentOrgId.value ? bt('common.currentOrgWithId', { id: currentOrgId.value }) : bt('auto.s_5b80f24aa3')
 })
+
+function orgTypeLabel(type?: string) {
+  if (type === 'PACK_FACTORY') return bt('auto.s_5c08c289a8')
+  if (type === 'DEALER') return bt('auto.s_9019dc8029')
+  if (type === 'STORE') return bt('auto.s_a7da92344c')
+  if (type === 'BMS_FACTORY') return 'BMS'
+  return type || bt('auto.s_74fe5f9e99')
+}
 
 // 转换 pw.json 数据为级联选择器格式
 const convertPwDataToCascader = (data: any): any[] => {
@@ -88,26 +97,26 @@ const formData = ref({
 const orgTypeOptions = computed(() => {
   // 如果有固定类型，只显示该类型
   if (props.fixedOrgType) {
-    return [{ label: OrgTypeLabels[props.fixedOrgType], value: props.fixedOrgType }]
+    return [{ label: orgTypeLabel(props.fixedOrgType), value: props.fixedOrgType }]
   }
-  return Object.entries(OrgTypeLabels).map(([value, label]) => ({ label, value }))
+  return Object.keys(OrgTypeLabels).map(value => ({ label: orgTypeLabel(value), value }))
 })
 
 const rules = computed(() => {
   const base: any = {
-    name: { required: true, message: '请输入组织名称', trigger: 'blur' },
-    org_type: { required: true, message: '请选择组织类型', trigger: 'change' }
+    name: { required: true, message: bt('auto.s_a5bf36a322'), trigger: 'blur' },
+    org_type: { required: true, message: bt('auto.s_ece282ac24'), trigger: 'change' }
   }
   if (props.type === 'add') {
-    base['account.username'] = { required: true, message: '请输入用户名（手机号/邮箱）', trigger: 'blur' }
-    base['account.password'] = { required: true, message: '请输入密码（至少6位）', trigger: 'blur' }
+    base['account.username'] = { required: true, message: bt('auto.s_822ed79a34'), trigger: 'blur' }
+    base['account.password'] = { required: true, message: bt('auto.s_fb23fc9cad'), trigger: 'blur' }
   }
   return base
 })
 
 const title = computed(() => {
-  const typeLabel = props.fixedOrgType ? OrgTypeLabels[props.fixedOrgType] : '组织'
-  return props.type === 'add' ? `新增${typeLabel}` : `编辑${typeLabel}`
+  const typeLabel = props.fixedOrgType ? orgTypeLabel(props.fixedOrgType) : bt('auto.s_74fe5f9e99')
+  return bt(props.type === 'add' ? 'common.addEntity' : 'common.editEntity', { entity: typeLabel })
 })
 
 // 加载上级组织选项
@@ -132,7 +141,7 @@ const loadParentOptions = async () => {
 const transformTreeData = (nodes: any[]): any[] => {
   return nodes.map(node => ({
     key: node.id,
-    label: `${node.name} (${OrgTypeLabels[node.org_type] || node.org_type})`,
+    label: `${node.name} (${orgTypeLabel(node.org_type)})`,
     children: node.children?.length ? transformTreeData(node.children) : undefined
   }))
 }
@@ -237,47 +246,47 @@ const handleSubmit = () => {
       require-mark-placement="right-hanging"
       size="small"
     >
-      <NDivider title-placement="left">基本信息</NDivider>
+      <NDivider title-placement="left">{{ bt('auto.s_9e5ffa068e') }}</NDivider>
       <NGrid cols="24" x-gap="12" y-gap="6">
-        <NFormItemGi :span="12" label="组织类型" path="org_type">
+        <NFormItemGi :span="12" :label="bt('auto.s_b2d081090b')" path="org_type">
           <NSelect
             v-model:value="formData.org_type"
             :options="orgTypeOptions"
-            placeholder="请选择组织类型"
+            :placeholder="bt('auto.s_ece282ac24')"
             :disabled="type === 'edit' || !!fixedOrgType"
           />
         </NFormItemGi>
-        <NFormItemGi :span="12" label="组织名称" path="name">
-          <NInput v-model:value="formData.name" placeholder="请输入组织名称" />
+        <NFormItemGi :span="12" :label="bt('auto.s_4c12d831e3')" path="name">
+          <NInput v-model:value="formData.name" :placeholder="bt('auto.s_a5bf36a322')" />
         </NFormItemGi>
 
-        <NFormItemGi :span="24" label="上级组织" path="parent_id">
+        <NFormItemGi :span="24" :label="bt('auto.s_75432f3ba5')" path="parent_id">
           <NInput v-if="isDealerCreateStoreScene" :value="dealerParentDisplay" disabled />
           <NTreeSelect
             v-else
             v-model:value="formData.parent_id"
             :options="parentOptions"
-            placeholder="请选择上级组织（可选）"
+            :placeholder="bt('auto.s_39dca5a17a')"
             clearable
             :loading="loading"
             :disabled="type === 'edit'"
           />
         </NFormItemGi>
 
-        <NFormItemGi :span="12" label="联系人" path="contact_person">
-          <NInput v-model:value="formData.contact_person" placeholder="请输入联系人" />
+        <NFormItemGi :span="12" :label="bt('auto.s_52409da520')" path="contact_person">
+          <NInput v-model:value="formData.contact_person" :placeholder="bt('auto.s_9e3f21b389')" />
         </NFormItemGi>
-        <NFormItemGi :span="12" label="联系电话" path="phone">
-          <NInput v-model:value="formData.phone" placeholder="请输入联系电话" />
+        <NFormItemGi :span="12" :label="bt('auto.s_09a1f6985a')" path="phone">
+          <NInput v-model:value="formData.phone" :placeholder="bt('auto.s_7b540b8035')" />
         </NFormItemGi>
-        <NFormItemGi :span="12" label="邮箱" path="email">
-          <NInput v-model:value="formData.email" placeholder="请输入邮箱" />
+        <NFormItemGi :span="12" :label="bt('auto.s_3bc5e602b2')" path="email">
+          <NInput v-model:value="formData.email" :placeholder="bt('auto.s_dbf6d02ab9')" />
         </NFormItemGi>
-        <NFormItemGi :span="12" :label="'省市区'" path="province">
+        <NFormItemGi :span="12" :label="bt('auto.s_5ea217d326')" path="province">
           <NCascader
             v-model:value="formData.addressCascaderValue"
             :options="provinceCityData"
-            placeholder="请选择省市区（三级联动）"
+            :placeholder="bt('auto.s_6d121c57a2')"
             clearable
             class="w-300px"
             :show-path="true"
@@ -286,31 +295,31 @@ const handleSubmit = () => {
             @update:value="handleAddressChange"
           />
         </NFormItemGi>
-        <NFormItemGi :span="24" label="详细地址" path="address">
-          <NInput v-model:value="formData.address" placeholder="请输入详细地址" />
+        <NFormItemGi :span="24" :label="bt('auto.s_61a0ec8a09')" path="address">
+          <NInput v-model:value="formData.address" :placeholder="bt('auto.s_80d6852f33')" />
         </NFormItemGi>
-        <NFormItemGi :span="24" label="备注" path="remark">
+        <NFormItemGi :span="24" :label="bt('auto.s_2432b57515')" path="remark">
           <NInput
             v-model:value="formData.remark"
             type="textarea"
             :autosize="{ minRows: 2, maxRows: 3 }"
-            placeholder="请输入备注"
+            :placeholder="bt('auto.s_3cac634296')"
           />
         </NFormItemGi>
       </NGrid>
 
       <template v-if="type === 'add'">
-        <NDivider title-placement="left">账号信息</NDivider>
+        <NDivider title-placement="left">{{ bt('auto.s_53cab44e34') }}</NDivider>
         <NGrid cols="24" x-gap="12" y-gap="6">
-          <NFormItemGi :span="12" label="用户名" path="account.username">
-            <NInput v-model:value="formData.account.username" placeholder="手机号/邮箱" />
+          <NFormItemGi :span="12" :label="bt('auto.s_819767ada1')" path="account.username">
+            <NInput v-model:value="formData.account.username" :placeholder="bt('auto.s_6060566802')" />
           </NFormItemGi>
-          <NFormItemGi :span="12" label="密码" path="account.password">
+          <NFormItemGi :span="12" :label="bt('auto.s_a810520460')" path="account.password">
             <NInput
               v-model:value="formData.account.password"
               type="password"
               show-password-on="click"
-              placeholder="请输入密码"
+              :placeholder="bt('auto.s_e39ffe99e9')"
             />
           </NFormItemGi>
         </NGrid>
@@ -318,8 +327,8 @@ const handleSubmit = () => {
     </NForm>
     <template #footer>
       <NSpace justify="end">
-        <NButton @click="handleClose">取消</NButton>
-        <NButton type="primary" @click="handleSubmit">确定</NButton>
+        <NButton @click="handleClose">{{ bt('auto.s_625fb26b4b') }}</NButton>
+        <NButton type="primary" @click="handleSubmit">{{ bt('auto.s_38cf16f220') }}</NButton>
       </NSpace>
     </template>
   </NModal>

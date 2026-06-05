@@ -1,4 +1,5 @@
 <script setup lang="tsx">
+import { bt } from '@/views/bms/_shared/i18n'
 import { computed, ref } from 'vue'
 import {
   NButton,
@@ -37,26 +38,24 @@ const message = useMessage()
 
 function createColumns(): DataTableColumns<Item> {
   return [
-    { key: 'device_number', title: '设备编号', minWidth: 160 },
-    { key: 'battery_model', title: '型号', minWidth: 140, render: row => row.battery_model || '--' },
-    { key: 'fault_type', title: '故障类型', minWidth: 140 },
-    { key: 'maintain_at', title: '维修时间', minWidth: 160 },
-    { key: 'maintainer', title: '维修人员', minWidth: 140 },
+    { key: 'device_number', title: bt('auto.s_cf05392308'), minWidth: 160 },
+    { key: 'battery_model', title: bt('auto.s_ac4190dfda'), minWidth: 140, render: row => row.battery_model || '--' },
+    { key: 'fault_type', title: bt('auto.s_105e4e0658'), minWidth: 140 },
+    { key: 'maintain_at', title: bt('auto.s_e215216902'), minWidth: 160 },
+    { key: 'maintainer', title: bt('auto.s_f2eaaafb1d'), minWidth: 140 },
     {
       key: 'affect_warranty',
-      title: '影响质保',
+      title: bt('auto.s_5a83ce52b0'),
       minWidth: 100,
-      render: row => (row.affect_warranty ? '是' : '否')
+      render: row => (row.affect_warranty ? bt('auto.s_0a60ac8f02') : bt('auto.s_c9744f45e7'))
     },
-    { key: 'created_at', title: '录入时间', minWidth: 160 },
+    { key: 'created_at', title: bt('auto.s_0039880117'), minWidth: 160 },
     {
       key: 'operate',
-      title: '操作',
+      title: bt('auto.s_2b6bc0f293'),
       minWidth: 120,
       render: row => (
-        <NButton size="small" type="primary" onClick={() => openDetail(row.id)}>
-          查看
-        </NButton>
+        <NButton size="small" type="primary" onClick={() => openDetail(row.id)}>{bt('auto.s_607e7a4f37')}</NButton>
       )
     }
   ]
@@ -152,7 +151,7 @@ async function submitCreate() {
     !createForm.value.maintainer ||
     !createForm.value.maintain_at
   ) {
-    message.warning('请填写：设备编号/故障类型/维修人员/维修时间')
+    message.warning(bt('auto.s_a9b0968d3f'))
     return
   }
   creating.value = true
@@ -171,11 +170,11 @@ async function submitCreate() {
       affect_warranty: createForm.value.affect_warranty,
       remark: createForm.value.remark ? createForm.value.remark : undefined
     })
-    message.success('新增成功')
+    message.success(bt('auto.s_a5bfd70d4a'))
     createVisible.value = false
     handleSearch()
   } catch (e: any) {
-    message.error(e?.message || '新增失败')
+    message.error(e?.message || bt('auto.s_bac372f6cd'))
   } finally {
     creating.value = false
   }
@@ -201,25 +200,25 @@ getData()
 </script>
 
 <template>
-  <NCard title="电池维保记录">
+  <NCard :title="bt('auto.s_3a81246f35')">
     <NForm class="mb-12px" :inline="true" label-placement="left" :model="searchForm">
-      <NFormItem label="设备编号">
-        <NInput v-model:value="searchForm.device_number" class="w-220px" placeholder="设备序列号" />
+      <NFormItem :label="bt('auto.s_cf05392308')">
+        <NInput v-model:value="searchForm.device_number" class="w-220px" :placeholder="bt('auto.s_4419e8a1ba')" />
       </NFormItem>
-      <NFormItem label="故障类型">
-        <NInput v-model:value="searchForm.fault_type" class="w-220px" placeholder="故障类型" />
+      <NFormItem :label="bt('auto.s_105e4e0658')">
+        <NInput v-model:value="searchForm.fault_type" class="w-220px" :placeholder="bt('auto.s_105e4e0658')" />
       </NFormItem>
-      <NFormItem label="维修时间">
+      <NFormItem :label="bt('auto.s_e215216902')">
         <NDatePicker v-model:value="searchForm.time_range" type="datetimerange" clearable />
       </NFormItem>
       <NFormItem>
-        <NButton type="primary" @click="handleSearch">查询</NButton>
+        <NButton type="primary" @click="handleSearch">{{ bt('auto.s_bee912d79e') }}</NButton>
       </NFormItem>
       <NFormItem>
-        <NButton @click="handleReset">重置</NButton>
+        <NButton @click="handleReset">{{ bt('auto.s_4b9c3271dc') }}</NButton>
       </NFormItem>
       <NFormItem>
-        <NButton type="success" @click="openCreate">新增记录</NButton>
+        <NButton type="success" @click="openCreate">{{ bt('auto.s_a4313469fd') }}</NButton>
       </NFormItem>
     </NForm>
 
@@ -232,58 +231,58 @@ getData()
       :scroll-x="980"
     />
 
-    <NModal v-model:show="createVisible" preset="card" title="新增电池维保记录" style="width: 720px">
+    <NModal v-model:show="createVisible" preset="card" :title="bt('auto.s_22410100b4')" style="width: 720px">
       <NForm label-placement="left" label-width="120" :model="createForm">
-        <NFormItem label="设备编号" required>
-          <NInput v-model:value="createForm.device_number" placeholder="设备序列号（精确）" />
+        <NFormItem :label="bt('auto.s_cf05392308')" required>
+          <NInput v-model:value="createForm.device_number" :placeholder="bt('auto.s_a49005fbd8')" />
         </NFormItem>
-        <NFormItem label="故障类型" required>
-          <NInput v-model:value="createForm.fault_type" placeholder="如：过压/过温/电芯不均衡" />
+        <NFormItem :label="bt('auto.s_105e4e0658')" required>
+          <NInput v-model:value="createForm.fault_type" :placeholder="bt('auto.s_bf6af88d97')" />
         </NFormItem>
-        <NFormItem label="维修时间" required>
+        <NFormItem :label="bt('auto.s_e215216902')" required>
           <NDatePicker v-model:value="createForm.maintain_at" type="datetime" clearable />
         </NFormItem>
-        <NFormItem label="维修人员" required>
-          <NInput v-model:value="createForm.maintainer" placeholder="维修人员" />
+        <NFormItem :label="bt('auto.s_f2eaaafb1d')" required>
+          <NInput v-model:value="createForm.maintainer" :placeholder="bt('auto.s_f2eaaafb1d')" />
         </NFormItem>
-        <NFormItem label="配件更换清单">
-          <NInput v-model:value="createForm.parts_text" type="textarea" placeholder="每行一个配件/更换项" />
+        <NFormItem :label="bt('auto.s_595dab53ea')">
+          <NInput v-model:value="createForm.parts_text" type="textarea" :placeholder="bt('auto.s_bf1206f33d')" />
         </NFormItem>
-        <NFormItem label="解决方案">
-          <NInput v-model:value="createForm.solution" type="textarea" placeholder="解决方案/维修说明" />
+        <NFormItem :label="bt('auto.s_de842a6c80')">
+          <NInput v-model:value="createForm.solution" type="textarea" :placeholder="bt('auto.s_517228a055')" />
         </NFormItem>
-        <NFormItem label="影响质保">
-          <NCheckbox v-model:checked="createForm.affect_warranty">是</NCheckbox>
+        <NFormItem :label="bt('auto.s_5a83ce52b0')">
+          <NCheckbox v-model:checked="createForm.affect_warranty">{{ bt('auto.s_0a60ac8f02') }}</NCheckbox>
         </NFormItem>
-        <NFormItem label="备注">
-          <NInput v-model:value="createForm.remark" placeholder="备注" />
+        <NFormItem :label="bt('auto.s_2432b57515')">
+          <NInput v-model:value="createForm.remark" :placeholder="bt('auto.s_2432b57515')" />
         </NFormItem>
       </NForm>
 
       <NSpace justify="end">
-        <NButton @click="createVisible = false">取消</NButton>
-        <NButton type="primary" :loading="creating" @click="submitCreate">提交</NButton>
+        <NButton @click="createVisible = false">{{ bt('auto.s_625fb26b4b') }}</NButton>
+        <NButton type="primary" :loading="creating" @click="submitCreate">{{ bt('auto.s_939d5345ad') }}</NButton>
       </NSpace>
     </NModal>
 
     <NModal
       v-model:show="detailVisible"
       preset="card"
-      title="维保记录详情"
+      :title="bt('auto.s_b265bfb51c')"
       style="width: 720px"
       :loading="detailLoading"
     >
       <div v-if="detailData">
-        <div class="mb-8px">设备编号：{{ detailData.device_number }}</div>
-        <div class="mb-8px">型号：{{ detailData.battery_model || '--' }}</div>
-        <div class="mb-8px">故障类型：{{ detailData.fault_type }}</div>
-        <div class="mb-8px">维修时间：{{ detailData.maintain_at }}</div>
-        <div class="mb-8px">维修人员：{{ detailData.maintainer }}</div>
-        <div class="mb-8px">影响质保：{{ detailData.affect_warranty ? '是' : '否' }}</div>
-        <div class="mb-8px">配件：{{ (detailData.parts || []).join('、') || '--' }}</div>
-        <div class="mb-8px">解决方案：{{ detailData.solution || '--' }}</div>
-        <div class="mb-8px">备注：{{ detailData.remark || '--' }}</div>
-        <div class="mb-8px">录入时间：{{ detailData.created_at }}</div>
+        <div class="mb-8px">{{ bt('common.labelWithValue', { label: bt('auto.s_cf05392308'), value: detailData.device_number }) }}</div>
+        <div class="mb-8px">{{ bt('common.labelWithValue', { label: bt('auto.s_ac4190dfda'), value: detailData.battery_model || '--' }) }}</div>
+        <div class="mb-8px">{{ bt('common.labelWithValue', { label: bt('auto.s_105e4e0658'), value: detailData.fault_type }) }}</div>
+        <div class="mb-8px">{{ bt('common.labelWithValue', { label: bt('auto.s_e215216902'), value: detailData.maintain_at }) }}</div>
+        <div class="mb-8px">{{ bt('common.labelWithValue', { label: bt('auto.s_f2eaaafb1d'), value: detailData.maintainer }) }}</div>
+        <div class="mb-8px">{{ bt('common.labelWithValue', { label: bt('auto.s_5a83ce52b0'), value: detailData.affect_warranty ? bt('auto.s_0a60ac8f02') : bt('auto.s_c9744f45e7') }) }}</div>
+        <div class="mb-8px">{{ bt('common.labelWithValue', { label: bt('auto.s_595dab53ea'), value: (detailData.parts || []).join(bt('common.listSeparator')) || '--' }) }}</div>
+        <div class="mb-8px">{{ bt('common.labelWithValue', { label: bt('auto.s_de842a6c80'), value: detailData.solution || '--' }) }}</div>
+        <div class="mb-8px">{{ bt('common.labelWithValue', { label: bt('auto.s_2432b57515'), value: detailData.remark || '--' }) }}</div>
+        <div class="mb-8px">{{ bt('common.labelWithValue', { label: bt('auto.s_0039880117'), value: detailData.created_at }) }}</div>
       </div>
     </NModal>
   </NCard>

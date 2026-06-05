@@ -1,4 +1,5 @@
 <script setup lang="tsx">
+import { bt } from '@/views/bms/_shared/i18n'
 import { computed, ref, watch } from 'vue'
 import {
   NAlert,
@@ -98,38 +99,46 @@ watch(
 
 const pageTitle = computed(() => {
   if (props.fixedOrgType) {
-    return `${OrgTypeLabels[props.fixedOrgType]}管理`
+    return bt('common.managementTitle', { name: orgTypeLabel(props.fixedOrgType) })
   }
-  return '组织管理'
+  return bt('auto.s_ee0b0b751c')
 })
 
+function orgTypeLabel(type?: string) {
+  if (type === 'PACK_FACTORY') return bt('auto.s_5c08c289a8')
+  if (type === 'DEALER') return bt('auto.s_9019dc8029')
+  if (type === 'STORE') return bt('auto.s_a7da92344c')
+  if (type === 'BMS_FACTORY') return 'BMS'
+  return type || bt('auto.s_74fe5f9e99')
+}
+
 const tabOptions = [
-  { key: 'PACK_FACTORY', label: 'PACK厂家' },
-  { key: 'DEALER', label: '经销商' },
-  { key: 'STORE', label: '门店' }
+  { key: 'PACK_FACTORY', label: bt('auto.s_5c08c289a8') },
+  { key: 'DEALER', label: bt('auto.s_9019dc8029') },
+  { key: 'STORE', label: bt('auto.s_a7da92344c') }
 ]
 
 const searchConfigs = ref<any[]>([
   {
     key: 'name',
-    label: '组织名称',
+    label: bt('auto.s_4c12d831e3'),
     type: 'input',
-    placeholder: '请输入组织名称'
+    placeholder: bt('auto.s_a5bf36a322')
   },
   {
     key: 'phone',
-    label: '联系电话',
+    label: bt('auto.s_09a1f6985a'),
     type: 'input',
-    placeholder: '请输入联系电话'
+    placeholder: bt('auto.s_7b540b8035')
   },
   {
     key: 'status',
-    label: '状态',
+    label: bt('auto.s_3fea7ca76c'),
     type: 'select',
-    placeholder: '请选择状态',
+    placeholder: bt('auto.s_e1c965efff'),
     options: [
-      { label: '正常', value: 'N' },
-      { label: '禁用', value: 'F' }
+      { label: bt('auto.s_fd6e80f1e0'), value: 'N' },
+      { label: bt('auto.s_710ad08b11'), value: 'F' }
     ]
   }
 ])
@@ -137,30 +146,30 @@ const searchConfigs = ref<any[]>([
 const columns = ref([
   {
     key: 'name',
-    title: '组织名称',
+    title: bt('auto.s_4c12d831e3'),
     minWidth: 150
   },
   {
     key: 'org_type',
-    title: '类型',
+    title: bt('auto.s_226b091218'),
     minWidth: 100,
     render: (row: any) => {
-      return <NTag type="info">{OrgTypeLabels[row.org_type] || row.org_type}</NTag>
+      return <NTag type="info">{orgTypeLabel(row.org_type)}</NTag>
     }
   },
   {
     key: 'contact_person',
-    title: '联系人',
+    title: bt('auto.s_52409da520'),
     minWidth: 100
   },
   {
     key: 'phone',
-    title: '联系电话',
+    title: bt('auto.s_09a1f6985a'),
     minWidth: 120
   },
   {
     key: 'region',
-    title: '所在地区',
+    title: bt('auto.s_65d3ab7783'),
     minWidth: 150,
     render: (row: any) => {
       return `${row.province || ''} ${row.city || ''} ${row.district || ''}`.trim() || '--'
@@ -168,43 +177,35 @@ const columns = ref([
   },
   {
     key: 'status',
-    title: '状态',
+    title: bt('auto.s_3fea7ca76c'),
     minWidth: 80,
     render: (row: any) => {
-      return row.status === 'F' ? <NTag type="error">禁用</NTag> : <NTag type="success">正常</NTag>
+      return row.status === 'F' ? <NTag type="error">{bt('auto.s_710ad08b11')}</NTag> : <NTag type="success">{bt('auto.s_fd6e80f1e0')}</NTag>
     }
   },
   {
     key: 'created_at',
-    title: '创建时间',
+    title: bt('auto.s_eca37cb072'),
     minWidth: 160
   },
   {
     key: 'actions',
-    title: '操作',
+    title: bt('auto.s_2b6bc0f293'),
     width: 220,
     fixed: 'right',
     render: (row: any) => {
       return (
         <NSpace>
-          <NButton size="small" type="primary" onClick={() => handleEdit(row)}>
-            编辑
-          </NButton>
-          <NButton size="small" type="warning" onClick={() => handleResetPassword(row)}>
-            重置密码
-          </NButton>
+          <NButton size="small" type="primary" onClick={() => handleEdit(row)}>{bt('auto.s_95b351c862')}</NButton>
+          <NButton size="small" type="warning" onClick={() => handleResetPassword(row)}>{bt('auto.s_0719aa2bb0')}</NButton>
           {row.org_type === 'PACK_FACTORY' ? (
-            <NButton size="small" type="info" onClick={() => handleWxmpConfig(row)}>
-              小程序配置
-            </NButton>
+            <NButton size="small" type="info" onClick={() => handleWxmpConfig(row)}>{bt('auto.s_701fa5a565')}</NButton>
           ) : null}
           <NPopconfirm onPositiveClick={() => handleDelete(row)}>
             {{
-              default: () => '确认删除该组织吗？删除后不可恢复。',
+              default: () => bt('auto.s_bfe73e2e3a'),
               trigger: () => (
-                <NButton size="small" type="error">
-                  删除
-                </NButton>
+                <NButton size="small" type="error">{bt('auto.s_2f4aaddde3')}</NButton>
               )
             }}
           </NPopconfirm>
@@ -222,13 +223,13 @@ const columnsToShow = computed<any>(() =>
   }))
 )
 
-const currentTypeLabel = computed(() => OrgTypeLabels[activeTab.value] || '组织')
+const currentTypeLabel = computed(() => orgTypeLabel(activeTab.value))
 
 const topActions = computed<any>(() => [
   {
     element: () => (
       <NButton type="primary" onClick={handleAdd}>
-        + 新增{currentTypeLabel.value}
+        {bt('common.addWithName', { name: currentTypeLabel.value })}
       </NButton>
     )
   }
@@ -237,20 +238,20 @@ const topActions = computed<any>(() => [
 const currentOrgType = computed(() => props.fixedOrgType || activeTab.value)
 
 const wxmpStatusOptions = [
-  { label: '启用', value: 'OPEN' },
-  { label: '停用', value: 'CLOSE' }
+  { label: bt('auto.s_7854b52a88'), value: 'OPEN' },
+  { label: bt('auto.s_5c56a88945'), value: 'CLOSE' }
 ]
 
 const contentKeyOptions = [
-  { label: '关于我们', value: 'about_us' },
-  { label: '隐私协议', value: 'privacy_policy' },
-  { label: '用户政策', value: 'user_policy' },
-  { label: '联系客服', value: 'contact_service' }
+  { label: bt('auto.s_3b2e3653b3'), value: 'about_us' },
+  { label: bt('auto.s_b0d5608709'), value: 'privacy_policy' },
+  { label: bt('auto.s_db1af7def3'), value: 'user_policy' },
+  { label: bt('auto.s_b6606015e0'), value: 'contact_service' }
 ]
 
 const contentLangOptions = [
-  { label: '中文', value: 'zh-CN' },
-  { label: '英文', value: 'en-US' }
+  { label: bt('auto.s_a7bac2239f'), value: 'zh-CN' },
+  { label: bt('auto.s_f9fb6a063d'), value: 'en-US' }
 ]
 
 const fetchData: any = (params: any) => {
@@ -276,11 +277,11 @@ const handleDelete = async (row: any) => {
   try {
     const { error } = await deleteOrg(row.id)
     if (!error) {
-      message.success('删除成功')
+      message.success(bt('auto.s_0007d170de'))
       tablePageRef.value?.reload()
     }
   } catch (err: any) {
-    message.error(err?.message || '删除失败')
+    message.error(err?.message || bt('auto.s_acf0664a54'))
   }
 }
 
@@ -327,7 +328,7 @@ const loadWxmpContent = async () => {
     }
   } catch (err: any) {
     resetWxmpContent()
-    message.error(err?.message || '内容加载失败')
+    message.error(err?.message || bt('auto.s_7619268c4a'))
   } finally {
     contentLoading.value = false
   }
@@ -365,7 +366,7 @@ const handleWxmpConfig = async (row: any) => {
     }
   } catch (err: any) {
     if (err?.response?.status !== 404 && err?.code !== 404) {
-      message.error(err?.message || '小程序配置加载失败')
+      message.error(err?.message || bt('auto.s_1e6408f6f6'))
     }
   } finally {
     wxmpLoading.value = false
@@ -377,11 +378,11 @@ const saveWxmpConfig = async () => {
   const wxAppID = wxmpForm.value.wx_appid.trim()
   const secret = wxmpForm.value.app_secret.trim()
   if (!wxAppID) {
-    message.warning('请输入微信小程序 AppID')
+    message.warning(bt('auto.s_a5c86beecc'))
     return
   }
   if (!wxmpConfig.value?.id && !secret) {
-    message.warning('首次配置需要填写 AppSecret')
+    message.warning(bt('auto.s_827339b69a'))
     return
   }
 
@@ -397,11 +398,11 @@ const saveWxmpConfig = async () => {
     })
     wxmpConfig.value = res?.data || null
     wxmpForm.value.app_secret = ''
-    message.success('小程序配置已保存')
+    message.success(bt('auto.s_96107b4620'))
     tablePageRef.value?.reload()
     await loadWxmpContent()
   } catch (err: any) {
-    message.error(err?.message || '小程序配置保存失败')
+    message.error(err?.message || bt('auto.s_3dc6b0152d'))
   } finally {
     wxmpSaving.value = false
   }
@@ -409,7 +410,7 @@ const saveWxmpConfig = async () => {
 
 const saveWxmpContent = async (publish = false) => {
   if (!wxmpConfig.value?.app_id) {
-    message.warning('请先保存小程序配置')
+    message.warning(bt('auto.s_32f41a1b8b'))
     return
   }
   contentSaving.value = true
@@ -423,10 +424,10 @@ const saveWxmpContent = async (publish = false) => {
     if (publish) {
       await publishAdminContentPage(contentKey.value, { app_id: wxmpConfig.value.app_id })
     }
-    message.success(publish ? '内容已保存并发布' : '内容已保存')
+    message.success(publish ? bt('auto.s_a99def6083') : bt('auto.s_1c34535aa5'))
     await loadWxmpContent()
   } catch (err: any) {
-    message.error(err?.message || '内容保存失败')
+    message.error(err?.message || bt('auto.s_9596d42fb4'))
   } finally {
     contentSaving.value = false
   }
@@ -438,11 +439,11 @@ const submitResetPassword = async () => {
     try {
       const { error } = await resetOrgAccountPassword(resetPwdRow.value.id, { password: resetPwdForm.value.password })
       if (!error) {
-        message.success('重置成功')
+        message.success(bt('auto.s_faa357fc6e'))
         resetPwdVisible.value = false
       }
     } catch (err: any) {
-      message.error(err?.message || '重置失败')
+      message.error(err?.message || bt('auto.s_4d71382234'))
     }
   })
 }
@@ -455,7 +456,7 @@ const handleModalSubmit = async (formData: any) => {
         org_type: currentOrgType.value
       })
       if (!error) {
-        message.success('创建成功')
+        message.success(bt('auto.s_04a691b377'))
         modalVisible.value = false
         tablePageRef.value?.reload()
       }
@@ -463,13 +464,13 @@ const handleModalSubmit = async (formData: any) => {
       if (!currentData.value) return
       const { error } = await updateOrg(currentData.value.id, formData)
       if (!error) {
-        message.success('更新成功')
+        message.success(bt('auto.s_55aa6366c0'))
         modalVisible.value = false
         tablePageRef.value?.reload()
       }
     }
   } catch (err: any) {
-    message.error(err?.message || '操作失败')
+    message.error(err?.message || bt('auto.s_5fa802bef5'))
   }
 }
 
@@ -518,7 +519,7 @@ watch([contentKey, contentLang], () => {
     <NModal
       :show="resetPwdVisible"
       preset="card"
-      title="重置账号密码"
+      :title="bt('auto.s_d049dfce64')"
       style="width: 460px"
       @close="resetPwdVisible = false"
     >
@@ -528,36 +529,36 @@ watch([contentKey, contentLang], () => {
         label-placement="left"
         label-width="90"
         :rules="{
-          password: { required: true, message: '请输入新密码（至少6位）', trigger: 'blur' },
+          password: { required: true, message: bt('auto.s_c4f4491d89'), trigger: 'blur' },
           confirmPassword: {
             required: true,
-            message: '请再次输入新密码',
+            message: bt('auto.s_d98a14a912'),
             trigger: 'blur',
             validator: (_: any, value: string) => value === resetPwdForm.password
           }
         }"
       >
-        <NFormItem label="新密码" path="password">
+        <NFormItem :label="bt('auto.s_bf7da0bf02')" path="password">
           <NInput
             v-model:value="resetPwdForm.password"
             type="password"
             show-password-on="click"
-            placeholder="请输入新密码"
+            :placeholder="bt('auto.s_abdd7ea830')"
           />
         </NFormItem>
-        <NFormItem label="确认密码" path="confirmPassword">
+        <NFormItem :label="bt('auto.s_3fbdde139c')" path="confirmPassword">
           <NInput
             v-model:value="resetPwdForm.confirmPassword"
             type="password"
             show-password-on="click"
-            placeholder="请再次输入新密码"
+            :placeholder="bt('auto.s_d98a14a912')"
           />
         </NFormItem>
       </NForm>
       <template #footer>
         <NSpace justify="end">
-          <NButton @click="resetPwdVisible = false">取消</NButton>
-          <NButton type="primary" @click="submitResetPassword">确定</NButton>
+          <NButton @click="resetPwdVisible = false">{{ bt('auto.s_625fb26b4b') }}</NButton>
+          <NButton type="primary" @click="submitResetPassword">{{ bt('auto.s_38cf16f220') }}</NButton>
         </NSpace>
       </template>
     </NModal>
@@ -565,33 +566,32 @@ watch([contentKey, contentLang], () => {
     <NModal
       :show="wxmpVisible"
       preset="card"
-      :title="`小程序配置 - ${wxmpRow?.name || ''}`"
+      :title="bt('common.modalTitleWithName', { title: bt('auto.s_701fa5a565'), name: wxmpRow?.name || '' })"
       style="width: 860px; max-width: 96vw"
       @close="wxmpVisible = false"
     >
       <NSpin :show="wxmpLoading">
         <NAlert type="info" class="mb-16px">
-          该配置仅作用于当前 PACK 厂接入的微信小程序。保存后，小程序登录将只走微信用户体系，首页 Banner
-          和公开内容按此小程序独立展示。
+          {{ bt('pages.org.wxmpConfigDesc') }}
         </NAlert>
         <NTabs v-model:value="wxmpActiveTab" type="line" animated>
-          <NTabPane name="basic" tab="小程序基本信息">
+          <NTabPane name="basic" :tab="bt('auto.s_8911a9423d')">
             <NForm label-placement="left" label-width="120">
-              <NFormItem label="微信 AppID">
-                <NInput v-model:value="wxmpForm.wx_appid" placeholder="请输入微信小程序 AppID" />
+              <NFormItem :label="bt('auto.s_ac09e0a168')">
+                <NInput v-model:value="wxmpForm.wx_appid" :placeholder="bt('auto.s_a5c86beecc')" />
               </NFormItem>
               <NFormItem label="AppSecret">
                 <NInput
                   v-model:value="wxmpForm.app_secret"
                   type="password"
                   show-password-on="click"
-                  placeholder="首次配置必填；留空表示不修改"
+                  :placeholder="bt('auto.s_e363fb799b')"
                 />
               </NFormItem>
-              <NFormItem label="状态">
+              <NFormItem :label="bt('auto.s_3fea7ca76c')">
                 <NSelect v-model:value="wxmpForm.status" :options="wxmpStatusOptions" />
               </NFormItem>
-              <NFormItem label="首页 Banner">
+              <NFormItem :label="bt('auto.s_da98ea8f7f')">
                 <FilePicker
                   v-model:model-value="wxmpForm.home_banner_url"
                   biz-type="image"
@@ -602,9 +602,9 @@ watch([contentKey, contentLang], () => {
                   accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
                   :allowed-extensions="['png', 'jpg', 'jpeg', 'gif', 'webp']"
                 />
-                <div class="mt-6px text-12px opacity-70">支持上传或选择已上传图片：png / jpg / jpeg / gif / webp</div>
+                <div class="mt-6px text-12px opacity-70">{{ bt('auto.s_73805dd353') }}</div>
               </NFormItem>
-              <NFormItem label="登录 Logo">
+              <NFormItem :label="bt('auto.s_cf12820ad4')">
                 <FilePicker
                   v-model:model-value="wxmpForm.login_logo_url"
                   biz-type="image"
@@ -615,31 +615,31 @@ watch([contentKey, contentLang], () => {
                   accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
                   :allowed-extensions="['png', 'jpg', 'jpeg', 'gif', 'webp']"
                 />
-                <div class="mt-6px text-12px opacity-70">用于微信小程序登录界面展示，未配置时使用默认 Logo。</div>
+                <div class="mt-6px text-12px opacity-70">{{ bt('auto.s_341de825c5') }}</div>
               </NFormItem>
-              <NFormItem label="备注">
-                <NInput v-model:value="wxmpForm.remark" type="textarea" placeholder="可填写用途、版本或客户说明" />
+              <NFormItem :label="bt('auto.s_2432b57515')">
+                <NInput v-model:value="wxmpForm.remark" type="textarea" :placeholder="bt('auto.s_db0ce65fbc')" />
               </NFormItem>
             </NForm>
 
             <NSpace justify="end">
-              <NButton :loading="wxmpSaving" type="primary" @click="saveWxmpConfig">保存小程序配置</NButton>
+              <NButton :loading="wxmpSaving" type="primary" @click="saveWxmpConfig">{{ bt('auto.s_164ac31dfd') }}</NButton>
             </NSpace>
           </NTabPane>
 
-          <NTabPane name="content" tab="文案内容">
+          <NTabPane name="content" :tab="bt('auto.s_17c8aa348f')">
             <div class="content-editor">
               <NSpace align="center" justify="space-between" class="content-toolbar">
                 <NSpace align="center">
                   <NSelect v-model:value="contentKey" :options="contentKeyOptions" style="width: 140px" />
                   <NSelect v-model:value="contentLang" :options="contentLangOptions" style="width: 110px" />
                   <NTag :type="contentPublished ? 'success' : 'warning'">
-                    {{ contentPublished ? '已发布' : '未发布' }}
+                    {{ contentPublished ? bt('auto.s_dca0c13b83') : bt('auto.s_637e8ba488') }}
                   </NTag>
                 </NSpace>
                 <NSpace>
                   <NButton :disabled="!wxmpConfig?.app_id" :loading="contentSaving" @click="saveWxmpContent(false)">
-                    保存草稿
+                    {{ bt('auto.s_4d7ea6dfa6') }}
                   </NButton>
                   <NButton
                     type="primary"
@@ -647,24 +647,24 @@ watch([contentKey, contentLang], () => {
                     :loading="contentSaving"
                     @click="saveWxmpContent(true)"
                   >
-                    保存并发布
+                    {{ bt('auto.s_5c097911f8') }}
                   </NButton>
                 </NSpace>
               </NSpace>
               <NSpin :show="contentLoading">
                 <NAlert v-if="!wxmpConfig?.app_id" type="warning" class="mb-16px">
-                  请先在“小程序基本信息”中保存小程序配置，再维护文案内容。
+                  {{ bt('pages.org.contentDisabledHint') }}
                 </NAlert>
                 <NForm v-else label-placement="left" label-width="110">
-                  <NFormItem label="标题">
-                    <NInput v-model:value="contentForm.title" placeholder="请输入页面标题" />
+                  <NFormItem :label="bt('auto.s_32c65d8d74')">
+                    <NInput v-model:value="contentForm.title" :placeholder="bt('auto.s_e9fa62ec22')" />
                   </NFormItem>
-                  <NFormItem label="正文内容" class="items-start">
+                  <NFormItem :label="bt('auto.s_c536c43976')" class="items-start">
                     <div class="w-full">
                       <MarkdownEditor
                         ref="wxmpMarkdownEditorRef"
                         v-model="contentForm.content_markdown"
-                        placeholder="请输入页面内容"
+                        :placeholder="bt('auto.s_eda4fb6cf5')"
                         :height="wxmpContentEditorHeight"
                         :min-height="wxmpContentEditorHeight"
                         @fullscreen-change="handleWxmpMarkdownFullscreen"
@@ -681,11 +681,11 @@ watch([contentKey, contentLang], () => {
 
     <div v-if="wxmpMarkdownFullscreen && wxmpVisible" class="markdown-fullscreen-bar">
       <NSpace align="center">
-        <NButton size="small" :loading="contentSaving" @click="saveWxmpContent(false)">保存草稿</NButton>
+        <NButton size="small" :loading="contentSaving" @click="saveWxmpContent(false)">{{ bt('auto.s_4d7ea6dfa6') }}</NButton>
         <NButton size="small" type="primary" :loading="contentSaving" @click="saveWxmpContent(true)">
-          保存并发布
+          {{ bt('auto.s_5c097911f8') }}
         </NButton>
-        <NButton size="small" tertiary @click="exitWxmpMarkdownFullscreen">退出全屏</NButton>
+        <NButton size="small" tertiary @click="exitWxmpMarkdownFullscreen">{{ bt('auto.s_49041f2450') }}</NButton>
       </NSpace>
     </div>
   </div>

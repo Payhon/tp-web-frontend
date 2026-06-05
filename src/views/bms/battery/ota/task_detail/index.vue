@@ -1,4 +1,5 @@
 <script setup lang="tsx">
+import { bt } from '@/views/bms/_shared/i18n'
 import { computed, ref, watch } from 'vue'
 import { NButton, NCard, NDataTable, NDescriptions, NDescriptionsItem, NSpace, NTag, useMessage } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
@@ -17,12 +18,12 @@ const statistics = ref<any[]>([])
 function statusLabel(v: number) {
   // 1-待推送2-已推送3-升级中4-升级成功5-升级失败6-已取消
   const map: Record<number, string> = {
-    1: '待推送',
-    2: '已推送',
-    3: '升级中',
-    4: '升级成功',
-    5: '升级失败',
-    6: '已取消'
+    1: bt('auto.s_bf258f2517'),
+    2: bt('auto.s_cd015eac54'),
+    3: bt('auto.s_c65f8ac5c0'),
+    4: bt('auto.s_e64d788d11'),
+    5: bt('auto.s_4ae2f0a20f'),
+    6: bt('auto.s_2111ccbb19')
   }
   return map[v] || String(v)
 }
@@ -48,7 +49,7 @@ async function fetchDetail() {
     list.value = res?.data?.list || []
     statistics.value = res?.data?.statistics || []
   } catch (e: any) {
-    message.error(e?.message || '获取任务详情失败')
+    message.error(e?.message || bt('auto.s_b1e725344d'))
     list.value = []
     statistics.value = []
   } finally {
@@ -59,40 +60,40 @@ async function fetchDetail() {
 async function cancelUpgrade(detailId: string) {
   try {
     await updateOtaTaskDetailStatus({ id: detailId, action: 6 })
-    message.success('已取消')
+    message.success(bt('auto.s_2111ccbb19'))
     fetchDetail()
   } catch (e: any) {
-    message.error(e?.message || '取消失败')
+    message.error(e?.message || bt('auto.s_482e8539da'))
   }
 }
 
 async function retryUpgrade(detailId: string) {
   try {
     await updateOtaTaskDetailStatus({ id: detailId, action: 1 })
-    message.success('已重新下发')
+    message.success(bt('auto.s_eb318b2c53'))
     fetchDetail()
   } catch (e: any) {
-    message.error(e?.message || '重新升级失败')
+    message.error(e?.message || bt('auto.s_5ce757ed8c'))
   }
 }
 
 const columns = computed<DataTableColumns<any>>(() => [
-  { key: 'device_number', title: '序列号', minWidth: 140 },
-  { key: 'name', title: '设备名称', minWidth: 160, render: r => r.name || '--' },
-  { key: 'current_version', title: '当前版本', minWidth: 120, render: r => r.current_version || '--' },
-  { key: 'version', title: '目标版本', minWidth: 120, render: r => r.version || '--' },
-  { key: 'step', title: '进度', minWidth: 90, render: r => r.step ?? '--' },
-  { key: 'updated_at', title: '更新时间', minWidth: 160, render: r => r.updated_at || '--' },
+  { key: 'device_number', title: bt('auto.s_7079d2e6c4'), minWidth: 140 },
+  { key: 'name', title: bt('auto.s_9f694f603c'), minWidth: 160, render: r => r.name || '--' },
+  { key: 'current_version', title: bt('auto.s_9b601b8efa'), minWidth: 120, render: r => r.current_version || '--' },
+  { key: 'version', title: bt('auto.s_bc15bf0b06'), minWidth: 120, render: r => r.version || '--' },
+  { key: 'step', title: bt('auto.s_c7bff79d05'), minWidth: 90, render: r => r.step ?? '--' },
+  { key: 'updated_at', title: bt('auto.s_a001a226fd'), minWidth: 160, render: r => r.updated_at || '--' },
   {
     key: 'status',
-    title: '状态',
+    title: bt('auto.s_3fea7ca76c'),
     minWidth: 120,
     render: r => <NTag type={statusTagType(r.status)}>{statusLabel(r.status)}</NTag>
   },
-  { key: 'status_description', title: '状态描述', minWidth: 220, render: r => r.status_description || '--' },
+  { key: 'status_description', title: bt('auto.s_920f05031b'), minWidth: 220, render: r => r.status_description || '--' },
   {
     key: 'actions',
-    title: '操作',
+    title: bt('auto.s_2b6bc0f293'),
     minWidth: 180,
     fixed: 'right',
     render: r => (
@@ -102,12 +103,8 @@ const columns = computed<DataTableColumns<any>>(() => [
           type="warning"
           disabled={!(r.status === 1 || r.status === 2 || r.status === 3)}
           onClick={() => cancelUpgrade(r.id)}
-        >
-          取消
-        </NButton>
-        <NButton size="small" type="primary" disabled={r.status !== 5} onClick={() => retryUpgrade(r.id)}>
-          重新升级
-        </NButton>
+        >{bt('auto.s_625fb26b4b')}</NButton>
+        <NButton size="small" type="primary" disabled={r.status !== 5} onClick={() => retryUpgrade(r.id)}>{bt('auto.s_d188392d3d')}</NButton>
       </NSpace>
     )
   }
@@ -123,7 +120,7 @@ watch(
 <template>
   <div class="flex-vertical-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
     <NCard
-      :title="`OTA任务详情：${taskId || '-'}`"
+      :title="bt('pages.ota.taskDetailTitle', { id: taskId || '-' })"
       :bordered="false"
       size="small"
       class="sm:flex-1-hidden card-wrapper"
@@ -131,7 +128,7 @@ watch(
       <div class="mb-4 flex items-center justify-between">
         <div />
         <NSpace>
-          <NButton :loading="loading" @click="fetchDetail">刷新</NButton>
+          <NButton :loading="loading" @click="fetchDetail">{{ bt('auto.s_694fc5efa9') }}</NButton>
         </NSpace>
       </div>
 

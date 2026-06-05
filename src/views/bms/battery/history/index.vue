@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { bt } from '@/views/bms/_shared/i18n'
 import { computed, h, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { NButton, NTag, useMessage } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
@@ -64,59 +65,59 @@ function unwrapApiPayload<T = any>(raw: any): T {
 }
 
 const wideIdentifierLabelMap: Record<string, string> = {
-  cycleCount: '循环次数',
-  faultCount: '故障数量',
-  charging: '充电状态',
-  discharging: '放电状态',
-  chargeFetOn: '充电MOS状态',
-  dischargeFetOn: '放电MOS状态',
-  chargeMosC: '充电MOS温度(°C)',
-  dischargeMosC: '放电MOS温度(°C)',
-  highestCellVoltageMv: '最高单体电压(mV)',
-  lowestCellVoltageMv: '最低单体电压(mV)',
-  avgCellVoltageMv: '平均单体电压(mV)',
-  totalVoltageMv: '总电压(mV)',
-  totalCurrentMa: '总电流(mA)',
-  remainCapacityMah: '剩余容量(mAh)',
-  nominalCapacityMah: '额定容量(mAh)',
+  cycleCount: bt('auto.s_2dbd74ad4f'),
+  faultCount: bt('auto.s_0331c1fd79'),
+  charging: bt('auto.s_18ad5763ed'),
+  discharging: bt('auto.s_4aabfe04bc'),
+  chargeFetOn: bt('auto.s_bf89014857'),
+  dischargeFetOn: bt('auto.s_83f24734d9'),
+  chargeMosC: bt('auto.s_2791571ac5'),
+  dischargeMosC: bt('auto.s_4df18c6903'),
+  highestCellVoltageMv: bt('auto.s_d3cc94d1fd'),
+  lowestCellVoltageMv: bt('auto.s_cb65bc97ee'),
+  avgCellVoltageMv: bt('auto.s_e08ac67141'),
+  totalVoltageMv: bt('auto.s_ace4c80be1'),
+  totalCurrentMa: bt('auto.s_8873466bd6'),
+  remainCapacityMah: bt('auto.s_0fc03fb8c4'),
+  nominalCapacityMah: bt('auto.s_3199571031'),
   soc: 'SOC(%)',
   soh: 'SOH(%)'
 }
 
 const wideIdentifierTokenMap: Record<string, string> = {
-  highest: '最高',
-  lowest: '最低',
-  avg: '平均',
-  average: '平均',
-  max: '最大',
-  min: '最小',
-  cell: '单体',
-  total: '总',
-  remain: '剩余',
-  remaining: '剩余',
-  nominal: '额定',
-  voltage: '电压',
-  current: '电流',
-  capacity: '容量',
-  count: '数量',
-  status: '状态',
-  fault: '故障',
-  charge: '充电',
-  discharge: '放电',
-  charging: '充电',
-  discharging: '放电',
+  highest: bt('auto.s_9b53e2a02d'),
+  lowest: bt('auto.s_1c73433cc8'),
+  avg: bt('auto.s_33875c8660'),
+  average: bt('auto.s_33875c8660'),
+  max: bt('auto.s_f98b9af13a'),
+  min: bt('auto.s_5e02aac448'),
+  cell: bt('auto.s_97ae793259'),
+  total: bt('auto.s_a246f63060'),
+  remain: bt('auto.s_43b510edc7'),
+  remaining: bt('auto.s_43b510edc7'),
+  nominal: bt('auto.s_c66c1538c6'),
+  voltage: bt('auto.s_b42583eaa2'),
+  current: bt('auto.s_5ecd057a1c'),
+  capacity: bt('auto.s_fe7d74278a'),
+  count: bt('auto.s_0bf60b32f9'),
+  status: bt('auto.s_3fea7ca76c'),
+  fault: bt('auto.s_4af58f243b'),
+  charge: bt('auto.s_2cd11ef34e'),
+  discharge: bt('auto.s_418102ac77'),
+  charging: bt('auto.s_2cd11ef34e'),
+  discharging: bt('auto.s_418102ac77'),
   mos: 'MOS',
   fet: 'MOS',
-  temp: '温度',
-  temperature: '温度',
-  cycle: '循环',
-  balance: '均衡',
-  protection: '保护',
-  alarm: '告警',
-  state: '状态',
-  power: '功率',
-  energy: '能量',
-  percentage: '百分比'
+  temp: bt('auto.s_c9bf0b889a'),
+  temperature: bt('auto.s_c9bf0b889a'),
+  cycle: bt('auto.s_69bdc66bb8'),
+  balance: bt('auto.s_f07d8f755e'),
+  protection: bt('auto.s_c6b95eef2e'),
+  alarm: bt('auto.s_aa0eab9dba'),
+  state: bt('auto.s_3fea7ca76c'),
+  power: bt('auto.s_93b57ce379'),
+  energy: bt('auto.s_ba7bd2a730'),
+  percentage: bt('auto.s_81522afdfe')
 }
 
 const wideIdentifierUnitMap: Record<string, string> = {
@@ -198,7 +199,7 @@ function recalcTableHeight() {
 
 const tableColumns = computed<DataTableColumns<Record<string, any>>>(() => {
   const timeColumn = {
-    title: '时间',
+    title: bt('auto.s_19fcb9eb25'),
     key: 'time',
     width: 180,
     fixed: viewMode.value === 'wide' ? 'left' : undefined,
@@ -209,7 +210,7 @@ const tableColumns = computed<DataTableColumns<Record<string, any>>>(() => {
     return [
       timeColumn,
       {
-        title: '数据类型',
+        title: bt('auto.s_185f7bf647'),
         key: 'data_type',
         width: 100,
         render: (row: Record<string, any>) =>
@@ -217,9 +218,9 @@ const tableColumns = computed<DataTableColumns<Record<string, any>>>(() => {
             ? h(NTag, { type: 'warning', size: 'small' }, () => 'attribute')
             : h(NTag, { type: 'info', size: 'small' }, () => 'telemetry')
       },
-      { title: '标识符', key: 'identifier', width: 180 },
-      { title: '数据名称', key: 'data_name', width: 180, ellipsis: { tooltip: true } },
-      { title: '值', key: 'value', minWidth: 200, ellipsis: { tooltip: true } }
+      { title: bt('auto.s_f3c00c7e55'), key: 'identifier', width: 180 },
+      { title: bt('auto.s_5a1419b7a2'), key: 'data_name', width: 180, ellipsis: { tooltip: true } },
+      { title: bt('auto.s_fe7509e0ed'), key: 'value', minWidth: 200, ellipsis: { tooltip: true } }
     ]
   }
 
@@ -244,9 +245,9 @@ const tableScrollX = computed(() => {
 })
 
 function mapCommType(type?: number) {
-  if (type === 1) return '蓝牙'
+  if (type === 1) return bt('auto.s_0a4e486218')
   if (type === 2) return '4G'
-  if (type === 3) return '蓝牙+4G'
+  if (type === 3) return bt('auto.s_59b8ad21d6')
   return '--'
 }
 
@@ -290,7 +291,7 @@ async function loadDevices(reset = false) {
       await queryHistory(true)
     }
   } catch (error: any) {
-    message.error(error?.message || '加载设备失败')
+    message.error(error?.message || bt('auto.s_6aa80d09ea'))
   } finally {
     deviceLoading.value = false
   }
@@ -326,7 +327,7 @@ async function handleSelectDevice(deviceId: string) {
 async function queryHistory(resetPage = false) {
   if (!selectedDeviceId.value) return
   if (!isDateRangeValid(dateRange.value)) {
-    message.warning('请选择不超过31天的时间范围')
+    message.warning(bt('auto.s_6cae0d1345'))
     return
   }
   if (!dateRange.value) return
@@ -355,7 +356,7 @@ async function queryHistory(resetPage = false) {
   } catch (error: any) {
     historyRows.value = []
     pagination.itemCount = 0
-    message.error(error?.message || '查询历史数据失败')
+    message.error(error?.message || bt('auto.s_5d3d1c8f69'))
   } finally {
     historyLoading.value = false
     await nextTick()
@@ -366,7 +367,7 @@ async function queryHistory(resetPage = false) {
 async function handleDateRangeChange(value: [number, number] | null) {
   dateRange.value = value
   if (!isDateRangeValid(value)) {
-    message.warning('查询时间范围不能超过31天')
+    message.warning(bt('auto.s_6bd57aa2d0'))
     return
   }
   pagination.page = 1
@@ -381,11 +382,11 @@ async function handleViewModeChange(mode: 'long' | 'wide') {
 
 async function handleExport() {
   if (!selectedDeviceId.value) {
-    message.warning('请先选择设备')
+    message.warning(bt('auto.s_7b0db2a0de'))
     return
   }
   if (!isDateRangeValid(dateRange.value) || !dateRange.value) {
-    message.warning('请先选择有效时间范围（31天内）')
+    message.warning(bt('auto.s_69ef79e700'))
     return
   }
 
@@ -397,9 +398,9 @@ async function handleExport() {
       start_time: startTime,
       end_time: endTime
     })
-    message.success('导出任务已生成，完成后将在右上角消息中心提醒')
+    message.success(bt('auto.s_c57ea55af2'))
   } catch (error: any) {
-    message.error(error?.message || '创建导出任务失败')
+    message.error(error?.message || bt('auto.s_bde8ed56dd'))
   }
 }
 
@@ -432,10 +433,10 @@ watch(
   <div class="h-full p-16px">
     <div class="history-layout">
       <div class="left-panel" :class="{ collapsed: panelCollapsed }">
-        <NCard title="设备筛选" size="small" :bordered="true" class="h-full device-filter-card">
+        <NCard :title="bt('auto.s_9005a51540')" size="small" :bordered="true" class="h-full device-filter-card">
           <NInput
             :value="deviceKeyword"
-            placeholder="按设备编号/名称搜索"
+            :placeholder="bt('auto.s_cc07b0e567')"
             clearable
             @update:value="handleKeywordUpdate"
           />
@@ -451,9 +452,9 @@ watch(
                 >
                   <div class="device-title">{{ item.device_name || item.device_number }}</div>
                   <div class="device-subtitle">SN: {{ item.device_number }}</div>
-                  <div class="device-subtitle">通讯: {{ mapCommType(item.bms_comm_type) }}</div>
+                  <div class="device-subtitle">{{ bt('pages.history.communication', { value: mapCommType(item.bms_comm_type) }) }}</div>
                 </div>
-                <NEmpty v-if="!deviceLoading && deviceList.length === 0" description="暂无设备" class="mt-20px" />
+                <NEmpty v-if="!deviceLoading && deviceList.length === 0" :description="bt('auto.s_bcc241e075')" class="mt-20px" />
               </NScrollbar>
             </NSpin>
           </div>
@@ -482,7 +483,7 @@ watch(
       </div>
 
       <div class="right-panel">
-        <NCard class="h-full history-query-card" title="历史数据查询">
+        <NCard class="h-full history-query-card" :title="bt('auto.s_36b9e682ef')">
           <div ref="historyContentRef" class="history-content">
             <div ref="historyToolbarRef" class="toolbar">
               <NSpace align="center" wrap>
@@ -494,15 +495,15 @@ watch(
                   @update:value="handleDateRangeChange"
                 />
                 <NRadioGroup :value="viewMode" @update:value="handleViewModeChange">
-                  <NRadioButton value="long">长表</NRadioButton>
-                  <NRadioButton value="wide">宽表</NRadioButton>
+                  <NRadioButton value="long">{{ bt('auto.s_ad02f7e9d6') }}</NRadioButton>
+                  <NRadioButton value="wide">{{ bt('auto.s_f921f12d83') }}</NRadioButton>
                 </NRadioGroup>
-                <NButton type="primary" :disabled="!canExport || !selectedDeviceId" @click="handleExport">导出</NButton>
+                <NButton type="primary" :disabled="!canExport || !selectedDeviceId" @click="handleExport">{{ bt('auto.s_55405ea6ff') }}</NButton>
               </NSpace>
             </div>
 
             <div v-if="!selectedDeviceId" ref="historyAlertRef" class="mb-12px">
-              <NAlert type="info">请先在左侧选择设备，再进行历史数据查询。</NAlert>
+              <NAlert type="info">{{ bt('auto.s_1f4dd546ca') }}</NAlert>
             </div>
 
             <div ref="historyTableWrapRef" class="history-table-wrap">

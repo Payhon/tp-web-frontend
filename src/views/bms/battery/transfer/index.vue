@@ -1,4 +1,5 @@
 <script setup lang="tsx">
+import { bt } from '@/views/bms/_shared/i18n'
 import { ref } from 'vue'
 import { NCard, NDataTable, NForm, NFormItem, NInput, NButton, NSpace, NTag, NDatePicker } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
@@ -29,25 +30,25 @@ interface TransferListResponse {
 }
 
 const createColumns = (): DataTableColumns<TransferItem> => [
-  { key: 'device_number', title: '设备编号', minWidth: 150 },
-  { key: 'device_model', title: '设备型号', minWidth: 120 },
+  { key: 'device_number', title: bt('auto.s_cf05392308'), minWidth: 150 },
+  { key: 'device_model', title: bt('auto.s_5858832b73'), minWidth: 120 },
   {
     key: 'from_dealer_name',
-    title: '原经销商',
+    title: bt('auto.s_60ae0a35c8'),
     minWidth: 150,
-    render: row => row.from_dealer_name || <NTag type="info">厂家</NTag>
+    render: row => row.from_dealer_name || <NTag type="info">{bt('auto.s_8284e8dacc')}</NTag>
   },
   {
     key: 'to_dealer_name',
-    title: '目标经销商',
+    title: bt('auto.s_62377d58e6'),
     minWidth: 150,
-    render: row => row.to_dealer_name || <NTag type="info">厂家</NTag>
+    render: row => row.to_dealer_name || <NTag type="info">{bt('auto.s_8284e8dacc')}</NTag>
   },
-  { key: 'operator_name', title: '操作人', minWidth: 100 },
-  { key: 'transfer_time', title: '转移时间', minWidth: 160 },
+  { key: 'operator_name', title: bt('auto.s_f9ac4b2aa6'), minWidth: 100 },
+  { key: 'transfer_time', title: bt('auto.s_96973db7f5'), minWidth: 160 },
   {
     key: 'remark',
-    title: '备注',
+    title: bt('auto.s_2432b57515'),
     minWidth: 200,
     ellipsis: { tooltip: true }
   }
@@ -108,7 +109,7 @@ const handleReset = () => {
 
 <template>
   <div class="flex-vertical-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
-    <NCard title="设备转移记录" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
+    <NCard :title="bt('auto.s_cc286cd5f4')" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
       <NForm
         inline
         :model="searchForm"
@@ -116,24 +117,24 @@ const handleReset = () => {
         label-width="auto"
         class="mb-4 flex flex-wrap gap-4 items-end"
       >
-        <NFormItem label="设备编号" path="device_number">
+        <NFormItem :label="bt('auto.s_cf05392308')" path="device_number">
           <NInput
             v-model:value="searchForm.device_number"
-            placeholder="请输入设备编号"
+            :placeholder="bt('auto.s_52b2a2bd92')"
             style="width: 220px"
             clearable
           />
         </NFormItem>
-        <NFormItem label="开始时间" path="start_time">
+        <NFormItem :label="bt('auto.s_592c595891')" path="start_time">
           <NDatePicker v-model:value="searchForm.start_time" type="datetime" clearable style="width: 260px" />
         </NFormItem>
-        <NFormItem label="结束时间" path="end_time">
+        <NFormItem :label="bt('auto.s_f782779e8b')" path="end_time">
           <NDatePicker v-model:value="searchForm.end_time" type="datetime" clearable style="width: 260px" />
         </NFormItem>
         <NFormItem>
           <NSpace>
-            <NButton type="primary" @click="handleSearch">查询</NButton>
-            <NButton @click="handleReset">重置</NButton>
+            <NButton type="primary" @click="handleSearch">{{ bt('auto.s_bee912d79e') }}</NButton>
+            <NButton @click="handleReset">{{ bt('auto.s_4b9c3271dc') }}</NButton>
           </NSpace>
         </NFormItem>
       </NForm>
