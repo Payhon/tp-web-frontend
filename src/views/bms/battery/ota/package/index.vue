@@ -349,7 +349,7 @@ async function submit() {
     if (form.value.device_kind === DEVICE_KIND_BMS) {
       Object.assign(payload, {
         version: form.value.version.trim(),
-        target_version: form.value.target_version.trim() ? form.value.target_version.trim() : undefined,
+        target_version: form.value.target_version.trim(),
         battery_model_id: form.value.battery_model_id || '',
         batch_number: form.value.batch_number.trim(),
         item_uuid: form.value.item_uuid.trim(),
@@ -403,40 +403,52 @@ loadBmsModels()
 
 <template>
   <div class="flex-vertical-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
-    <NCard :title="bt('auto.s_d50a49fae4')" :bordered="false" size="small" class="sm:flex-1-hidden card-wrapper">
-      <NTabs v-model:value="activeTab" type="line" animated>
-        <NTabPane :name="DEVICE_KIND_BMS" :tab="bt('auto.s_96b721c7f1')" />
-        <NTabPane :name="DEVICE_KIND_METER" :tab="bt('auto.s_0a0ca8d002')" />
-        <NTabPane :name="DEVICE_KIND_4G_MODULE" :tab="bt('auto.s_3751b81511')" />
-      </NTabs>
+    <NCard
+      :title="bt('auto.s_d50a49fae4')"
+      :bordered="false"
+      size="small"
+      class="sm:flex-1-hidden card-wrapper"
+      content-style="height: 100%; min-height: 0; display: flex; flex-direction: column;"
+    >
+      <div class="ota-package-layout">
+        <div class="ota-package-toolbar">
+          <NTabs v-model:value="activeTab" type="line" animated>
+            <NTabPane :name="DEVICE_KIND_BMS" :tab="bt('auto.s_96b721c7f1')" />
+            <NTabPane :name="DEVICE_KIND_METER" :tab="bt('auto.s_0a0ca8d002')" />
+            <NTabPane :name="DEVICE_KIND_4G_MODULE" :tab="bt('auto.s_3751b81511')" />
+          </NTabs>
 
-      <NForm
-        inline
-        :model="searchForm"
-        label-placement="left"
-        label-width="auto"
-        class="mb-4 flex flex-wrap gap-4 items-end"
-      >
-        <NFormItem :label="bt('auto.s_9d9540e486')">
-          <NInput v-model:value="searchForm.name" :placeholder="bt('auto.s_f33cb868c8')" style="width: 220px" clearable />
-        </NFormItem>
-        <NFormItem>
-          <NSpace>
-            <NButton type="primary" @click="handleSearch">{{ bt('auto.s_bee912d79e') }}</NButton>
-            <NButton @click="handleReset">{{ bt('auto.s_4b9c3271dc') }}</NButton>
-            <NButton type="success" @click="openCreate">{{ bt('auto.s_1e07bb77be') }}</NButton>
-          </NSpace>
-        </NFormItem>
-      </NForm>
+          <NForm
+            inline
+            :model="searchForm"
+            label-placement="left"
+            label-width="auto"
+            class="ota-package-search"
+          >
+            <NFormItem :label="bt('auto.s_9d9540e486')">
+              <NInput v-model:value="searchForm.name" :placeholder="bt('auto.s_f33cb868c8')" style="width: 220px" clearable />
+            </NFormItem>
+            <NFormItem>
+              <NSpace>
+                <NButton type="primary" @click="handleSearch">{{ bt('auto.s_bee912d79e') }}</NButton>
+                <NButton @click="handleReset">{{ bt('auto.s_4b9c3271dc') }}</NButton>
+                <NButton type="success" @click="openCreate">{{ bt('auto.s_1e07bb77be') }}</NButton>
+              </NSpace>
+            </NFormItem>
+          </NForm>
+        </div>
 
-      <NDataTable
-        :columns="columns"
-        :data="data"
-        :loading="loading"
-        :pagination="pagination"
-        :row-key="row => row.id"
-        :scroll-x="isBmsTab ? 1900 : is4GModuleTab ? 1320 : 1180"
-      />
+        <NDataTable
+          :columns="columns"
+          :data="data"
+          flex-height
+          class="ota-package-table"
+          :loading="loading"
+          :pagination="pagination"
+          :row-key="row => row.id"
+          :scroll-x="isBmsTab ? 1900 : is4GModuleTab ? 1320 : 1180"
+        />
+      </div>
     </NCard>
 
     <NModal
@@ -532,5 +544,30 @@ loadBmsModels()
 <style scoped>
 .card-wrapper {
   height: 100%;
+}
+
+.ota-package-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  gap: 16px;
+}
+
+.ota-package-toolbar {
+  flex-shrink: 0;
+}
+
+.ota-package-search {
+  margin-bottom: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+}
+
+.ota-package-table {
+  min-height: 0;
+  flex: 1;
 }
 </style>
