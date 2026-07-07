@@ -2355,13 +2355,14 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
   font-weight: 700;
 }
 .cell-battery-voltage {
+  width: 100%;
   margin-top: 10px;
   color: rgba(71, 85, 105, 0.88);
   font-size: 12px;
   font-weight: 600;
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  transform: rotate(180deg);
+  line-height: 16px;
+  text-align: center;
+  white-space: nowrap;
 }
 .cell-battery-item--highest .cell-battery-top {
   background: #ec4899;
