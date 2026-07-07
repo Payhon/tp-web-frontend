@@ -35,11 +35,17 @@
     "addWithName": "+ 新增{name}",
     "modalTitleWithName": "{title} - {name}"
   },
+  "packWxmpSelfConfig": {
+    "title": "小程序配置",
+    "packOnly": "当前页面仅支持 PACK 厂家账号配置自己机构关联的小程序。",
+    "missingOrg": "当前账号未绑定 PACK 厂机构，无法配置小程序。"
+  },
   "detail": {
     "tabs": {
       "bmsPanel": "BMS面板",
       "basicInfo": "基本信息",
-      "operationLog": "操作记录"
+      "operationLog": "操作记录",
+      "warranty": "质保"
     },
     "telemetry": {
       "non4g": "非4G上报设备",
@@ -169,6 +175,31 @@
     "description": "描述",
     "empty": "暂无操作记录",
     "loadFailed": "获取操作记录失败"
+  },
+  "warranty": {
+    "batteryInfo": "电池质保",
+    "userInfo": "绑定用户",
+    "deviceNumber": "设备编号",
+    "batterySerial": "电池序列号",
+    "bmsModel": "BMS型号",
+    "activationDate": "激活日期",
+    "warrantyStartDate": "质保开始日期",
+    "warrantyExpireDate": "质保到期日期",
+    "warrantyMonths": "质保时长（月）",
+    "manualOverride": "人工覆盖",
+    "updatedAt": "更新时间",
+    "updatedBy": "更新人",
+    "contactName": "质保联系人",
+    "contactPhone": "质保电话",
+    "userName": "用户",
+    "userPhone": "账号电话",
+    "owner": "主用户",
+    "bindingTime": "绑定时间",
+    "edit": "编辑质保",
+    "saveSuccess": "质保信息已保存",
+    "loadFailed": "获取质保信息失败",
+    "saveFailed": "质保信息保存失败",
+    "emptyUsers": "暂无绑定用户"
   },
   "status": {
     "fault": "故障",
@@ -553,7 +584,9 @@
     },
     "org": {
       "wxmpConfigDesc": "该配置仅作用于当前 PACK 厂接入的微信小程序。保存后，小程序登录将只走微信用户体系，首页 Banner 和公开内容按此小程序独立展示。",
-      "contentDisabledHint": "请先在“小程序基本信息”中保存小程序配置，再维护文案内容。"
+      "contentDisabledHint": "请先在“小程序基本信息”中保存小程序配置，再维护文案内容。",
+      "warrantyCardsEnabled": "启用质保卡片",
+      "warrantyCardsEnabledHint": "关闭后，该 PACK 小程序的移动端质保信息页只显示个人质保信息。"
     },
     "params": {
       "title": "参数远程查看与修改：{device}",

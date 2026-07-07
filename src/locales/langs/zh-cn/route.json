@@ -171,6 +171,7 @@
   "route.bms_org_pack-factory": "PACK厂家管理",
   "route.bms_org_dealer": "经销商管理",
   "route.bms_org_store": "门店管理",
+  "route.bms_pack_wxmp_config": "小程序配置",
   "route.bms_pack_factory": "PACK厂家管理",
   "route.bms_store": "门店管理",
   "route.bms_end": "终端用户",

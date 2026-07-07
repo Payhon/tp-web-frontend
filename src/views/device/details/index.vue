@@ -6,6 +6,7 @@ import { useWebSocket } from '@vueuse/core'
 import BmsPanel from '@/views/device/details/modules/bms-panel/index.vue'
 import BatteryBasicInfo from '@/views/device/details/modules/battery-basic-info.vue'
 import BatteryOperationLog from '@/views/device/details/modules/battery-operation-log.vue'
+import BatteryWarrantyInfo from '@/views/device/details/modules/battery-warranty-info.vue'
 import Telemetry from '@/views/device/details/modules/telemetry/telemetry.vue'
 import TelemetryChart from '@/views/device/details/modules/telemetry-chart.vue'
 import Join from '@/views/device/details/modules/join.vue'
@@ -33,7 +34,11 @@ const logger = createLogger('Detail')
 const route = useRoute()
 const { query } = useRoute()
 const appStore = useAppStore()
-let { d_id } = query
+const getQueryString = (value: unknown) => {
+  if (Array.isArray(value)) return String(value[0] || '')
+  return String(value || '')
+}
+let d_id = getQueryString(query.d_id)
 const { loading, startLoading, endLoading } = useLoading()
 const enableBmsPanel = computed(() => String(route.query?.bms || '') === '1')
 const enableBmsBatteryDetailMode = computed(() => enableBmsPanel.value)
@@ -56,6 +61,13 @@ const batteryOperationLogTab = {
   key: 'battery-operation-log',
   name: () => $t('bms.detail.tabs.operationLog'),
   component: BatteryOperationLog,
+  refreshKey: 0
+}
+
+const batteryWarrantyInfoTab = {
+  key: 'battery-warranty-info',
+  name: () => $t('bms.detail.tabs.warranty'),
+  component: BatteryWarrantyInfo,
   refreshKey: 0
 }
 
@@ -201,6 +213,9 @@ function rebuildComponents(data: any) {
     if (hasUiPermission('bms_battery_detail_operation_log')) {
       detailTabs.push(batteryOperationLogTab)
     }
+    if (hasUiPermission('bms_battery_detail_warranty')) {
+      detailTabs.push(batteryWarrantyInfoTab)
+    }
 
     list = connectionTab ? [...detailTabs, connectionTab] : detailTabs
 
@@ -330,7 +345,7 @@ watch(
 watch(
   () => route.query.d_id,
   async newVal => {
-    d_id = newVal
+    d_id = getQueryString(newVal)
     const currentComponent = components.value.find(c => c.key === tabValue.value)
     if (currentComponent) {
       currentComponent.refreshKey += 1

@@ -35,11 +35,17 @@
     "addWithName": "+ Add {name}",
     "modalTitleWithName": "{title} - {name}"
   },
+  "packWxmpSelfConfig": {
+    "title": "Mini Program Config",
+    "packOnly": "This page is only available for PACK factory accounts to configure their own linked Mini Program.",
+    "missingOrg": "The current account is not linked to a PACK factory organization, so Mini Program configuration is unavailable."
+  },
   "detail": {
     "tabs": {
       "bmsPanel": "BMS Panel",
       "basicInfo": "Basic Info",
-      "operationLog": "Operation Logs"
+      "operationLog": "Operation Logs",
+      "warranty": "Warranty"
     },
     "telemetry": {
       "non4g": "Non-4G Reporting Device",
@@ -169,6 +175,31 @@
     "description": "Description",
     "empty": "No operation records",
     "loadFailed": "Failed to load operation records"
+  },
+  "warranty": {
+    "batteryInfo": "Battery Warranty",
+    "userInfo": "Bound Users",
+    "deviceNumber": "Device Number",
+    "batterySerial": "Battery Serial",
+    "bmsModel": "BMS Model",
+    "activationDate": "Activation Date",
+    "warrantyStartDate": "Warranty Start Date",
+    "warrantyExpireDate": "Warranty Expiry Date",
+    "warrantyMonths": "Warranty Months",
+    "manualOverride": "Manual Override",
+    "updatedAt": "Updated At",
+    "updatedBy": "Updated By",
+    "contactName": "Warranty Contact",
+    "contactPhone": "Warranty Phone",
+    "userName": "User",
+    "userPhone": "Account Phone",
+    "owner": "Owner",
+    "bindingTime": "Binding Time",
+    "edit": "Edit Warranty",
+    "saveSuccess": "Warranty information saved",
+    "loadFailed": "Failed to load warranty information",
+    "saveFailed": "Failed to save warranty information",
+    "emptyUsers": "No bound users"
   },
   "status": {
     "fault": "Fault",
@@ -553,7 +584,9 @@
     },
     "org": {
       "wxmpConfigDesc": "This configuration only applies to the WeChat Mini Program connected to the current PACK factory. After saving, Mini Program login uses only the WeChat user system, and Home Banner plus public content are displayed independently for this Mini Program.",
-      "contentDisabledHint": "Save the Mini Program configuration in Basic Info before maintaining content."
+      "contentDisabledHint": "Save the Mini Program configuration in Basic Info before maintaining content.",
+      "warrantyCardsEnabled": "Enable warranty cards",
+      "warrantyCardsEnabledHint": "When disabled, the mobile warranty page for this PACK Mini Program only shows personal warranty information."
     },
     "params": {
       "title": "Remote Parameter View and Edit: {device}",

@@ -670,6 +670,7 @@ export interface PackWxMpConfig {
   status?: 'OPEN' | 'CLOSE'
   home_banner_url?: string | null
   login_logo_url?: string | null
+  warranty_cards_enabled?: boolean
   remark?: string | null
   created_at?: string
   updated_at?: string
@@ -681,6 +682,7 @@ export interface UpsertPackWxMpConfigReq {
   status: 'OPEN' | 'CLOSE'
   home_banner_url?: string
   login_logo_url?: string
+  warranty_cards_enabled?: boolean
   remark?: string
 }
 
@@ -690,6 +692,47 @@ export const getPackWxMpConfig = (id: string) => {
 
 export const upsertPackWxMpConfig = (id: string, data: UpsertPackWxMpConfigReq) => {
   return request.put<PackWxMpConfig>(`/org/${id}/wxmp-config`, data)
+}
+
+export interface BatteryWarrantyUser {
+  user_id: string
+  user_name?: string | null
+  username?: string | null
+  user_phone?: string
+  contact_name?: string | null
+  contact_phone?: string | null
+  is_owner: boolean
+  binding_time?: string | null
+}
+
+export interface BatteryWarrantyInfo {
+  device_id: string
+  device_number: string
+  battery_serial: string
+  battery_model_id?: string | null
+  battery_model_name?: string | null
+  activation_date?: string | null
+  warranty_start_date?: string | null
+  warranty_expire_date?: string | null
+  warranty_months?: number | null
+  warranty_manual_override: boolean
+  warranty_updated_at?: string | null
+  warranty_updated_by?: string | null
+  users: BatteryWarrantyUser[]
+}
+
+export interface BatteryWarrantyUpdateReq {
+  warranty_months?: number | null
+  warranty_start_date?: string | null
+  warranty_expire_date?: string | null
+}
+
+export const getBatteryWarranty = (deviceId: string) => {
+  return request.get<BatteryWarrantyInfo>(`/battery/${deviceId}/warranty`)
+}
+
+export const updateBatteryWarranty = (deviceId: string, data: BatteryWarrantyUpdateReq) => {
+  return request.put<BatteryWarrantyInfo>(`/battery/${deviceId}/warranty`, data)
 }
 
 // 设备组织转移

@@ -73,6 +73,7 @@ declare module "@elegant-router/types" {
     "bms_org_dealer": "/bms/org/dealer";
     "bms_org_pack-factory": "/bms/org/pack-factory";
     "bms_org_store": "/bms/org/store";
+    "bms_pack-wxmp-config": "/bms/pack-wxmp-config";
     "bms_system": "/bms/system";
     "bms_system_role": "/bms/system/role";
     "bms_system_user": "/bms/system/user";
@@ -293,6 +294,7 @@ declare module "@elegant-router/types" {
     | "bms_org"
     | "bms_org_pack-factory"
     | "bms_org_store"
+    | "bms_pack-wxmp-config"
     | "bms_system_role"
     | "bms_system_user"
     | "bms_warranty"

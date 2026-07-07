@@ -1,41 +1,9 @@
 <script setup lang="tsx">
 import { bt } from '@/views/bms/_shared/i18n'
 import { computed, ref, watch } from 'vue'
-import {
-  NAlert,
-  NButton,
-  NForm,
-  NFormItem,
-  NInput,
-  NModal,
-  NPopconfirm,
-  NSelect,
-  NSpace,
-  NSpin,
-  NTabPane,
-  NTabs,
-  NTag,
-  useMessage
-} from 'naive-ui'
-import {
-  createOrg,
-  deleteOrg,
-  getOrgList,
-  getPackWxMpConfig,
-  OrgTypeLabels,
-  resetOrgAccountPassword,
-  type PackWxMpConfig,
-  updateOrg,
-  upsertPackWxMpConfig
-} from '@/service/api/bms'
-import {
-  fetchAdminContentPage,
-  publishAdminContentPage,
-  type ContentKey,
-  upsertAdminContentPage
-} from '@/service/api/app-manage'
-import FilePicker from '@/components/business/file-picker/index.vue'
-import MarkdownEditor from '../../../app_manage/content/components/MarkdownEditor.vue'
+import { NButton, NForm, NFormItem, NInput, NModal, NPopconfirm, NSpace, NTag, useMessage } from 'naive-ui'
+import { createOrg, deleteOrg, getOrgList, resetOrgAccountPassword, updateOrg } from '@/service/api/bms'
+import PackWxmpConfigPanel from '@/views/bms/_shared/components/pack-wxmp-config-panel.vue'
 import OrgModal from '../modules/org-modal.vue'
 
 interface Props {
@@ -57,31 +25,7 @@ const resetPwdForm = ref({
   confirmPassword: ''
 })
 const wxmpVisible = ref(false)
-const wxmpLoading = ref(false)
-const wxmpSaving = ref(false)
 const wxmpRow = ref<any>(null)
-const wxmpConfig = ref<PackWxMpConfig | null>(null)
-const wxmpActiveTab = ref<'basic' | 'content'>('basic')
-const wxmpForm = ref({
-  wx_appid: '',
-  app_secret: '',
-  status: 'OPEN' as 'OPEN' | 'CLOSE',
-  home_banner_url: '',
-  login_logo_url: '',
-  remark: ''
-})
-const contentLoading = ref(false)
-const contentSaving = ref(false)
-const contentPublished = ref(false)
-const contentKey = ref<ContentKey>('about_us')
-const contentLang = ref<'zh-CN' | 'en-US'>('zh-CN')
-const contentForm = ref({
-  title: '',
-  content_markdown: ''
-})
-const wxmpMarkdownEditorRef = ref<InstanceType<typeof MarkdownEditor> | null>(null)
-const wxmpMarkdownFullscreen = ref(false)
-const wxmpContentEditorHeight = 420
 
 const hideTabs = computed(() => Boolean(props.fixedOrgType))
 
@@ -89,7 +33,7 @@ const activeTab = ref<string>(props.fixedOrgType || 'PACK_FACTORY')
 
 watch(
   () => props.fixedOrgType,
-  (value) => {
+  value => {
     if (value) {
       activeTab.value = value
     }
@@ -180,7 +124,11 @@ const columns = ref([
     title: bt('auto.s_3fea7ca76c'),
     minWidth: 80,
     render: (row: any) => {
-      return row.status === 'F' ? <NTag type="error">{bt('auto.s_710ad08b11')}</NTag> : <NTag type="success">{bt('auto.s_fd6e80f1e0')}</NTag>
+      return row.status === 'F' ? (
+        <NTag type="error">{bt('auto.s_710ad08b11')}</NTag>
+      ) : (
+        <NTag type="success">{bt('auto.s_fd6e80f1e0')}</NTag>
+      )
     }
   },
   {
@@ -196,16 +144,24 @@ const columns = ref([
     render: (row: any) => {
       return (
         <NSpace>
-          <NButton size="small" type="primary" onClick={() => handleEdit(row)}>{bt('auto.s_95b351c862')}</NButton>
-          <NButton size="small" type="warning" onClick={() => handleResetPassword(row)}>{bt('auto.s_0719aa2bb0')}</NButton>
+          <NButton size="small" type="primary" onClick={() => handleEdit(row)}>
+            {bt('auto.s_95b351c862')}
+          </NButton>
+          <NButton size="small" type="warning" onClick={() => handleResetPassword(row)}>
+            {bt('auto.s_0719aa2bb0')}
+          </NButton>
           {row.org_type === 'PACK_FACTORY' ? (
-            <NButton size="small" type="info" onClick={() => handleWxmpConfig(row)}>{bt('auto.s_701fa5a565')}</NButton>
+            <NButton size="small" type="info" onClick={() => handleWxmpConfig(row)}>
+              {bt('auto.s_701fa5a565')}
+            </NButton>
           ) : null}
           <NPopconfirm onPositiveClick={() => handleDelete(row)}>
             {{
               default: () => bt('auto.s_bfe73e2e3a'),
               trigger: () => (
-                <NButton size="small" type="error">{bt('auto.s_2f4aaddde3')}</NButton>
+                <NButton size="small" type="error">
+                  {bt('auto.s_2f4aaddde3')}
+                </NButton>
               )
             }}
           </NPopconfirm>
@@ -236,23 +192,6 @@ const topActions = computed<any>(() => [
 ])
 
 const currentOrgType = computed(() => props.fixedOrgType || activeTab.value)
-
-const wxmpStatusOptions = [
-  { label: bt('auto.s_7854b52a88'), value: 'OPEN' },
-  { label: bt('auto.s_5c56a88945'), value: 'CLOSE' }
-]
-
-const contentKeyOptions = [
-  { label: bt('auto.s_3b2e3653b3'), value: 'about_us' },
-  { label: bt('auto.s_b0d5608709'), value: 'privacy_policy' },
-  { label: bt('auto.s_db1af7def3'), value: 'user_policy' },
-  { label: bt('auto.s_b6606015e0'), value: 'contact_service' }
-]
-
-const contentLangOptions = [
-  { label: bt('auto.s_a7bac2239f'), value: 'zh-CN' },
-  { label: bt('auto.s_f9fb6a063d'), value: 'en-US' }
-]
 
 const fetchData: any = (params: any) => {
   return getOrgList({
@@ -291,146 +230,13 @@ const handleResetPassword = (row: any) => {
   resetPwdVisible.value = true
 }
 
-const resetWxmpContent = () => {
-  wxmpMarkdownEditorRef.value?.exitFullscreen?.()
-  wxmpMarkdownFullscreen.value = false
-  contentPublished.value = false
-  contentForm.value = {
-    title: '',
-    content_markdown: ''
-  }
-}
-
-const handleWxmpMarkdownFullscreen = (value: boolean) => {
-  wxmpMarkdownFullscreen.value = value
-}
-
-const exitWxmpMarkdownFullscreen = () => {
-  wxmpMarkdownEditorRef.value?.exitFullscreen?.()
-}
-
-const loadWxmpContent = async () => {
-  if (!wxmpConfig.value?.app_id) {
-    resetWxmpContent()
-    return
-  }
-  contentLoading.value = true
-  try {
-    const res: any = await fetchAdminContentPage(contentKey.value, {
-      app_id: wxmpConfig.value.app_id,
-      lang: contentLang.value
-    })
-    const data = res?.data
-    contentPublished.value = Boolean(data?.published)
-    contentForm.value = {
-      title: data?.title || '',
-      content_markdown: data?.content_markdown || ''
-    }
-  } catch (err: any) {
-    resetWxmpContent()
-    message.error(err?.message || bt('auto.s_7619268c4a'))
-  } finally {
-    contentLoading.value = false
-  }
-}
-
-const handleWxmpConfig = async (row: any) => {
+const handleWxmpConfig = (row: any) => {
   wxmpRow.value = row
   wxmpVisible.value = true
-  wxmpActiveTab.value = 'basic'
-  wxmpConfig.value = null
-  wxmpForm.value = {
-    wx_appid: '',
-    app_secret: '',
-    status: 'OPEN',
-    home_banner_url: '',
-    login_logo_url: '',
-    remark: ''
-  }
-  resetWxmpContent()
-  wxmpLoading.value = true
-  try {
-    const res: any = await getPackWxMpConfig(row.id)
-    const data = res?.data as PackWxMpConfig | undefined
-    if (data?.id) {
-      wxmpConfig.value = data
-      wxmpForm.value = {
-        wx_appid: data.wx_appid || '',
-        app_secret: '',
-        status: data.status || 'OPEN',
-        home_banner_url: data.home_banner_url || '',
-        login_logo_url: data.login_logo_url || '',
-        remark: data.remark || ''
-      }
-      await loadWxmpContent()
-    }
-  } catch (err: any) {
-    if (err?.response?.status !== 404 && err?.code !== 404) {
-      message.error(err?.message || bt('auto.s_1e6408f6f6'))
-    }
-  } finally {
-    wxmpLoading.value = false
-  }
 }
 
-const saveWxmpConfig = async () => {
-  if (!wxmpRow.value?.id) return
-  const wxAppID = wxmpForm.value.wx_appid.trim()
-  const secret = wxmpForm.value.app_secret.trim()
-  if (!wxAppID) {
-    message.warning(bt('auto.s_a5c86beecc'))
-    return
-  }
-  if (!wxmpConfig.value?.id && !secret) {
-    message.warning(bt('auto.s_827339b69a'))
-    return
-  }
-
-  wxmpSaving.value = true
-  try {
-    const res: any = await upsertPackWxMpConfig(wxmpRow.value.id, {
-      wx_appid: wxAppID,
-      app_secret: secret || undefined,
-      status: wxmpForm.value.status,
-      home_banner_url: wxmpForm.value.home_banner_url.trim() || undefined,
-      login_logo_url: wxmpForm.value.login_logo_url.trim() || undefined,
-      remark: wxmpForm.value.remark.trim() || undefined
-    })
-    wxmpConfig.value = res?.data || null
-    wxmpForm.value.app_secret = ''
-    message.success(bt('auto.s_96107b4620'))
-    tablePageRef.value?.reload()
-    await loadWxmpContent()
-  } catch (err: any) {
-    message.error(err?.message || bt('auto.s_3dc6b0152d'))
-  } finally {
-    wxmpSaving.value = false
-  }
-}
-
-const saveWxmpContent = async (publish = false) => {
-  if (!wxmpConfig.value?.app_id) {
-    message.warning(bt('auto.s_32f41a1b8b'))
-    return
-  }
-  contentSaving.value = true
-  try {
-    await upsertAdminContentPage(contentKey.value, {
-      app_id: wxmpConfig.value.app_id,
-      lang: contentLang.value,
-      title: contentForm.value.title,
-      content_markdown: contentForm.value.content_markdown
-    })
-    if (publish) {
-      await publishAdminContentPage(contentKey.value, { app_id: wxmpConfig.value.app_id })
-    }
-    message.success(publish ? bt('auto.s_a99def6083') : bt('auto.s_1c34535aa5'))
-    await loadWxmpContent()
-  } catch (err: any) {
-    message.error(err?.message || bt('auto.s_9596d42fb4'))
-  } finally {
-    contentSaving.value = false
-  }
+const handleWxmpSaved = () => {
+  tablePageRef.value?.reload()
 }
 
 const submitResetPassword = async () => {
@@ -477,11 +283,6 @@ const handleModalSubmit = async (formData: any) => {
 watch(activeTab, () => {
   if (hideTabs.value) return
   tablePageRef.value?.reload()
-})
-
-watch([contentKey, contentLang], () => {
-  if (!wxmpVisible.value) return
-  loadWxmpContent()
 })
 </script>
 
@@ -570,145 +371,7 @@ watch([contentKey, contentLang], () => {
       style="width: 860px; max-width: 96vw"
       @close="wxmpVisible = false"
     >
-      <NSpin :show="wxmpLoading">
-        <NAlert type="info" class="mb-16px">
-          {{ bt('pages.org.wxmpConfigDesc') }}
-        </NAlert>
-        <NTabs v-model:value="wxmpActiveTab" type="line" animated>
-          <NTabPane name="basic" :tab="bt('auto.s_8911a9423d')">
-            <NForm label-placement="left" label-width="120">
-              <NFormItem :label="bt('auto.s_ac09e0a168')">
-                <NInput v-model:value="wxmpForm.wx_appid" :placeholder="bt('auto.s_a5c86beecc')" />
-              </NFormItem>
-              <NFormItem label="AppSecret">
-                <NInput
-                  v-model:value="wxmpForm.app_secret"
-                  type="password"
-                  show-password-on="click"
-                  :placeholder="bt('auto.s_e363fb799b')"
-                />
-              </NFormItem>
-              <NFormItem :label="bt('auto.s_3fea7ca76c')">
-                <NSelect v-model:value="wxmpForm.status" :options="wxmpStatusOptions" />
-              </NFormItem>
-              <NFormItem :label="bt('auto.s_da98ea8f7f')">
-                <FilePicker
-                  v-model:model-value="wxmpForm.home_banner_url"
-                  biz-type="image"
-                  value-mode="url"
-                  display-mode="image"
-                  :preview-width="180"
-                  :preview-height="82"
-                  accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
-                  :allowed-extensions="['png', 'jpg', 'jpeg', 'gif', 'webp']"
-                />
-                <div class="mt-6px text-12px opacity-70">{{ bt('auto.s_73805dd353') }}</div>
-              </NFormItem>
-              <NFormItem :label="bt('auto.s_cf12820ad4')">
-                <FilePicker
-                  v-model:model-value="wxmpForm.login_logo_url"
-                  biz-type="image"
-                  value-mode="url"
-                  display-mode="image"
-                  :preview-width="120"
-                  :preview-height="80"
-                  accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
-                  :allowed-extensions="['png', 'jpg', 'jpeg', 'gif', 'webp']"
-                />
-                <div class="mt-6px text-12px opacity-70">{{ bt('auto.s_341de825c5') }}</div>
-              </NFormItem>
-              <NFormItem :label="bt('auto.s_2432b57515')">
-                <NInput v-model:value="wxmpForm.remark" type="textarea" :placeholder="bt('auto.s_db0ce65fbc')" />
-              </NFormItem>
-            </NForm>
-
-            <NSpace justify="end">
-              <NButton :loading="wxmpSaving" type="primary" @click="saveWxmpConfig">{{ bt('auto.s_164ac31dfd') }}</NButton>
-            </NSpace>
-          </NTabPane>
-
-          <NTabPane name="content" :tab="bt('auto.s_17c8aa348f')">
-            <div class="content-editor">
-              <NSpace align="center" justify="space-between" class="content-toolbar">
-                <NSpace align="center">
-                  <NSelect v-model:value="contentKey" :options="contentKeyOptions" style="width: 140px" />
-                  <NSelect v-model:value="contentLang" :options="contentLangOptions" style="width: 110px" />
-                  <NTag :type="contentPublished ? 'success' : 'warning'">
-                    {{ contentPublished ? bt('auto.s_dca0c13b83') : bt('auto.s_637e8ba488') }}
-                  </NTag>
-                </NSpace>
-                <NSpace>
-                  <NButton :disabled="!wxmpConfig?.app_id" :loading="contentSaving" @click="saveWxmpContent(false)">
-                    {{ bt('auto.s_4d7ea6dfa6') }}
-                  </NButton>
-                  <NButton
-                    type="primary"
-                    :disabled="!wxmpConfig?.app_id"
-                    :loading="contentSaving"
-                    @click="saveWxmpContent(true)"
-                  >
-                    {{ bt('auto.s_5c097911f8') }}
-                  </NButton>
-                </NSpace>
-              </NSpace>
-              <NSpin :show="contentLoading">
-                <NAlert v-if="!wxmpConfig?.app_id" type="warning" class="mb-16px">
-                  {{ bt('pages.org.contentDisabledHint') }}
-                </NAlert>
-                <NForm v-else label-placement="left" label-width="110">
-                  <NFormItem :label="bt('auto.s_32c65d8d74')">
-                    <NInput v-model:value="contentForm.title" :placeholder="bt('auto.s_e9fa62ec22')" />
-                  </NFormItem>
-                  <NFormItem :label="bt('auto.s_c536c43976')" class="items-start">
-                    <div class="w-full">
-                      <MarkdownEditor
-                        ref="wxmpMarkdownEditorRef"
-                        v-model="contentForm.content_markdown"
-                        :placeholder="bt('auto.s_eda4fb6cf5')"
-                        :height="wxmpContentEditorHeight"
-                        :min-height="wxmpContentEditorHeight"
-                        @fullscreen-change="handleWxmpMarkdownFullscreen"
-                      />
-                    </div>
-                  </NFormItem>
-                </NForm>
-              </NSpin>
-            </div>
-          </NTabPane>
-        </NTabs>
-      </NSpin>
+      <PackWxmpConfigPanel v-if="wxmpVisible && wxmpRow?.id" :org-id="wxmpRow.id" @saved="handleWxmpSaved" />
     </NModal>
-
-    <div v-if="wxmpMarkdownFullscreen && wxmpVisible" class="markdown-fullscreen-bar">
-      <NSpace align="center">
-        <NButton size="small" :loading="contentSaving" @click="saveWxmpContent(false)">{{ bt('auto.s_4d7ea6dfa6') }}</NButton>
-        <NButton size="small" type="primary" :loading="contentSaving" @click="saveWxmpContent(true)">
-          {{ bt('auto.s_5c097911f8') }}
-        </NButton>
-        <NButton size="small" tertiary @click="exitWxmpMarkdownFullscreen">{{ bt('auto.s_49041f2450') }}</NButton>
-      </NSpace>
-    </div>
   </div>
 </template>
-
-<style scoped>
-.content-editor {
-  padding-top: 4px;
-}
-
-.content-toolbar {
-  margin-bottom: 12px;
-}
-
-.markdown-fullscreen-bar {
-  position: fixed;
-  right: 24px;
-  bottom: 24px;
-  z-index: 10000;
-  border: 1px solid var(--n-border-color);
-  border-radius: 8px;
-  background: var(--n-color);
-  box-shadow: 0 8px 24px rgb(0 0 0 / 16%);
-  padding: 10px 12px;
-}
-</style>

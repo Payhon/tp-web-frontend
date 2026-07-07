@@ -1,4 +1,4 @@
-import type { CustomRoute, ElegantConstRoute, ElegantRoute } from '@elegant-router/types'
+import type { CustomRoute, ElegantConstRoute } from '@elegant-router/types'
 import { generatedRoutes } from '../elegant/routes'
 import { layouts, views } from '../elegant/imports'
 import { transformElegantRoutesToVueRoutes } from '../elegant/transform'
@@ -13,7 +13,7 @@ export const ROOT_ROUTE: CustomRoute = {
   }
 }
 
-const customRoutes: ElegantRoute[] = [
+const customRoutes: ElegantConstRoute[] = [
   ROOT_ROUTE,
   {
     name: 'public',
@@ -160,6 +160,15 @@ const customRoutes: ElegantRoute[] = [
         meta: {
           title: 'PACK厂家管理',
           icon: 'mdi:factory'
+        }
+      },
+      {
+        name: 'bms_pack_wxmp_config',
+        path: '/bms/pack-wxmp-config',
+        component: 'view.bms_pack_wxmp_config',
+        meta: {
+          title: '小程序配置',
+          icon: 'mdi:wechat'
         }
       },
       {
@@ -414,15 +423,15 @@ const customRoutes: ElegantRoute[] = [
 
 /** Create routes */
 export function createRoutes() {
-  const constantRoutes: ElegantRoute[] = []
-  const authRoutes: ElegantRoute[] = []
+  const constantRoutes: ElegantConstRoute[] = []
+  const authRoutes: ElegantConstRoute[] = []
 
   // 自定义路由名称集合（用于过滤生成的重复路由）
   const customRouteNames = new Set<string>()
-  const collectRouteNames = (routes: ElegantRoute[]) => {
+  const collectRouteNames = (routes: ElegantConstRoute[]) => {
     routes.forEach(route => {
       if (route.name) customRouteNames.add(route.name as string)
-      if (route.children) collectRouteNames(route.children as ElegantRoute[])
+      if (route.children) collectRouteNames(route.children)
     })
   }
   collectRouteNames(customRoutes)
