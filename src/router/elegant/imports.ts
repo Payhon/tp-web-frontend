@@ -59,6 +59,7 @@ export const views: Record<LastLevelRouteKey, RouteComponent | (() => Promise<Ro
   "bms_pack-wxmp-config": () => import("@/views/bms/pack-wxmp-config/index.vue"),
   bms_system_role: () => import("@/views/bms/system/role/index.vue"),
   bms_system_user: () => import("@/views/bms/system/user/index.vue"),
+  "bms_system_version-updates": () => import("@/views/bms/system/version-updates/index.vue"),
   bms_warranty: () => import("@/views/bms/warranty/index.vue"),
   component_button: () => import("@/views/component/button/index.vue"),
   component_card: () => import("@/views/component/card/index.vue"),

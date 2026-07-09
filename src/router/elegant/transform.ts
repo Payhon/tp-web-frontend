@@ -221,6 +221,7 @@ const routeMap: RouteMap = {
   "bms_system": "/bms/system",
   "bms_system_role": "/bms/system/role",
   "bms_system_user": "/bms/system/user",
+  "bms_system_version-updates": "/bms/system/version-updates",
   "bms_warranty": "/bms/warranty",
   "component": "/component",
   "component_button": "/component/button",

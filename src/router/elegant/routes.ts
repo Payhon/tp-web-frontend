@@ -547,6 +547,15 @@ export const generatedRoutes: ElegantConstRoute[] = [
               title: 'bms_system_user',
               i18nKey: 'route.bms_system_user'
             }
+          },
+          {
+            name: 'bms_system_version-updates',
+            path: '/bms/system/version-updates',
+            component: 'view.bms_system_version-updates',
+            meta: {
+              title: 'bms_system_version-updates',
+              i18nKey: 'route.bms_system_version-updates'
+            }
           }
         ]
       },

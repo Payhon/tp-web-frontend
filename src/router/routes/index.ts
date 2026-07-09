@@ -414,6 +414,16 @@ const customRoutes: ElegantConstRoute[] = [
               title: '后台角色管理',
               icon: 'mdi:account-key'
             }
+          },
+          {
+            name: 'bms_system_version-updates',
+            path: '/bms/system/version-updates',
+            component: 'view.bms_system_version-updates',
+            meta: {
+              title: '版本更新记录',
+              i18nKey: 'route.bms_system_version-updates',
+              icon: 'mdi:history'
+            }
           }
         ]
       }

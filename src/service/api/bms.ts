@@ -122,6 +122,46 @@ export const deleteCellBrand = (id: string) => {
   return request.delete(`/battery/cell-brand/${id}`)
 }
 
+export type VersionUpdateProject = 'MOBILE' | 'CLOUD_FRONTEND' | 'CLOUD_BACKEND'
+
+export type VersionUpdateListParams = {
+  page: number
+  page_size: number
+  project?: VersionUpdateProject
+  version_no?: string
+  keyword?: string
+  start_date?: string
+  end_date?: string
+}
+
+export type VersionUpdatePayload = {
+  project: VersionUpdateProject
+  version_no: string
+  release_date: string
+  update_content: string
+}
+
+// 版本更新记录
+export const getVersionUpdateList = (params: VersionUpdateListParams) => {
+  return request.get('/version-updates', { params })
+}
+
+export const getVersionUpdateDetail = (id: string) => {
+  return request.get(`/version-updates/${id}`)
+}
+
+export const createVersionUpdate = (data: VersionUpdatePayload) => {
+  return request.post('/version-updates', data)
+}
+
+export const updateVersionUpdate = (id: string, data: Partial<VersionUpdatePayload>) => {
+  return request.put(`/version-updates/${id}`, data)
+}
+
+export const deleteVersionUpdate = (id: string) => {
+  return request.delete(`/version-updates/${id}`)
+}
+
 // 设备转移相关接口
 export const transferDevices = (data: any) => {
   return request.post('/device/transfer', data)

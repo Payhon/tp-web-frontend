@@ -169,6 +169,8 @@
   "route.bms_system": "System Management",
   "route.bms_system_user": "Admin Accounts",
   "route.bms_system_role": "Admin Roles",
+  "route.bms_system_version_updates": "Version Update Records",
+  "route.bms_system_version-updates": "Version Update Records",
   "route.bms_org": "Organization Management",
   "route.bms_org_management": "Organization Management",
   "route.bms_org_pack_factory": "PACK Factory Management",

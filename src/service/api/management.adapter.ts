@@ -89,7 +89,9 @@ const LEGACY_MENU_ROUTE_MAP: Record<string, { routeName: string; routePath: stri
   // 历史「场景管理」菜单 key，对应现有自动化场景管理页面
   'automation_space-management': { routeName: 'automation_scene-manage', routePath: '/automation/scene-manage' },
   // 历史「看板预览」菜单 key，兼容到当前可视化看板列表页
-  'visualization_panel-preview': { routeName: 'visualization_kanban', routePath: '/visualization/kanban' }
+  'visualization_panel-preview': { routeName: 'visualization_kanban', routePath: '/visualization/kanban' },
+  // FEAT-0065 初版 SQL 使用下划线菜单 code，真实 elegant-router key 由目录名生成短横线
+  bms_system_version_updates: { routeName: 'bms_system_version-updates', routePath: '/bms/system/version-updates' }
 }
 
 function getOrgTypeFromQuery(query: Record<string, string>): string {
@@ -227,7 +229,7 @@ function replaceKeys(data: ElegantConstRoute[]): ElegantRoute[] {
         component = transformLayoutAndPageToComponent('base', '')
       }
     }
-    const route: Partial<ElegantRoute> = {
+    const route = {
       // id: item.id,
       // parentId: item.parent_id,
       name: routeName,

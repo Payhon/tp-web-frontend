@@ -165,6 +165,8 @@
   "route.bms_system": "系统管理",
   "route.bms_system_user": "后台账号管理",
   "route.bms_system_role": "后台角色管理",
+  "route.bms_system_version_updates": "版本更新记录",
+  "route.bms_system_version-updates": "版本更新记录",
   "route.bms_org": "组织管理",
   "route.bms_org_management": "组织管理",
   "route.bms_org_pack_factory": "PACK厂家管理",
