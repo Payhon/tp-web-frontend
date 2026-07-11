@@ -4,12 +4,14 @@ import { onMounted, reactive, ref } from 'vue'
 import { NButton, NCard, NDataTable, NForm, NFormItem, NInput, NPopconfirm, NSpace, useMessage } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import {
+  createBatteryWarrantyRecalcJob,
   createBatteryBmsModel,
   deleteBatteryBmsModel,
   getBatteryBmsModelList,
   updateBatteryBmsModel
 } from '@/service/api/bms'
 import BatteryModelModal from '../modules/battery-model-modal.vue'
+import WarrantyRecalcJobModal from '../modules/warranty-recalc-job-modal.vue'
 
 type BmsModelRow = {
   id: string
@@ -30,6 +32,8 @@ const loading = ref(false)
 const modalVisible = ref(false)
 const modalType = ref<'add' | 'edit'>('add')
 const currentRow = ref<BmsModelRow | undefined>(undefined)
+const recalcModalVisible = ref(false)
+const recalcJobId = ref('')
 
 const queryForm = reactive({
   name: ''
@@ -74,12 +78,16 @@ const columns: DataTableColumns<BmsModelRow> = [
     width: 160,
     render: row => (
       <NSpace>
-        <NButton size="small" type="primary" onClick={() => handleEdit(row)}>{bt('auto.s_95b351c862')}</NButton>
+        <NButton size="small" type="primary" onClick={() => handleEdit(row)}>
+          {bt('auto.s_95b351c862')}
+        </NButton>
         <NPopconfirm onPositiveClick={() => handleDelete(row.id)}>
           {{
             default: () => bt('auto.s_431c1dedab'),
             trigger: () => (
-              <NButton size="small" type="error">{bt('auto.s_2f4aaddde3')}</NButton>
+              <NButton size="small" type="error">
+                {bt('auto.s_2f4aaddde3')}
+              </NButton>
             )
           }}
         </NPopconfirm>
@@ -124,14 +132,36 @@ async function handleDelete(id: string) {
   }
 }
 
+function openRecalcJob(jobId: string) {
+  recalcJobId.value = jobId
+  recalcModalVisible.value = true
+}
+
+async function handleManualRecalc() {
+  try {
+    const res: any = await createBatteryWarrantyRecalcJob()
+    const jobId = res?.data?.job_id
+    if (!jobId) throw new Error(bt('warrantyRecalc.missingJobId'))
+    message.success(bt('warrantyRecalc.started'))
+    openRecalcJob(jobId)
+  } catch (e: any) {
+    message.error(e?.message || bt('warrantyRecalc.startFailed'))
+  }
+}
+
 async function handleSubmit(formData: any) {
   try {
     if (modalType.value === 'add') {
       await createBatteryBmsModel(formData)
       message.success(bt('auto.s_a5bfd70d4a'))
     } else if (currentRow.value?.id) {
-      await updateBatteryBmsModel(currentRow.value.id, formData)
+      const res: any = await updateBatteryBmsModel(currentRow.value.id, formData)
       message.success(bt('auto.s_55aa6366c0'))
+      const jobId = res?.data?.warranty_recalc_job_id
+      if (jobId) {
+        message.success(bt('warrantyRecalc.started'))
+        openRecalcJob(jobId)
+      }
     }
     modalVisible.value = false
     await fetchData()
@@ -186,7 +216,15 @@ onMounted(() => {
       </NForm>
 
       <div class="mb-4">
-        <NButton type="primary" @click="handleAdd">{{ bt('auto.s_9369cf0afd') }}</NButton>
+        <NSpace>
+          <NButton type="primary" @click="handleAdd">{{ bt('auto.s_9369cf0afd') }}</NButton>
+          <NPopconfirm @positive-click="handleManualRecalc">
+            <template #trigger>
+              <NButton>{{ bt('warrantyRecalc.button') }}</NButton>
+            </template>
+            {{ bt('warrantyRecalc.confirm') }}
+          </NPopconfirm>
+        </NSpace>
       </div>
 
       <NDataTable
@@ -206,6 +244,8 @@ onMounted(() => {
       :entity-name="bt('auto.s_c44c1028d5')"
       @submit="handleSubmit"
     />
+
+    <WarrantyRecalcJobModal v-model:visible="recalcModalVisible" :job-id="recalcJobId" @finished="fetchData" />
   </div>
 </template>
 

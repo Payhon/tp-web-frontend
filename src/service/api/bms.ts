@@ -775,6 +775,51 @@ export const updateBatteryWarranty = (deviceId: string, data: BatteryWarrantyUpd
   return request.put<BatteryWarrantyInfo>(`/battery/${deviceId}/warranty`, data)
 }
 
+export interface BatteryWarrantyRecalcJobCreateResp {
+  job_id: string
+}
+
+export interface BatteryWarrantyRecalcJobStatus {
+  job_id: string
+  source: 'MODEL_CHANGE' | 'MANUAL_SCAN'
+  scope_model_id?: string | null
+  status: 'PENDING' | 'RUNNING' | 'SUCCESS' | 'FAILED'
+  total_rows: number
+  processed_rows: number
+  success_rows: number
+  skipped_rows: number
+  failed_rows: number
+  error_message?: string | null
+  started_at?: string | null
+  finished_at?: string | null
+  created_at: string
+}
+
+export interface BatteryWarrantyRecalcJobLogItem {
+  id: number
+  level: 'INFO' | 'WARN' | 'ERROR'
+  device_id?: string | null
+  device_number?: string | null
+  battery_model_id?: string | null
+  message: string
+  created_at: string
+}
+
+export const createBatteryWarrantyRecalcJob = () => {
+  return request.post<BatteryWarrantyRecalcJobCreateResp>('/battery/warranty/recalculate-jobs')
+}
+
+export const getBatteryWarrantyRecalcJobStatus = (jobId: string) => {
+  return request.get<BatteryWarrantyRecalcJobStatus>(`/battery/warranty/recalculate-jobs/${jobId}`)
+}
+
+export const getBatteryWarrantyRecalcJobLogs = (jobId: string, params?: { after_id?: number; limit?: number }) => {
+  return request.get<{ list: BatteryWarrantyRecalcJobLogItem[]; next_after_id: number }>(
+    `/battery/warranty/recalculate-jobs/${jobId}/logs`,
+    { params }
+  )
+}
+
 // 设备组织转移
 export const transferDevicesToOrg = (data: { device_ids: string[]; to_org_id?: string; remark?: string }) => {
   return request.post('/device/transfer/org', data)

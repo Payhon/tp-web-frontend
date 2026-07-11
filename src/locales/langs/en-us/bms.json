@@ -40,6 +40,23 @@
     "packOnly": "This page is only available for PACK factory accounts to configure their own linked Mini Program.",
     "missingOrg": "The current account is not linked to a PACK factory organization, so Mini Program configuration is unavailable."
   },
+  "warrantyRecalc": {
+    "button": "Backfill Missing Warranty Dates",
+    "confirm": "Scan batteries with missing warranty expiry dates under the current tenant and backfill them asynchronously?",
+    "title": "Warranty Expiry Backfill",
+    "started": "Warranty backfill task started",
+    "startFailed": "Failed to start warranty backfill task",
+    "loadFailed": "Failed to load warranty backfill progress",
+    "missingJobId": "No job_id returned",
+    "progress": "{processed}/{total} (success {success}, skipped {skipped}, failed {failed})",
+    "failed": "Task failed: {message}",
+    "refresh": "Refresh",
+    "createdAt": "Time",
+    "level": "Level",
+    "deviceNumber": "Battery No.",
+    "modelId": "Model ID",
+    "message": "Message"
+  },
   "detail": {
     "tabs": {
       "bmsPanel": "BMS Panel",

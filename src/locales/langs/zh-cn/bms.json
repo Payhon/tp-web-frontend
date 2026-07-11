@@ -40,6 +40,23 @@
     "packOnly": "当前页面仅支持 PACK 厂家账号配置自己机构关联的小程序。",
     "missingOrg": "当前账号未绑定 PACK 厂机构，无法配置小程序。"
   },
+  "warrantyRecalc": {
+    "button": "补偿空质保日期",
+    "confirm": "将扫描当前租户空质保截止日期的电池并异步补偿，确认开始？",
+    "title": "质保截止日期补偿",
+    "started": "质保补偿任务已启动",
+    "startFailed": "启动质保补偿任务失败",
+    "loadFailed": "获取质保补偿任务进度失败",
+    "missingJobId": "未返回 job_id",
+    "progress": "{processed}/{total}（成功 {success}，跳过 {skipped}，失败 {failed}）",
+    "failed": "任务失败：{message}",
+    "refresh": "刷新",
+    "createdAt": "时间",
+    "level": "级别",
+    "deviceNumber": "电池编号",
+    "modelId": "型号ID",
+    "message": "内容"
+  },
   "detail": {
     "tabs": {
       "bmsPanel": "BMS面板",
