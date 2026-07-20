@@ -53,6 +53,7 @@ import {
   type FunctionConfigFlagKey
 } from '@/common/lib/bms-protocol'
 import type { BmsStatus } from '@/common/lib/bms-protocol'
+import { selectDisplayCellVoltagesMv } from './cell-voltage'
 
 const props = defineProps<{
   id: string
@@ -1001,18 +1002,19 @@ function toggleProtectPanel() {
 }
 
 const cellVoltageRows = computed(() => {
-  const list = displayStatus.value?.cell?.voltagesMv || cloudCellVoltagesMv.value
+  const list = selectDisplayCellVoltagesMv(displayStatus.value?.cell?.voltagesMv, cloudCellVoltagesMv.value)
   const balancingList = displayStatus.value?.cell?.balancing || []
   return list.map((mv, i) => {
-    const v = Number(mv || 0) / 1000
+    const v = mv == null ? null : mv / 1000
+    const valid = v != null && Number.isFinite(v)
     return {
       index: i + 1,
-      voltage: Number.isFinite(v) ? v : null,
-      voltageText: Number.isFinite(v) ? `${v.toFixed(3)}V` : '-',
-      voltageLabel: Number.isFinite(v) ? v.toFixed(3) : '-',
-      fillPercent: Number.isFinite(v) ? Math.max(0, Math.min(100, (v / 5) * 100)) : 0,
-      isHighest: i + 1 === highestIdx.value,
-      isLowest: i + 1 === lowestIdx.value,
+      voltage: valid ? v : null,
+      voltageText: valid ? `${v.toFixed(3)}V` : '-',
+      voltageLabel: valid ? v.toFixed(3) : '-',
+      fillPercent: valid ? Math.max(0, Math.min(100, (v / 5) * 100)) : 0,
+      isHighest: valid && i + 1 === highestIdx.value,
+      isLowest: valid && i + 1 === lowestIdx.value,
       isBalancing: Boolean(balancingList[i])
     }
   })
