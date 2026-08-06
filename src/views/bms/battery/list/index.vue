@@ -26,6 +26,7 @@ import dayjs from 'dayjs'
 import { useTable } from '@/hooks/common/table'
 import { useRouterPush } from '@/hooks/common/router'
 import { useAuthStore } from '@/store/modules/auth'
+import { sessionStg } from '@/utils/storage'
 import { ensureUiPermissionState, hasUiPermission } from '@/utils/common/ui-permission'
 import { commandDataById } from '@/service/api/device'
 import ParamsModal from '@/views/bms/battery/modules/params-modal.vue'
@@ -45,6 +46,7 @@ import {
   batchFactoryOutBattery,
   factoryRestoreBattery,
   transferBattery,
+  batchTransferBattery,
   getBatteryRollbackPreview,
   rollbackBattery,
   activateBattery,
@@ -124,6 +126,53 @@ interface ListResp<T> {
   page_size: number
 }
 
+type BatterySearchForm = StorageType.Session['bmsBatteryListSearchState']['form']
+type BatterySearchState = StorageType.Session['bmsBatteryListSearchState']
+
+function createDefaultSearchForm(): BatterySearchForm {
+  return {
+    search_field: 'device_number',
+    search_value: '',
+    device_number: '',
+    battery_model_id: null,
+    cell_brand_seq_no: null,
+    battery_model_seq_no: null,
+    owner_org_type: null,
+    owner_org_id: null,
+    is_online: null,
+    activation_status: null,
+    production_range: null,
+    warranty_status: null
+  }
+}
+
+function cloneSearchForm(form: BatterySearchForm): BatterySearchForm {
+  return {
+    ...form,
+    production_range: form.production_range ? [form.production_range[0], form.production_range[1]] : null
+  }
+}
+
+function loadStoredSearchState(): BatterySearchState | null {
+  const state = sessionStg.get('bmsBatteryListSearchState')
+  if (
+    !state ||
+    state.version !== 1 ||
+    !state.form ||
+    !state.apiParams ||
+    !Number.isInteger(state.page) ||
+    state.page < 1 ||
+    !Number.isInteger(state.pageSize) ||
+    state.pageSize < 1
+  ) {
+    sessionStg.remove('bmsBatteryListSearchState')
+    return null
+  }
+  return state
+}
+
+const storedSearchState = loadStoredSearchState()
+
 const { routerPushByKey } = useRouterPush()
 const message = useMessage()
 const dialog = useDialog()
@@ -163,6 +212,7 @@ const rollbackLoading = ref(false)
 const activateLoading = ref(false)
 const completeInfoLoading = ref(false)
 const factoryMode = ref<'single' | 'batch'>('single')
+const transferMode = ref<'single' | 'batch'>('single')
 
 const factoryForm = ref({
   device_ids: [] as string[],
@@ -173,6 +223,7 @@ const factoryForm = ref({
   remark: ''
 })
 const transferForm = ref({
+  device_ids: [] as string[],
   device_id: '',
   device_number: '',
   from_org_name: '',
@@ -351,6 +402,14 @@ function clearSelection() {
   selectedRowsMap.value = {}
 }
 
+function retainSelection(deviceIDs: string[]) {
+  const retained = new Set(deviceIDs)
+  selectedRowKeys.value = selectedRowKeys.value.filter(deviceID => retained.has(deviceID))
+  selectedRowsMap.value = Object.fromEntries(
+    Object.entries(selectedRowsMap.value).filter(([deviceID]) => retained.has(deviceID))
+  )
+}
+
 function syncSelectedRowsFromCurrentPage(rows: BatteryItem[]) {
   const nextMap = { ...selectedRowsMap.value }
   const selectedKeySet = new Set(selectedRowKeys.value)
@@ -515,6 +574,13 @@ function getBatchActionOptions() {
       permissionKey: 'bms_battery_list_batch_factory_out'
     },
     {
+      label: `${bt('pages.batteryList.batchTransfer')}(${selectedCount.value})`,
+      key: 'batch.transfer',
+      icon: renderIcon(SwapHorizontalOutline),
+      permissionKey: 'bms_battery_list_batch_transfer',
+      disabled: isStoreOrgUser.value
+    },
+    {
       label: `${bt('auto.s_c9c2396d84')}(${selectedCount.value})`,
       key: 'batch.infoComplete',
       icon: renderIcon(ListOutline),
@@ -569,6 +635,7 @@ function handleActionSelect(key: string, row: BatteryItem) {
 
 function handleBatchActionSelect(key: string) {
   if (key === 'batch.factory') handleBatchFactory()
+  if (key === 'batch.transfer') handleBatchTransfer()
   if (key === 'batch.infoComplete') handleBatchCompleteInfo()
   if (key === 'batch.assignDealer') handleBatchAssign()
   if (key === 'batch.tag') handleBatchTag()
@@ -576,41 +643,15 @@ function handleBatchActionSelect(key: string) {
   if (key === 'batch.ota') handleBatchOta()
 }
 
-const searchForm = ref<{
-  search_field:
-    | 'device_number'
-    | 'batch_number'
-    | 'battery_model_name'
-    | 'product_spec'
-    | 'ble_mac'
-    | 'identity_ble_mac'
-    | 'comm_chip_id'
-  search_value: string
-  device_number: string
-  battery_model_id: string | null
-  cell_brand_seq_no: number | null
-  battery_model_seq_no: number | null
-  owner_org_type: string | null
-  owner_org_id: string | null
-  is_online: number | null
-  activation_status: string | null
-  production_range: [number, number] | null
-  warranty_status: string | null
-}>({
-  search_field: 'device_number',
-  search_value: '',
-  device_number: '',
-  battery_model_id: null,
-  cell_brand_seq_no: null,
-  battery_model_seq_no: null,
-  owner_org_type: null,
-  owner_org_id: null,
-  is_online: null,
-  activation_status: null,
-  production_range: null,
-  warranty_status: null
-})
-const showAdvancedSearch = ref(false)
+const initialSearchForm = storedSearchState
+  ? {
+      ...createDefaultSearchForm(),
+      ...storedSearchState.form
+    }
+  : createDefaultSearchForm()
+const searchForm = ref<BatterySearchForm>(cloneSearchForm(initialSearchForm))
+const appliedSearchForm = ref<BatterySearchForm>(cloneSearchForm(initialSearchForm))
+const showAdvancedSearch = ref(storedSearchState?.showAdvancedSearch ?? false)
 
 const textSearchFieldOptions: Array<{ label: string; value: typeof searchForm.value.search_field }> = [
   { label: bt('auto.s_7079d2e6c4'), value: 'device_number' },
@@ -646,7 +687,12 @@ const ownerOrgTypeOptions = computed(() => {
     types.push('STORE')
   }
   return types.map(type => ({
-    label: type === 'PACK_FACTORY' ? bt('auto.s_7b50c41556') : type === 'DEALER' ? bt('auto.s_9019dc8029') : bt('auto.s_a7da92344c'),
+    label:
+      type === 'PACK_FACTORY'
+        ? bt('auto.s_7b50c41556')
+        : type === 'DEALER'
+          ? bt('auto.s_9019dc8029')
+          : bt('auto.s_a7da92344c'),
     value: type
   }))
 })
@@ -678,9 +724,19 @@ const createColumns = (): DataTableColumns<BatteryItem> => [
   },
   { key: 'device_number', title: bt('auto.s_7079d2e6c4'), minWidth: 150, fixed: 'left' },
   { key: 'batch_number', title: bt('auto.s_b09f4ca805'), minWidth: 140, render: row => row.batch_number || '--' },
-  { key: 'battery_model_name', title: bt('auto.s_c44c1028d5'), minWidth: 140, render: row => row.battery_model_name || '--' },
+  {
+    key: 'battery_model_name',
+    title: bt('auto.s_c44c1028d5'),
+    minWidth: 140,
+    render: row => row.battery_model_name || '--'
+  },
   { key: 'product_spec', title: bt('auto.s_2b4784210d'), minWidth: 140, render: row => row.product_spec || '--' },
-  { key: 'cell_brand_name', title: bt('auto.s_b7f1936e90'), minWidth: 140, render: row => row.cell_brand_name || '--' },
+  {
+    key: 'cell_brand_name',
+    title: bt('auto.s_b7f1936e90'),
+    minWidth: 140,
+    render: row => row.cell_brand_name || '--'
+  },
   {
     key: 'pack_battery_model_name',
     title: bt('auto.s_ca62d89383'),
@@ -688,9 +744,19 @@ const createColumns = (): DataTableColumns<BatteryItem> => [
     render: row => row.pack_battery_model_name || '--'
   },
   { key: 'ble_mac', title: bt('auto.s_7342dbc8fd'), minWidth: 160, render: row => row.ble_mac || '--' },
-  { key: 'identity_ble_mac', title: bt('auto.s_5542d0a58d'), minWidth: 160, render: row => row.identity_ble_mac || '--' },
+  {
+    key: 'identity_ble_mac',
+    title: bt('auto.s_5542d0a58d'),
+    minWidth: 160,
+    render: row => row.identity_ble_mac || '--'
+  },
   { key: 'comm_chip_id', title: bt('auto.s_1978e7fc85'), minWidth: 160, render: row => row.comm_chip_id || '--' },
-  { key: 'production_date', title: bt('auto.s_fbe2fcd983'), minWidth: 120, render: row => row.production_date || '--' },
+  {
+    key: 'production_date',
+    title: bt('auto.s_fbe2fcd983'),
+    minWidth: 120,
+    render: row => row.production_date || '--'
+  },
   {
     key: 'owner_org_name',
     title: bt('auto.s_6ce6f1493b'),
@@ -704,17 +770,36 @@ const createColumns = (): DataTableColumns<BatteryItem> => [
     minWidth: 110,
     render: row => <NTag type={activationTagType(row.activation_status)}>{activationLabel(row.activation_status)}</NTag>
   },
-  { key: 'activation_date', title: bt('auto.s_94d02ed943'), minWidth: 160, render: row => row.activation_date || '--' },
+  {
+    key: 'activation_date',
+    title: bt('auto.s_94d02ed943'),
+    minWidth: 160,
+    render: row => row.activation_date || '--'
+  },
   {
     key: 'is_online',
     title: bt('auto.s_e639862a11'),
     minWidth: 110,
-    render: row => <NTag type={onlineTagType(row.is_online)}>{row.is_online === 1 ? bt('auto.s_68905cf391') : bt('auto.s_50d4a8502e')}</NTag>
+    render: row => (
+      <NTag type={onlineTagType(row.is_online)}>
+        {row.is_online === 1 ? bt('auto.s_68905cf391') : bt('auto.s_50d4a8502e')}
+      </NTag>
+    )
   },
   { key: 'soc', title: 'SOC(%)', minWidth: 100, render: row => row.soc ?? '--' },
   { key: 'soh', title: 'SOH(%)', minWidth: 100, render: row => row.soh ?? '--' },
-  { key: 'warranty_expire_date', title: bt('auto.s_f65c27925f'), minWidth: 120, render: row => row.warranty_expire_date || '--' },
-  { key: 'current_version', title: bt('auto.s_a81e282698'), minWidth: 120, render: row => row.current_version || '--' },
+  {
+    key: 'warranty_expire_date',
+    title: bt('auto.s_f65c27925f'),
+    minWidth: 120,
+    render: row => row.warranty_expire_date || '--'
+  },
+  {
+    key: 'current_version',
+    title: bt('auto.s_a81e282698'),
+    minWidth: 120,
+    render: row => row.current_version || '--'
+  },
   {
     key: 'actions',
     title: bt('auto.s_2b6bc0f293'),
@@ -742,14 +827,46 @@ const createColumns = (): DataTableColumns<BatteryItem> => [
   }
 ]
 
+function buildSearchApiParams(form: BatterySearchForm, page: number, pageSize: number) {
+  const [start, end] = form.production_range || []
+  return {
+    page,
+    page_size: pageSize,
+    search_field: form.search_value ? form.search_field : undefined,
+    search_value: form.search_value || undefined,
+    device_number: form.device_number || undefined,
+    battery_model_id: form.battery_model_id || undefined,
+    cell_brand_seq_no: form.cell_brand_seq_no ?? undefined,
+    battery_model_seq_no: form.battery_model_seq_no ?? undefined,
+    owner_org_id: form.owner_org_id || undefined,
+    owner_org_type: form.owner_org_type || undefined,
+    is_online: form.is_online ?? undefined,
+    activation_status: form.activation_status || undefined,
+    warranty_status: form.warranty_status || undefined,
+    production_date_start: start ? dayjs(start).format('YYYY-MM-DD') : undefined,
+    production_date_end: end ? dayjs(end).format('YYYY-MM-DD') : undefined
+  }
+}
+
+const initialPage = storedSearchState?.page ?? 1
+const initialPageSize = storedSearchState?.pageSize ?? 10
+const initialApiParams = storedSearchState
+  ? {
+      ...storedSearchState.apiParams,
+      page: initialPage,
+      page_size: initialPageSize
+    }
+  : buildSearchApiParams(appliedSearchForm.value, initialPage, initialPageSize)
+
 const { data, loading, columns, pagination, getData, updateSearchParams, reloadColumns } = useTable<
   BatteryItem,
   typeof getBatteryList
 >({
   apiFn: getBatteryList,
-  apiParams: {
-    page: 1,
-    page_size: 10
+  apiParams: initialApiParams,
+  pagination: {
+    page: initialPage,
+    pageSize: initialPageSize
   },
   transformer: (res: any) => {
     const payload: ListResp<BatteryItem> | undefined = res?.data
@@ -762,6 +879,24 @@ const { data, loading, columns, pagination, getData, updateSearchParams, reloadC
   },
   columns: (): any => createColumns()
 })
+
+function persistSearchState() {
+  const page = Number(pagination.page || 1)
+  const pageSize = Number(pagination.pageSize || 10)
+  sessionStg.set('bmsBatteryListSearchState', {
+    version: 1,
+    form: cloneSearchForm(appliedSearchForm.value),
+    apiParams: buildSearchApiParams(appliedSearchForm.value, page, pageSize),
+    showAdvancedSearch: showAdvancedSearch.value,
+    page,
+    pageSize
+  })
+}
+
+function handleAdvancedSearchToggle() {
+  showAdvancedSearch.value = !showAdvancedSearch.value
+  persistSearchState()
+}
 
 const activeAdvancedFilterCount = computed(() => {
   let count = 0
@@ -914,7 +1049,12 @@ const transferOrgTypeOptions = computed(() => {
   }
 
   return types.map(type => ({
-    label: type === 'PACK_FACTORY' ? bt('auto.s_7b50c41556') : type === 'DEALER' ? bt('auto.s_9019dc8029') : bt('auto.s_a7da92344c'),
+    label:
+      type === 'PACK_FACTORY'
+        ? bt('auto.s_7b50c41556')
+        : type === 'DEALER'
+          ? bt('auto.s_9019dc8029')
+          : bt('auto.s_a7da92344c'),
     value: type
   }))
 })
@@ -984,11 +1124,38 @@ async function openTransferModal(row: BatteryItem) {
     message.warning(bt('auto.s_dad74257ab'))
     return
   }
+  transferMode.value = 'single'
   transferForm.value = {
+    device_ids: [row.device_id],
     device_id: row.device_id,
     device_number: row.device_number,
     from_org_name: row.owner_org_name || row.dealer_name || bt('auto.s_8284e8dacc'),
     from_org_type: row.owner_org_type || '',
+    to_org_type: defaultTargetType,
+    to_org_id: null,
+    remark: ''
+  }
+  showTransferModal.value = true
+  await ensureOrgOptions(defaultTargetType)
+}
+
+async function handleBatchTransfer() {
+  if (selectedCount.value === 0) {
+    message.warning(bt('auto.s_10c820a5d7'))
+    return
+  }
+  const defaultTargetType = transferOrgTypeOptions.value[0]?.value as 'PACK_FACTORY' | 'DEALER' | 'STORE' | undefined
+  if (!defaultTargetType) {
+    message.warning(bt('auto.s_dad74257ab'))
+    return
+  }
+  transferMode.value = 'batch'
+  transferForm.value = {
+    device_ids: [...selectedRowKeys.value],
+    device_id: '',
+    device_number: '',
+    from_org_name: '',
+    from_org_type: '',
     to_org_type: defaultTargetType,
     to_org_id: null,
     remark: ''
@@ -1102,7 +1269,9 @@ async function confirmFactoryOut() {
         })
         if (r.failed > 0 && r.failures?.length) {
           const failures = r.failures.map((f: any) => `${f.device_number || f.device_id}：${f.message}`).join('\n')
-          message.warning(`${msg}\n${bt('pages.batteryList.failureDetails', { details: failures })}`, { duration: 10000 })
+          message.warning(`${msg}\n${bt('pages.batteryList.failureDetails', { details: failures })}`, {
+            duration: 10000
+          })
         } else {
           message.success(msg)
         }
@@ -1134,16 +1303,54 @@ async function confirmTransfer() {
   }
   transferLoading.value = true
   try {
-    await transferBattery({
-      device_id: transferForm.value.device_id,
-      to_org_id: transferForm.value.to_org_id,
-      remark: transferForm.value.remark?.trim() ? transferForm.value.remark.trim() : undefined
-    })
-    message.success(bt('auto.s_986d239b72'))
+    const remark = transferForm.value.remark?.trim() ? transferForm.value.remark.trim() : undefined
+    if (transferMode.value === 'batch') {
+      const res: any = await batchTransferBattery({
+        device_ids: transferForm.value.device_ids,
+        to_org_id: transferForm.value.to_org_id,
+        remark
+      })
+      const result = res?.data
+      if (result) {
+        const summary = bt('pages.batteryList.batchTransferResult', {
+          total: result.total,
+          success: result.success,
+          failed: result.failed
+        })
+        if (result.failed > 0) {
+          const failureItems = Array.isArray(result.failures) ? result.failures : []
+          const failures = failureItems
+            .map((failure: any) => `${failure.device_number || failure.device_id}：${failure.message}`)
+            .join('\n')
+          const failureIds = failureItems.map((failure: any) => String(failure.device_id))
+          retainSelection(failureIds.length > 0 ? failureIds : transferForm.value.device_ids)
+          message.warning(
+            failures ? `${summary}\n${bt('pages.batteryList.failureDetails', { details: failures })}` : summary,
+            { duration: 10000 }
+          )
+        } else {
+          clearSelection()
+          message.success(summary)
+        }
+      } else {
+        clearSelection()
+        message.success(bt('pages.batteryList.batchTransfer'))
+      }
+    } else {
+      await transferBattery({
+        device_id: transferForm.value.device_id,
+        to_org_id: transferForm.value.to_org_id,
+        remark
+      })
+      message.success(bt('auto.s_986d239b72'))
+    }
     showTransferModal.value = false
     getData()
   } catch (e: any) {
-    message.error(e?.message || bt('auto.s_7ff235650d'))
+    message.error(
+      e?.message ||
+        (transferMode.value === 'batch' ? bt('pages.batteryList.batchTransferFailed') : bt('auto.s_7ff235650d'))
+    )
   } finally {
     transferLoading.value = false
   }
@@ -1509,26 +1716,11 @@ async function confirmOfflineCmd() {
 }
 
 function handleSearch() {
-  const [start, end] = searchForm.value.production_range || []
   clearSelection()
-
-  updateSearchParams({
-    page: 1,
-    page_size: pagination.pageSize,
-    search_field: searchForm.value.search_value ? searchForm.value.search_field : undefined,
-    search_value: searchForm.value.search_value || undefined,
-    device_number: searchForm.value.device_number || undefined,
-    battery_model_id: searchForm.value.battery_model_id || undefined,
-    cell_brand_seq_no: searchForm.value.cell_brand_seq_no ?? undefined,
-    battery_model_seq_no: searchForm.value.battery_model_seq_no ?? undefined,
-    owner_org_id: searchForm.value.owner_org_id || undefined,
-    owner_org_type: searchForm.value.owner_org_type || undefined,
-    is_online: searchForm.value.is_online ?? undefined,
-    activation_status: searchForm.value.activation_status || undefined,
-    warranty_status: searchForm.value.warranty_status || undefined,
-    production_date_start: start ? dayjs(start).format('YYYY-MM-DD') : undefined,
-    production_date_end: end ? dayjs(end).format('YYYY-MM-DD') : undefined
-  })
+  appliedSearchForm.value = cloneSearchForm(searchForm.value)
+  pagination.page = 1
+  updateSearchParams(buildSearchApiParams(appliedSearchForm.value, 1, Number(pagination.pageSize || 10)))
+  persistSearchState()
   getData()
 }
 
@@ -1538,6 +1730,7 @@ function handlePageChange(page: number) {
     page,
     page_size: pagination.pageSize
   })
+  persistSearchState()
   getData()
 }
 
@@ -1548,27 +1741,21 @@ function handlePageSizeChange(pageSize: number) {
     page: 1,
     page_size: pageSize
   })
+  persistSearchState()
   getData()
 }
 
 function handleReset() {
   clearSelection()
-  searchForm.value = {
-    search_field: 'device_number',
-    search_value: '',
-    device_number: '',
-    battery_model_id: null,
-    cell_brand_seq_no: null,
-    battery_model_seq_no: null,
-    owner_org_type: null,
-    owner_org_id: null,
-    is_online: null,
-    activation_status: null,
-    production_range: null,
-    warranty_status: null
-  }
+  const defaultForm = createDefaultSearchForm()
+  searchForm.value = cloneSearchForm(defaultForm)
+  appliedSearchForm.value = cloneSearchForm(defaultForm)
+  showAdvancedSearch.value = false
   ownerOrgOptions.value = []
-  handleSearch()
+  pagination.page = 1
+  sessionStg.remove('bmsBatteryListSearchState')
+  updateSearchParams(buildSearchApiParams(defaultForm, 1, Number(pagination.pageSize || 10)))
+  getData()
 }
 
 function goDeviceDetail(row: BatteryItem) {
@@ -1627,6 +1814,9 @@ onMounted(async () => {
   await ensureUiPermissionState()
   reloadColumns()
   initSelectOptions()
+  if (appliedSearchForm.value.owner_org_type) {
+    await loadOwnerOrgOptions(appliedSearchForm.value.owner_org_type)
+  }
 })
 </script>
 
@@ -1666,7 +1856,13 @@ onMounted(async () => {
               <div class="battery-search-actions">
                 <NButton type="primary" @click="handleSearch">{{ bt('auto.s_bee912d79e') }}</NButton>
                 <NButton @click="handleReset">{{ bt('auto.s_4b9c3271dc') }}</NButton>
-                <NButton text type="primary" @click="showAdvancedSearch = !showAdvancedSearch">
+                <NButton
+                  text
+                  type="primary"
+                  :aria-expanded="showAdvancedSearch"
+                  aria-controls="battery-advanced-search"
+                  @click="handleAdvancedSearchToggle"
+                >
                   {{
                     showAdvancedSearch
                       ? bt('auto.s_5e0e0c6169')
@@ -1678,8 +1874,13 @@ onMounted(async () => {
               </div>
             </div>
 
-            <div v-show="showAdvancedSearch" class="battery-search-advanced">
-              <NFormItem v-if="canFilterByOrgType" :label="bt('auto.s_f835eef9e8')" path="owner_org_type" class="battery-search-item">
+            <div v-show="showAdvancedSearch" id="battery-advanced-search" class="battery-search-advanced">
+              <NFormItem
+                v-if="canFilterByOrgType"
+                :label="bt('auto.s_f835eef9e8')"
+                path="owner_org_type"
+                class="battery-search-item"
+              >
                 <NSelect
                   v-model:value="searchForm.owner_org_type"
                   :options="ownerOrgTypeOptions"
@@ -1690,7 +1891,12 @@ onMounted(async () => {
                 />
               </NFormItem>
 
-              <NFormItem v-if="canFilterByOrgType" :label="bt('auto.s_6ce6f1493b')" path="owner_org_id" class="battery-search-item">
+              <NFormItem
+                v-if="canFilterByOrgType"
+                :label="bt('auto.s_6ce6f1493b')"
+                path="owner_org_id"
+                class="battery-search-item"
+              >
                 <NSelect
                   v-model:value="searchForm.owner_org_id"
                   :options="ownerOrgOptions"
@@ -1906,7 +2112,9 @@ onMounted(async () => {
           <NFormItem :label="bt('auto.s_6ea1fe6baa')">
             <div class="complete-info-summary">
               <div v-for="item in selectedRows" :key="item.device_id" class="complete-info-row">
-                <div>{{ bt('common.labelWithValue', { label: bt('auto.s_7079d2e6c4'), value: item.device_number }) }}</div>
+                <div>
+                  {{ bt('common.labelWithValue', { label: bt('auto.s_7079d2e6c4'), value: item.device_number }) }}
+                </div>
                 <div>
                   {{
                     bt('common.labelWithValue', {
@@ -1915,8 +2123,14 @@ onMounted(async () => {
                     })
                   }}
                 </div>
-                <div>{{ bt('common.labelWithValue', { label: bt('auto.s_fbe2fcd983'), value: item.production_date || '--' }) }}</div>
-                <div>{{ bt('common.labelWithValue', { label: bt('auto.s_6bf1f392c0'), value: currentStatusLabel(item) }) }}</div>
+                <div>
+                  {{
+                    bt('common.labelWithValue', { label: bt('auto.s_fbe2fcd983'), value: item.production_date || '--' })
+                  }}
+                </div>
+                <div>
+                  {{ bt('common.labelWithValue', { label: bt('auto.s_6bf1f392c0'), value: currentStatusLabel(item) }) }}
+                </div>
               </div>
             </div>
           </NFormItem>
@@ -1948,19 +2162,43 @@ onMounted(async () => {
     <NModal
       v-model:show="showTransferModal"
       preset="dialog"
-      :title="bt('auto.s_0cccb8acdf')"
+      :title="transferMode === 'batch' ? bt('pages.batteryList.batchTransfer') : bt('auto.s_0cccb8acdf')"
       :positive-text="bt('auto.s_16e2eab6ee')"
       :negative-text="bt('auto.s_625fb26b4b')"
       :loading="transferLoading"
       @positive-click="confirmTransfer"
     >
       <NForm :model="transferForm" label-placement="left" label-width="100px">
-        <NFormItem :label="bt('auto.s_90ccdfe522')">
-          <NInput v-model:value="transferForm.device_number" disabled />
-        </NFormItem>
-        <NFormItem :label="bt('auto.s_5b80f24aa3')">
-          <NInput v-model:value="transferForm.from_org_name" disabled />
-        </NFormItem>
+        <template v-if="transferMode === 'batch'">
+          <NFormItem :label="bt('auto.s_63843f5a90')">
+            <div style="color: #475569">{{ bt('common.unitCount', { count: transferForm.device_ids.length }) }}</div>
+          </NFormItem>
+          <NFormItem :label="bt('auto.s_6ea1fe6baa')">
+            <div class="complete-info-summary" role="list">
+              <div v-for="item in selectedRows" :key="item.device_id" class="complete-info-row" role="listitem">
+                <div>
+                  {{ bt('common.labelWithValue', { label: bt('auto.s_7079d2e6c4'), value: item.device_number }) }}
+                </div>
+                <div>
+                  {{
+                    bt('common.labelWithValue', {
+                      label: bt('auto.s_6ce6f1493b'),
+                      value: item.owner_org_name || item.dealer_name || bt('auto.s_a14d2ac1e0')
+                    })
+                  }}
+                </div>
+              </div>
+            </div>
+          </NFormItem>
+        </template>
+        <template v-else>
+          <NFormItem :label="bt('auto.s_90ccdfe522')">
+            <NInput v-model:value="transferForm.device_number" disabled />
+          </NFormItem>
+          <NFormItem :label="bt('auto.s_5b80f24aa3')">
+            <NInput v-model:value="transferForm.from_org_name" disabled />
+          </NFormItem>
+        </template>
         <NFormItem :label="bt('auto.s_62a44be140')" path="to_org_type" required>
           <NRadioGroup v-model:value="transferForm.to_org_type" @update:value="handleTransferOrgTypeChange">
             <NRadioButton v-for="item in transferOrgTypeOptions" :key="item.value" :value="item.value">
@@ -2087,10 +2325,18 @@ onMounted(async () => {
         <NFormItem :label="bt('auto.s_6ea1fe6baa')">
           <div class="complete-info-summary">
             <div v-for="item in completeInfoRows" :key="item.device_id" class="complete-info-row">
-              <div>{{ bt('common.labelWithValue', { label: bt('auto.s_7079d2e6c4'), value: item.device_number }) }}</div>
+              <div>
+                {{ bt('common.labelWithValue', { label: bt('auto.s_7079d2e6c4'), value: item.device_number }) }}
+              </div>
               <div>{{ bt('common.labelWithValue', { label: 'MAC', value: item.ble_mac || '--' }) }}</div>
-              <div>{{ bt('common.labelWithValue', { label: bt('auto.s_fbe2fcd983'), value: item.production_date || '--' }) }}</div>
-              <div>{{ bt('common.labelWithValue', { label: bt('auto.s_6bf1f392c0'), value: currentStatusLabel(item) }) }}</div>
+              <div>
+                {{
+                  bt('common.labelWithValue', { label: bt('auto.s_fbe2fcd983'), value: item.production_date || '--' })
+                }}
+              </div>
+              <div>
+                {{ bt('common.labelWithValue', { label: bt('auto.s_6bf1f392c0'), value: currentStatusLabel(item) }) }}
+              </div>
             </div>
           </div>
         </NFormItem>
@@ -2229,7 +2475,9 @@ onMounted(async () => {
       <template v-else>
         <div style="margin-bottom: 12px; color: #666; font-size: 12px">
           {{ bt('common.taskId', { id: lastOtaTaskId }) }}
-          <NButton size="tiny" style="margin-left: 8px" @click="fetchOtaTaskDetail">{{ bt('auto.s_694fc5efa9') }}</NButton>
+          <NButton size="tiny" style="margin-left: 8px" @click="fetchOtaTaskDetail">
+            {{ bt('auto.s_694fc5efa9') }}
+          </NButton>
         </div>
         <div v-if="otaTaskDetailStats?.length" style="margin-bottom: 12px">
           <span

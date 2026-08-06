@@ -7,7 +7,7 @@ import { SetupStoreId } from '@/enum'
 import { useRouterPush } from '@/hooks/common/router'
 import { fetchGetUserInfo, fetchLogin, logout } from '@/service/api'
 import { transformUser } from '@/service/api/auth'
-import { localStg } from '@/utils/storage'
+import { localStg, sessionStg } from '@/utils/storage'
 import { $t } from '@/locales'
 import { encryptDataByRsa, generateRandomHexString, validPassword } from '@/utils/common/tool'
 import { resetUiPermissionState } from '@/utils/common/ui-permission'
@@ -33,6 +33,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     const authStore = useAuthStore()
 
     clearAuthStorage()
+    sessionStg.remove('bmsBatteryListSearchState')
     resetUiPermissionState()
 
     authStore.$reset()
@@ -118,6 +119,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   async function enter(userId: string) {
     startLoading()
     const { clearTabs } = useTabStore()
+    sessionStg.remove('bmsBatteryListSearchState')
     const { data: loginToken, error } = await transformUser({
       become_user_id: userId
     })

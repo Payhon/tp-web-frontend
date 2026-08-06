@@ -202,6 +202,7 @@
   "perm.bms_battery_list_batch_tag": "Batch Tag Assignment",
   "perm.bms_battery_list_batch_command": "Batch Command Dispatch",
   "perm.bms_battery_list_batch_ota": "Batch OTA Push",
+  "perm.bms_battery_list_batch_transfer": "Batch Transfer",
   "perm.bms_battery_list_action_lifecycle_info_complete": "Lifecycle - Info Completion",
   "perm.bms_battery_list_action_edit_bms_info": "Edit BMS Info",
   "perm.bms_battery_list_action_delete": "Delete",
