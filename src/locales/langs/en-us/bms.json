@@ -613,7 +613,18 @@
       "hint": "Select writable parameters and enter new values before dispatch. Values can be JSON numbers, booleans, objects, or arrays."
     },
     "history": {
-      "communication": "Communication: {value}"
+      "communication": "Communication: {value}",
+      "headers": {
+        "time": "时间 / Time",
+        "dataType": "数据类型 / Data Type",
+        "identifier": "标识符 / Identifier",
+        "dataName": "数据名称 / Data Name",
+        "value": "值 / Value"
+      },
+      "dataTypes": {
+        "attribute": "属性 / Attribute",
+        "telemetry": "遥测 / Telemetry"
+      }
     },
     "ota": {
       "taskDetailTitle": "OTA Task Details: {id}",

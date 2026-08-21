@@ -233,6 +233,7 @@ export type BmsHistoryWideColumn = {
   data_type: string
   identifier: string
   data_name: string
+  display_name?: string
 }
 
 export type BmsHistoryPendingJob = {

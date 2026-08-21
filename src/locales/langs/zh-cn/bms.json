@@ -613,7 +613,18 @@
       "hint": "说明：勾选“可写”参数并填写新值后下发；值可输入 JSON（数字/布尔/对象/数组）"
     },
     "history": {
-      "communication": "通讯: {value}"
+      "communication": "通讯: {value}",
+      "headers": {
+        "time": "时间 / Time",
+        "dataType": "数据类型 / Data Type",
+        "identifier": "标识符 / Identifier",
+        "dataName": "数据名称 / Data Name",
+        "value": "值 / Value"
+      },
+      "dataTypes": {
+        "attribute": "属性 / Attribute",
+        "telemetry": "遥测 / Telemetry"
+      }
     },
     "ota": {
       "taskDetailTitle": "OTA任务详情：{id}",

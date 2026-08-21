@@ -64,125 +64,10 @@ function unwrapApiPayload<T = any>(raw: any): T {
   return (level1?.data ?? level1 ?? {}) as T
 }
 
-const wideIdentifierLabelMap: Record<string, string> = {
-  cycleCount: bt('auto.s_2dbd74ad4f'),
-  faultCount: bt('auto.s_0331c1fd79'),
-  charging: bt('auto.s_18ad5763ed'),
-  discharging: bt('auto.s_4aabfe04bc'),
-  chargeFetOn: bt('auto.s_bf89014857'),
-  dischargeFetOn: bt('auto.s_83f24734d9'),
-  chargeMosC: bt('auto.s_2791571ac5'),
-  dischargeMosC: bt('auto.s_4df18c6903'),
-  highestCellVoltageMv: bt('auto.s_d3cc94d1fd'),
-  lowestCellVoltageMv: bt('auto.s_cb65bc97ee'),
-  avgCellVoltageMv: bt('auto.s_e08ac67141'),
-  totalVoltageMv: bt('auto.s_ace4c80be1'),
-  totalCurrentMa: bt('auto.s_8873466bd6'),
-  remainCapacityMah: bt('auto.s_0fc03fb8c4'),
-  nominalCapacityMah: bt('auto.s_3199571031'),
-  soc: 'SOC(%)',
-  soh: 'SOH(%)'
-}
-
-const wideIdentifierTokenMap: Record<string, string> = {
-  highest: bt('auto.s_9b53e2a02d'),
-  lowest: bt('auto.s_1c73433cc8'),
-  avg: bt('auto.s_33875c8660'),
-  average: bt('auto.s_33875c8660'),
-  max: bt('auto.s_f98b9af13a'),
-  min: bt('auto.s_5e02aac448'),
-  cell: bt('auto.s_97ae793259'),
-  total: bt('auto.s_a246f63060'),
-  remain: bt('auto.s_43b510edc7'),
-  remaining: bt('auto.s_43b510edc7'),
-  nominal: bt('auto.s_c66c1538c6'),
-  voltage: bt('auto.s_b42583eaa2'),
-  current: bt('auto.s_5ecd057a1c'),
-  capacity: bt('auto.s_fe7d74278a'),
-  count: bt('auto.s_0bf60b32f9'),
-  status: bt('auto.s_3fea7ca76c'),
-  fault: bt('auto.s_4af58f243b'),
-  charge: bt('auto.s_2cd11ef34e'),
-  discharge: bt('auto.s_418102ac77'),
-  charging: bt('auto.s_2cd11ef34e'),
-  discharging: bt('auto.s_418102ac77'),
-  mos: 'MOS',
-  fet: 'MOS',
-  temp: bt('auto.s_c9bf0b889a'),
-  temperature: bt('auto.s_c9bf0b889a'),
-  cycle: bt('auto.s_69bdc66bb8'),
-  balance: bt('auto.s_f07d8f755e'),
-  protection: bt('auto.s_c6b95eef2e'),
-  alarm: bt('auto.s_aa0eab9dba'),
-  state: bt('auto.s_3fea7ca76c'),
-  power: bt('auto.s_93b57ce379'),
-  energy: bt('auto.s_ba7bd2a730'),
-  percentage: bt('auto.s_81522afdfe')
-}
-
-const wideIdentifierUnitMap: Record<string, string> = {
-  mv: 'mV',
-  ma: 'mA',
-  mah: 'mAh',
-  ah: 'Ah',
-  v: 'V',
-  a: 'A',
-  c: '°C',
-  pct: '%',
-  percent: '%'
-}
-
-function splitIdentifier(identifier: string): string[] {
-  return identifier
-    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
-    .replace(/[_./-]+/g, ' ')
-    .split(/\s+/)
-    .map(item => item.trim())
-    .filter(Boolean)
-}
-
-function translateWideIdentifier(identifier: string): string {
-  const raw = String(identifier || '').trim()
-  if (!raw) return raw
-  if (wideIdentifierLabelMap[raw]) return wideIdentifierLabelMap[raw]
-
-  const parts = splitIdentifier(raw)
-  if (parts.length === 0) return raw
-
-  let unit = ''
-  let mappedCount = 0
-  const translated = parts.map(part => {
-    const key = part.toLowerCase()
-    if (wideIdentifierUnitMap[key]) {
-      unit = wideIdentifierUnitMap[key]
-      mappedCount += 1
-      return ''
-    }
-    if (wideIdentifierTokenMap[key]) {
-      mappedCount += 1
-      return wideIdentifierTokenMap[key]
-    }
-    if (/^\d+$/.test(key)) return part
-    return part
-  })
-
-  if (mappedCount === 0) return raw
-
-  const label = translated.join('')
-  if (!label) return raw
-  if (unit) return `${label}(${unit})`
-  return label
-}
-
 function getWideColumnTitle(col: BmsHistoryWideColumn): string {
   const identifier = String(col.identifier || '').trim()
   const dataName = String(col.data_name || '').trim()
-  if (dataName && dataName !== identifier) {
-    return `${dataName} (${identifier})`
-  }
-  const zhLabel = translateWideIdentifier(identifier)
-  if (!zhLabel || zhLabel === identifier) return identifier
-  return `${zhLabel} (${identifier})`
+  return col.display_name || (dataName && dataName !== identifier ? `${dataName} (${identifier})` : identifier)
 }
 
 function recalcTableHeight() {
@@ -199,7 +84,7 @@ function recalcTableHeight() {
 
 const tableColumns = computed<DataTableColumns<Record<string, any>>>(() => {
   const timeColumn = {
-    title: bt('auto.s_19fcb9eb25'),
+    title: bt('pages.history.headers.time'),
     key: 'time',
     width: 180,
     fixed: viewMode.value === 'wide' ? 'left' : undefined,
@@ -210,17 +95,17 @@ const tableColumns = computed<DataTableColumns<Record<string, any>>>(() => {
     return [
       timeColumn,
       {
-        title: bt('auto.s_185f7bf647'),
+        title: bt('pages.history.headers.dataType'),
         key: 'data_type',
         width: 100,
         render: (row: Record<string, any>) =>
           row.data_type === 'attribute'
-            ? h(NTag, { type: 'warning', size: 'small' }, () => 'attribute')
-            : h(NTag, { type: 'info', size: 'small' }, () => 'telemetry')
+            ? h(NTag, { type: 'warning', size: 'small' }, () => bt('pages.history.dataTypes.attribute'))
+            : h(NTag, { type: 'info', size: 'small' }, () => bt('pages.history.dataTypes.telemetry'))
       },
-      { title: bt('auto.s_f3c00c7e55'), key: 'identifier', width: 180 },
-      { title: bt('auto.s_5a1419b7a2'), key: 'data_name', width: 180, ellipsis: { tooltip: true } },
-      { title: bt('auto.s_fe7509e0ed'), key: 'value', minWidth: 200, ellipsis: { tooltip: true } }
+      { title: bt('pages.history.headers.identifier'), key: 'identifier', width: 180 },
+      { title: bt('pages.history.headers.dataName'), key: 'data_name', width: 180, ellipsis: { tooltip: true } },
+      { title: bt('pages.history.headers.value'), key: 'value', minWidth: 200, ellipsis: { tooltip: true } }
     ]
   }
 
@@ -452,9 +337,15 @@ watch(
                 >
                   <div class="device-title">{{ item.device_name || item.device_number }}</div>
                   <div class="device-subtitle">SN: {{ item.device_number }}</div>
-                  <div class="device-subtitle">{{ bt('pages.history.communication', { value: mapCommType(item.bms_comm_type) }) }}</div>
+                  <div class="device-subtitle">
+                    {{ bt('pages.history.communication', { value: mapCommType(item.bms_comm_type) }) }}
+                  </div>
                 </div>
-                <NEmpty v-if="!deviceLoading && deviceList.length === 0" :description="bt('auto.s_bcc241e075')" class="mt-20px" />
+                <NEmpty
+                  v-if="!deviceLoading && deviceList.length === 0"
+                  :description="bt('auto.s_bcc241e075')"
+                  class="mt-20px"
+                />
               </NScrollbar>
             </NSpin>
           </div>
@@ -498,7 +389,9 @@ watch(
                   <NRadioButton value="long">{{ bt('auto.s_ad02f7e9d6') }}</NRadioButton>
                   <NRadioButton value="wide">{{ bt('auto.s_f921f12d83') }}</NRadioButton>
                 </NRadioGroup>
-                <NButton type="primary" :disabled="!canExport || !selectedDeviceId" @click="handleExport">{{ bt('auto.s_55405ea6ff') }}</NButton>
+                <NButton type="primary" :disabled="!canExport || !selectedDeviceId" @click="handleExport">
+                  {{ bt('auto.s_55405ea6ff') }}
+                </NButton>
               </NSpace>
             </div>
 
