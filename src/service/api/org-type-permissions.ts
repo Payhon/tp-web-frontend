@@ -50,3 +50,7 @@ export const fetchCurrentDeviceParamPermissions = () => {
 export const fetchCurrentUiPermissions = () => {
   return request.get<UiPermissionResp>('/org_type_permissions/ui_codes/me')
 }
+
+export const fetchCurrentMobileUIPermissions = () => {
+  return request.get<UiPermissionResp>('/org_type_permissions/mobile_ui_codes/me')
+}

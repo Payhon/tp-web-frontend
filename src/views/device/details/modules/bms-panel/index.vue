@@ -36,7 +36,7 @@ import {
   type BatteryRelayStatus
 } from '@/service/api/bms'
 import { telemetryDataCurrentKeys, telemetryDataHistoryList, telemetryHistoryData } from '@/service/api/device'
-import { fetchCurrentDeviceParamPermissions } from '@/service/api/org-type-permissions'
+import { fetchCurrentDeviceParamPermissions, fetchCurrentMobileUIPermissions } from '@/service/api/org-type-permissions'
 import {
   BMS_PARAM,
   BmsClient,
@@ -169,6 +169,8 @@ const deviceParamPerm = reactive({
   keys: [] as string[]
 })
 const deviceParamPermSet = computed(() => new Set(deviceParamPerm.keys))
+const DEVICE_PROTECTION_STATUS_PERMISSION = 'app_device_detail_protection_status'
+const canShowProtectionStatus = ref(false)
 
 const connType = ref<'mqtt' | 'offline'>('offline')
 const connecting = ref(false)
@@ -747,6 +749,17 @@ async function refreshCloudData() {
   openCloudWs()
 }
 
+async function loadProtectionStatusPermission() {
+  canShowProtectionStatus.value = false
+  try {
+    const { data } = await fetchCurrentMobileUIPermissions()
+    const codes = Array.isArray(data?.ui_codes) ? data.ui_codes.map(code => String(code || '').trim()) : []
+    canShowProtectionStatus.value = codes.includes(DEVICE_PROTECTION_STATUS_PERMISSION)
+  } catch {
+    canShowProtectionStatus.value = false
+  }
+}
+
 async function loadDeviceParamPermissions() {
   try {
     const resp: any = await fetchCurrentDeviceParamPermissions()
@@ -775,6 +788,7 @@ watch(
 
 onMounted(() => {
   loadDeviceParamPermissions()
+  loadProtectionStatusPermission()
   load()
 })
 onBeforeUnmount(() => {
@@ -1786,7 +1800,7 @@ const functionColumns: DataTableColumns<FunctionControlRow> = [
                 </NCard>
               </NGridItem>
 
-              <NGridItem :span="12">
+              <NGridItem v-if="canShowProtectionStatus" :span="12">
                 <NCard size="small" :title="$t('bms.detail.dashboard.protectStatus')" :bordered="false">
                   <template #header-extra>
                     <NButton text type="primary" @click="toggleProtectPanel">
