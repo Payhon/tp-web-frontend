@@ -50,7 +50,7 @@ export const request = createFlatRequest<App.Service.DEVResponse>(
       // for example: the token is expired, prefetch token and retry requestTs
     },
     transformBackendResponse(response) {
-      if (response.config.method !== 'get') {
+      if (response.config.method !== 'get' && (response.config as any).needMessage !== false) {
         window.$message?.destroyAll()
       }
       if ((response as any).config?.needMessage) {
@@ -59,6 +59,7 @@ export const request = createFlatRequest<App.Service.DEVResponse>(
       return response.data.data
     },
     onError(error) {
+      if ((error.config as any)?.needMessage === false) return
       // when the requestTs is fail, you can show error message
 
       if (error?.response?.status === 401) {
