@@ -433,6 +433,17 @@ export const getAppBatteryDetail = (deviceId: string) => {
   return request.get(`/app/battery/detail/${deviceId}`)
 }
 
+export type BatteryInteractiveSnapshotReq = {
+  device_id: string
+  session_id: string
+  platform?: string
+  snapshot: Record<string, unknown>
+}
+
+export const reportBatteryInteractiveSnapshot = (data: BatteryInteractiveSnapshotReq) => {
+  return request.post('/app/battery/interactive-snapshot', data, { needMessage: false } as any)
+}
+
 export type BatteryRelayStatus = {
   device_id: string
   owner_online: boolean

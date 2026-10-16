@@ -69,7 +69,7 @@
       "mqttOnline": "MQTT Reporting Online",
       "mqttOffline": "MQTT Reporting Offline",
       "mqttRealtime": "MQTT Pass-through Live",
-      "activeReportFallback": "Active Report Fallback",
+      "activeReportFallback": "Shared / Cloud Read-only",
       "offlineNoData": "Offline / No Data",
       "paramMqtt": "Parameter Channel: MQTT pass-through available",
       "paramRelay": "Parameter Channel: APP Bluetooth relay available",

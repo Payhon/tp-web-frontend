@@ -31,6 +31,7 @@ import { localStg } from '@/utils/storage'
 import {
   getAppBatteryDetail,
   getBatteryRelayStatus,
+  reportBatteryInteractiveSnapshot,
   sendBatteryRelayCommand,
   type BatteryRelayCommandResp,
   type BatteryRelayStatus
@@ -54,6 +55,7 @@ import {
 } from '@/common/lib/bms-protocol'
 import type { BmsStatus } from '@/common/lib/bms-protocol'
 import { selectDisplayCellVoltagesMv } from './cell-voltage'
+import { selectSharedBmsSnapshot } from './shared-snapshot'
 
 const props = defineProps<{
   id: string
@@ -119,6 +121,7 @@ const CLOUD_KEYS = [
   'cellVoltageLowestIndex',
   'electrical.packCellSumVoltageV',
   'electrical.avgCellVoltageMv',
+  'bms.mqtt_interactive_snapshot',
   'bms.snapshot'
 ]
 
@@ -179,6 +182,8 @@ const status = ref<BmsStatus | null>(null)
 let pollTimer: number | null = null
 let transport: WebMqttSocketBmsTransport | null = null
 let client: BmsClient | null = null
+let sharedSnapshotPending: { deviceId: string; sessionId: string; snapshot: BmsStatus } | null = null
+let sharedSnapshotPump: Promise<void> | null = null
 
 let cloudWs: WebSocket | null = null
 let cloudHeartbeatTimer: number | null = null
@@ -247,17 +252,9 @@ const paramConnectButtonText = computed(() =>
   canUse4G.value ? tb('detail.telemetry.reconnectMqtt') : tb('detail.telemetry.connectRelay')
 )
 
-const cloudSnapshot = computed<BmsStatus | null>(() => {
-  const raw = cloudCurrent['bms.snapshot']
-  if (!raw) return null
-  if (typeof raw === 'object') return raw as BmsStatus
-  if (typeof raw !== 'string') return null
-  try {
-    return JSON.parse(raw) as BmsStatus
-  } catch {
-    return null
-  }
-})
+const cloudSnapshot = computed<BmsStatus | null>(() =>
+  selectSharedBmsSnapshot(cloudCurrent['bms.mqtt_interactive_snapshot'], cloudCurrent['bms.snapshot'])
+)
 
 const displayStatus = computed(() => status.value || cloudSnapshot.value)
 
@@ -629,14 +626,52 @@ const snapshotColumns: DataTableColumns<SnapshotHistoryRow> = [
   }
 ]
 
+function flushSharedSnapshot() {
+  if (sharedSnapshotPump) return
+  sharedSnapshotPump = (async () => {
+    while (sharedSnapshotPending) {
+      const pending = sharedSnapshotPending
+      sharedSnapshotPending = null
+      try {
+        await reportBatteryInteractiveSnapshot({
+          device_id: pending.deviceId,
+          session_id: pending.sessionId,
+          platform: 'web-admin',
+          snapshot: pending.snapshot as unknown as Record<string, unknown>
+        })
+      } catch {
+        // 共享快照失败不影响 owner 的本地实时读取。
+      }
+    }
+  })().finally(() => {
+    sharedSnapshotPump = null
+    if (sharedSnapshotPending) flushSharedSnapshot()
+  })
+}
+
+function queueSharedSnapshot(snapshot: BmsStatus, sourceTransport: WebMqttSocketBmsTransport) {
+  if (transport !== sourceTransport || !props.id) return
+  const sessionId = sourceTransport.getSessionId()
+  if (!sessionId) return
+  sharedSnapshotPending = { deviceId: props.id, sessionId, snapshot }
+  flushSharedSnapshot()
+}
+
 function startPolling() {
   stopPolling()
   const run = async () => {
-    if (!client) return
+    const activeClient = client
+    const activeTransport = transport
+    if (!activeClient || !activeTransport) return
     try {
-      status.value = await client.readAllStatus()
+      const nextStatus = await activeClient.readAllStatus()
+      if (client !== activeClient || transport !== activeTransport) return
+      status.value = nextStatus
+      queueSharedSnapshot(nextStatus, activeTransport)
     } catch {
-      // ignore polling errors (connection may recover)
+      if (client === activeClient && transport === activeTransport && !activeTransport.connected) {
+        void disconnectMqtt()
+      }
     }
   }
   run()
@@ -645,6 +680,7 @@ function startPolling() {
 
 async function disconnectMqtt() {
   stopPolling()
+  sharedSnapshotPending = null
   status.value = null
   connType.value = 'offline'
   client = null
@@ -699,7 +735,8 @@ async function connectMqtt(options: { silent?: boolean } = {}) {
     transport = new WebMqttSocketBmsTransport({
       wsUrl: buildWsUrl('/api/v1/app/battery/socket/ws'),
       deviceId: props.id,
-      token
+      token,
+      platform: 'web-admin'
     })
     await transport.connect()
     client = new BmsClient({ transport })

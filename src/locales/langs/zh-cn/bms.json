@@ -69,7 +69,7 @@
       "mqttOnline": "MQTT上报在线",
       "mqttOffline": "MQTT上报离线",
       "mqttRealtime": "MQTT透传实时",
-      "activeReportFallback": "主动上报兜底",
+      "activeReportFallback": "共享/云端只读",
       "offlineNoData": "离线/无数据",
       "paramMqtt": "参数通道：MQTT透传可用",
       "paramRelay": "参数通道：APP蓝牙中继可用",
