@@ -32,6 +32,8 @@ function hexToBytes(hex: string): Uint8Array {
 
 const SOCKET_CLOUD_READ_START = 0x0900
 const SOCKET_CLOUD_READ_END_EXCLUSIVE = 0x0924
+const SOCKET_OWNER_FEATURE = 'mqtt_socket_owner_v1'
+const SOCKET_READY_TIMEOUT_MS = 1200
 
 function isSocketCloudReadRange(startAddress: number, quantity: number): boolean {
   if (!Number.isFinite(startAddress) || !Number.isFinite(quantity) || quantity <= 0) return false
@@ -121,6 +123,7 @@ export type WebMqttSocketBmsTransportOptions = {
   wsUrl: string
   deviceId: string
   token: string
+  platform?: string
   minFrameIntervalMs?: number
   requestTimeoutMs?: number
   logger?: LoggerLike
@@ -131,6 +134,7 @@ export class WebMqttSocketBmsTransport {
   wsUrl: string
   deviceId: string
   token: string
+  platform: string
   minFrameIntervalMs: number
   requestTimeoutMs: number
   logger: LoggerLike
@@ -140,6 +144,7 @@ export class WebMqttSocketBmsTransport {
   private collector: FrameCollector
   private queue: Promise<any>
   private bridgeError: string
+  private sessionId: string
   private pending: null | {
     resolve: (frame: Uint8Array) => void
     reject: (err: unknown) => void
@@ -153,6 +158,7 @@ export class WebMqttSocketBmsTransport {
     this.wsUrl = options.wsUrl
     this.deviceId = options.deviceId
     this.token = options.token
+    this.platform = String(options.platform || '').trim()
     this.minFrameIntervalMs = options.minFrameIntervalMs ?? 80
     this.requestTimeoutMs = options.requestTimeoutMs ?? 10000
     this.logger = options.logger ?? console
@@ -162,12 +168,17 @@ export class WebMqttSocketBmsTransport {
     this.collector = new FrameCollector({ logger: this.logger })
     this.queue = Promise.resolve()
     this.bridgeError = ''
+    this.sessionId = ''
     this.pending = null
     this.lastTxAt = 0
   }
 
   get connected() {
     return this.connectedFlag
+  }
+
+  getSessionId(): string {
+    return this.sessionId
   }
 
   async connect(): Promise<void> {
@@ -177,6 +188,24 @@ export class WebMqttSocketBmsTransport {
     if (!this.token) throw new BmsProtocolError('token is required')
 
     const { promise, resolve, reject } = defer<void>()
+    let settled = false
+    let readyTimer: ReturnType<typeof setTimeout> | null = null
+    const finishReady = () => {
+      if (settled) return
+      settled = true
+      if (readyTimer) clearTimeout(readyTimer)
+      readyTimer = null
+      this.connectedFlag = true
+      resolve()
+    }
+    const failReady = (err: unknown) => {
+      if (settled) return
+      settled = true
+      if (readyTimer) clearTimeout(readyTimer)
+      readyTimer = null
+      this.connectedFlag = false
+      reject(err)
+    }
 
     try {
       const ws = new WebSocket(this.wsUrl)
@@ -184,16 +213,24 @@ export class WebMqttSocketBmsTransport {
 
       ws.onopen = () => {
         try {
-          ws.send(JSON.stringify({ device_id: this.deviceId, token: this.token }))
-          this.connectedFlag = true
-          resolve()
+          ws.send(
+            JSON.stringify({
+              device_id: this.deviceId,
+              token: this.token,
+              features: [SOCKET_OWNER_FEATURE],
+              platform: this.platform || 'web-admin'
+            })
+          )
+          readyTimer = setTimeout(finishReady, SOCKET_READY_TIMEOUT_MS)
         } catch (e) {
-          reject(new BmsProtocolError('WebSocket auth send failed', e))
+          failReady(new BmsProtocolError('WebSocket auth send failed', e))
         }
       }
 
       ws.onclose = () => {
         this.connectedFlag = false
+        this.sessionId = ''
+        failReady(new BmsProtocolError(this.bridgeError || 'WebSocket closed'))
         if (this.pending) {
           const p = this.pending
           clearTimeout(p.timer)
@@ -204,7 +241,8 @@ export class WebMqttSocketBmsTransport {
 
       ws.onerror = () => {
         this.connectedFlag = false
-        reject(new BmsProtocolError('WebSocket error'))
+        this.sessionId = ''
+        failReady(new BmsProtocolError('WebSocket error'))
       }
 
       ws.onmessage = evt => {
@@ -212,11 +250,35 @@ export class WebMqttSocketBmsTransport {
           const txt = typeof evt.data === 'string' ? evt.data : String(evt.data || '')
           if (!txt || txt === 'pong') return
           let payloadHex = ''
+          let obj: any = null
           try {
-            const obj = JSON.parse(txt)
+            obj = JSON.parse(txt)
             payloadHex = String(obj?.hex || '')
           } catch {
             // ignore
+          }
+          const controlType = String(obj?.type || '').trim()
+          if (controlType === 'socket_ready') {
+            this.sessionId = String(obj?.session_id || '').trim()
+            finishReady()
+            return
+          }
+          if (controlType === 'socket_occupied' || controlType === 'socket_error') {
+            const err = new BmsProtocolError(String(obj?.message || 'MQTT socket unavailable'), obj)
+            this.bridgeError = err.message
+            failReady(err)
+            if (this.pending) {
+              const p = this.pending
+              clearTimeout(p.timer)
+              this.pending = null
+              p.reject(err)
+            }
+            try {
+              ws.close()
+            } catch {
+              // ignore
+            }
+            return
           }
           if (!payloadHex) {
             this.bridgeError = txt
@@ -253,6 +315,7 @@ export class WebMqttSocketBmsTransport {
 
   async disconnect(): Promise<void> {
     this.connectedFlag = false
+    this.sessionId = ''
     if (this.pending) {
       const p = this.pending
       clearTimeout(p.timer)
